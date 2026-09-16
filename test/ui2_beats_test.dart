@@ -122,7 +122,9 @@ void main() {
       'Deceleration capacity',
       'Rhythm screen',
     ]) {
-      expect(text, contains(panel), reason: '$panel is missing');
+      // Section titles render in caps; compare case-blind.
+      expect(text.toUpperCase(), contains(panel.toUpperCase()),
+          reason: '$panel is missing');
     }
     // The Poincaré numbers are printed BESIDE the cloud they describe.
     // At `metricValue`'s ms precision — a tenth of a millisecond is not a

@@ -34,7 +34,9 @@ class _Heights implements Canvas {
 }
 
 void main() {
-  final themes = {'light': const P(false), 'dark': const P(true)};
+  // One palette. `P(false)` resolves to the same dark values as `P(true)`;
+  // the sweep runs once.
+  final themes = {'dark': const P(true)};
 
   // The tokens' own luminance/contrast maths, checked against the two anchors
   // everyone knows, so a bug in the metric can't quietly pass every other test
@@ -163,7 +165,7 @@ void main() {
       // Zone 4 against zone 5 is 1.34:1 — measured against EACH OTHER, which
       // no surface-based solve can fix, and a stacked bar has no lane position
       // to separate them with. So the ordinal is also drawn as height.
-      const p = P(false);
+      const p = P(true);
       final worst = <double>[
         for (var i = 1; i < ZoneBar.cols(p).length; i++)
           P.contrast(ZoneBar.cols(p)[i - 1], ZoneBar.cols(p)[i]),
@@ -185,15 +187,16 @@ void main() {
 
   test('the raw pigment really was unsafe — this test has teeth', () {
     // If the solver ever became a no-op, every assertion above would still
-    // pass on whichever accents happen to be dark enough. Pin the specific
-    // failure it exists to prevent.
-    const p = P(false);
-    expect(P.contrast(C.green, p.card), lessThan(_aa),
-        reason: 'raw green on white is 2.28:1 — that is the bug');
-    expect(P.contrast(p.on(C.green), p.card), greaterThanOrEqualTo(_aa));
-    // …and that the fix is a nudge, not a repaint: it must still read green.
-    expect(p.on(C.green).g, greaterThan(p.on(C.green).b));
-    expect(p.on(C.green).g, greaterThan(p.on(C.green).r));
+    // pass on whichever accents happen to be bright enough. Pin the specific
+    // failure it exists to prevent: the low-recovery red, straight off the
+    // brand sheet, does not clear AA on the lightest card.
+    const p = P(true);
+    expect(P.contrast(C.red, p.card2), lessThan(_aa),
+        reason: 'raw #FF0026 on the recessed card is under 4.5:1 — that is the bug');
+    expect(P.contrast(p.on(C.red), p.card2), greaterThanOrEqualTo(_aa));
+    // …and that the fix is a nudge, not a repaint: it must still read red.
+    expect(p.on(C.red).r, greaterThan(p.on(C.red).g));
+    expect(p.on(C.red).r, greaterThan(p.on(C.red).b));
   });
 
   test('solving is memoised — a repaint is not a search', () {

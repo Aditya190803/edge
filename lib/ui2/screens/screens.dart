@@ -2,6 +2,7 @@
 export 'ai_briefing.dart';
 export 'beats.dart';
 export 'circadian_detail.dart';
+export 'add_sheet.dart';
 export 'coach.dart';
 export 'coach_figures.dart';
 export 'findings_log.dart';

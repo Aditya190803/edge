@@ -197,7 +197,7 @@ void _screen() {
       await t.pumpAndSettle();
 
       // All three land, and WH-08 asks before it draws anything.
-      expect(find.text('By day of your cycle'), findsOneWidget);
+      expect(find.text('BY DAY OF YOUR CYCLE'), findsOneWidget);
       // WH-08 sits below the fold on a phone-sized viewport.
       await t.dragUntilVisible(
         find.text('Your cycle lengths against a published range'),
@@ -205,7 +205,7 @@ void _screen() {
         const Offset(0, -200),
       );
       await t.pumpAndSettle();
-      expect(find.text('How long your cycles have been'), findsOneWidget);
+      expect(find.text('HOW LONG YOUR CYCLES HAVE BEEN'), findsOneWidget);
 
       final texts = t
           .widgetList<Text>(find.byType(Text))

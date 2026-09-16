@@ -66,17 +66,15 @@ Widget _frame(Widget child, Brightness b, double scale) => MediaQuery(
 /// reviews, and an unreviewed golden gets `--update-goldens`-ed over the top
 /// of the bug it was supposed to catch.
 Future<void> _loadType() async {
-  final files = Directory('assets/fonts/Manrope')
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.ttf'));
-  // Registered under both names. `.SF Pro Text` does not exist off Apple
-  // hardware, so on Android and in the test harness the type IS Manrope —
-  // registering it under the primary name makes the goldens show what a
-  // non-Apple user actually sees, rather than the harness's fallback blocks.
-  for (final family in const ['Manrope', '.SF Pro Text']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
+  // The one bundled family, so a golden shows the type the app ships.
+  for (final e in const {
+    'Figtree': 'assets/fonts/Figtree',
+  }.entries) {
+    final loader = FontLoader(e.key);
+    for (final f in Directory(e.value)
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.ttf'))) {
       loader.addFont(f
           .readAsBytes()
           .then((b) => ByteData.sublistView(Uint8List.fromList(b))));
@@ -110,7 +108,8 @@ void main() {
 
   for (final scale in const [1.0, 2.0]) {
     final tag = scale == 1.0 ? '1x' : '2x';
-    for (final brightness in Brightness.values) {
+    // Dark only. The app has one palette now.
+    for (final brightness in const [Brightness.dark]) {
       final theme = brightness.name;
       group('$theme · $tag text', () {
         cases.forEach((name, widget) {
@@ -135,15 +134,15 @@ void main() {
     }
   }
 
-  testWidgets('the shell has five destinations and cannot grow a sixth',
+  testWidgets('the shell has four destinations and cannot grow a fifth',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(Brightness.light),
+      theme: buildTheme(),
       home: AppShell(
         builder: (c, d) => Center(child: Text(d.label)),
       ),
     ));
-    expect(ShellDomain.values, hasLength(5));
+    expect(ShellDomain.values, hasLength(4));
     for (final d in ShellDomain.values) {
       expect(find.text(d.label), findsWidgets, reason: '${d.label} tab missing');
     }

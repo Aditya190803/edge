@@ -613,7 +613,14 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
     final d = _d ?? const HealthData();
     final l = AppLocalizations.of(c);
     return ListView(padding: pad, children: [
-      ScreenTitle(l?.healthTitle ?? 'Health'),
+      // Centred caps, as the reference app heads this tab.
+      Padding(
+        padding: const EdgeInsets.fromLTRB(0, S.x3, 0, S.x4),
+        child: Center(
+          child: Text((l?.healthTitle ?? 'Health').toUpperCase(),
+              style: F.caps.copyWith(color: P.of(c).ink)),
+        ),
+      ),
       SubTabs(_tabsOf(l), _tab, _select, color: C.blue),
       const SizedBox(height: S.x5),
       if (_loading && _d == null)
@@ -633,11 +640,152 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
   }
 
   // ─────────────── OVERVIEW ───────────────
+
+  /// "HEALTH MONITOR": the four overnight inputs as icon columns, a tick
+  /// under each one inside its usual range, and the count in a pill.
+  Widget _monitorCard(BuildContext c, P p, HealthData d) {
+    final base = d.today['baselines'] is Map
+        ? (d.today['baselines'] as Map).cast<String, dynamic>()
+        : const <String, dynamic>{};
+    bool? inRange(String key) {
+      final b = base[key];
+      if (b is! Map) return null;
+      final delta = (b['delta'] as num?)?.toDouble();
+      final spread = (b['spread'] as num?)?.toDouble();
+      if (delta == null || spread == null) return null;
+      return delta.abs() <= spread;
+    }
+    final cols = <(IconData, String, bool?)>[
+      (LucideIcons.wind, 'Resp', inRange('resp')),
+      (LucideIcons.heartPulse, 'RHR', inRange('resting_hr')),
+      (LucideIcons.activity, 'HRV', inRange('hrv')),
+      (LucideIcons.thermometer, 'Temp', inRange('skin_temp')),
+    ];
+    final known = cols.where((e) => e.$3 != null).length;
+    final ok = cols.where((e) => e.$3 == true).length;
+    return Pressable(
+      onTap: () => go(c, const MetricDetail('resting_hr')),
+      semanticLabel: 'Health monitor, $ok of $known metrics within range',
+      child: Container(
+        padding: const EdgeInsets.all(S.x4),
+        decoration: BoxDecoration(color: p.card, borderRadius: R.rLg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Expanded(
+              child: Text('HEALTH MONITOR',
+                  style: F.caps.copyWith(color: p.ink)),
+            ),
+            Icon(LucideIcons.chevronRight, size: 20, color: p.ink3),
+          ]),
+          const SizedBox(height: S.x5),
+          Row(children: [
+            for (var i = 0; i < cols.length; i++) ...[
+              if (i > 0) Container(width: 1, height: 64, color: p.line),
+              Expanded(
+                child: Column(children: [
+                  Icon(cols[i].$1, size: 26, color: p.ink2),
+                  const SizedBox(height: S.x2),
+                  Text(cols[i].$2.toUpperCase(),
+                      style: F.over.copyWith(color: p.ink)),
+                  const SizedBox(height: S.x2),
+                  Container(
+                    width: 22,
+                    height: 22,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                        color: cols[i].$3 == null
+                            ? p.card2
+                            : p.wash(cols[i].$3! ? C.teal : C.yellow),
+                        borderRadius: R.rSm),
+                    child: Icon(
+                        cols[i].$3 == null
+                            ? LucideIcons.minus
+                            : cols[i].$3!
+                                ? LucideIcons.check
+                                : LucideIcons.triangleAlert,
+                        size: 14,
+                        color: cols[i].$3 == null
+                            ? p.ink3
+                            : p.on(cols[i].$3! ? C.teal : C.yellow)),
+                  ),
+                ]),
+              ),
+            ],
+          ]),
+          const SizedBox(height: S.x5),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: S.x3, vertical: S.x3),
+            decoration: BoxDecoration(color: p.card2, borderRadius: R.rSm),
+            child: Row(children: [
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                    color: known == 0 ? p.line : p.fill(C.teal),
+                    borderRadius: R.rSm),
+                child: Icon(known == 0 ? LucideIcons.minus : LucideIcons.check,
+                    size: 14, color: p.inkOnFill),
+              ),
+              const SizedBox(width: S.x3),
+              Text(
+                  known == 0
+                      ? 'No baselines yet'
+                      : '$ok/$known metrics within range',
+                  style: F.body.copyWith(color: p.ink)),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  /// "STRESS MONITOR": the score, its word, and the door to the chart.
+  Widget _stressCard(BuildContext c, P p, HealthData d) {
+    final blk = d.today['stress'];
+    final score = blk is Map ? (blk['score'] as num?) : null;
+    final level = blk is Map ? blk['level']?.toString() : null;
+    return Pressable(
+      onTap: () => go(c, const MetricDetail('stress')),
+      semanticLabel: 'Stress monitor',
+      child: Container(
+        padding: const EdgeInsets.all(S.x4),
+        decoration: BoxDecoration(color: p.card, borderRadius: R.rLg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(
+              child: Text('STRESS MONITOR',
+                  style: F.caps.copyWith(color: p.ink)),
+            ),
+            Icon(LucideIcons.chevronRight, size: 20, color: p.ink3),
+          ]),
+          const SizedBox(height: S.x4),
+          Text("OVERNIGHT STRESS", style: F.over.copyWith(color: p.ink2)),
+          const SizedBox(height: S.x1),
+          Row(crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(score == null ? '–' : '${score.round()}',
+                    style: F.n34.copyWith(color: p.ink)),
+                const SizedBox(width: S.x2),
+                Text(score == null ? 'no reading' : '/100',
+                    style: F.cap.copyWith(color: p.ink3)),
+              ]),
+          if (level != null) ...[
+            const SizedBox(height: S.x2),
+            Pill(level, C.teal),
+          ],
+        ]),
+      ),
+    );
+  }
+
   Widget _overview(BuildContext c, HealthData d) {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
     final rows = <Widget>[];
     final gaps = <Widget>[];
+    final missing = <MetricLine>[];
 
     // ALL FIVE ROWS ARE READ FROM THE NIGHT, so all five take the same
     // measured gap. `overnight: false` is for a row that is not — a hole at
@@ -654,6 +802,7 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         bool overnight = true,
         Rising rising = Rising.neither}) {
       if (m.isEmpty) {
+        missing.add(MetricLine(icon, name, '–'));
         final s = StatusCard.forMetric(
             l?.healthNoMetric(name.toLowerCase()) ??
                 'No ${name.toLowerCase()}',
@@ -819,7 +968,12 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
           );
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if (rows.isNotEmpty)
+      // The reference app's two monitor cards, then the readings.
+      _monitorCard(c, p, d),
+      const SizedBox(height: S.x3),
+      _stressCard(c, p, d),
+      if (rows.isNotEmpty) ...[
+        const SizedBox(height: S.x3),
         Surface(
           pad: const EdgeInsets.symmetric(horizontal: S.x4),
           child: Column(children: [
@@ -829,7 +983,14 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
             ],
           ]),
         ),
-      for (final g in gaps) ...[const SizedBox(height: S.x3), g],
+      ],
+      // The readings that are not there, as rows with a dash — the reasons
+      // are one tap down on each metric's own screen, not a wall of cards
+      // on the tab you land on.
+      if (missing.isNotEmpty) ...[
+        const SizedBox(height: S.x3),
+        MetricListCard(missing, notch: false, legend: 'No reading yet'),
+      ],
 
       // OBSERVATIONS — the illness watch, wrapped, plus a door to the other
       // three detectors.
@@ -1512,7 +1673,10 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
                     style: F.n17.copyWith(
                         color: inRange == false ? p.on(C.orange) : p.ink)),
                 const SizedBox(width: 3),
-                Text(unit, style: F.over.copyWith(color: p.ink3)),
+                // Untracked: a six-letter unit at 3x text tipped this row
+                // one pixel over with the caps tracking on.
+                Text(unit,
+                    style: F.over.copyWith(color: p.ink3, letterSpacing: 0)),
               ]),
           // This is the user's own blood work in an app that keeps it on their
           // phone; being able to take it back out is the premise, not a setting.

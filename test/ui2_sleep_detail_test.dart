@@ -103,7 +103,7 @@ void main() {
         effHistory: _flat(20, 91),
       ),
     );
-    expect(find.text('Unusual on Wednesday, 20 May'), findsOneWidget);
+    expect(find.text('UNUSUAL ON WEDNESDAY, 20 MAY'), findsOneWidget);
     // SLP-13a — the Light/Deep split is unvalidated and flagged
     // `deep_low_confidence` all the way up, so ranking last night's deep
     // minutes against 20 other nights of the same split is not a claim we own.
@@ -259,7 +259,7 @@ void main() {
         ),
         scale: scale,
       );
-      expect(find.text('Unusual on Wednesday, 20 May'), findsOneWidget);
+      expect(find.text('UNUSUAL ON WEDNESDAY, 20 MAY'), findsOneWidget);
     });
   }
 

@@ -119,7 +119,9 @@ void main() {
     test('no ${rule.name} outside the token boundary', () {
       final hits = <String>[];
       for (final f in files) {
-        final rel = f.path.replaceFirst(RegExp(r'^\./'), '');
+        // Forward slashes whatever the host — the allow-list is written
+        // with them, and a Windows path must still match it.
+        final rel = f.path.replaceFirst(RegExp(r'^\./'), '').replaceAll(r'\', '/');
         if (rule.allow.contains(rel)) continue;
         final lines = codeLines(f.readAsStringSync());
         for (var i = 0; i < lines.length; i++) {
@@ -195,6 +197,9 @@ void main() {
 const _notComponents = {
   // shell and routing
   'AppShell', 'Domain', 'GalleryScreen',
+  // the ⊕ sheet is a modal route, and PushedTab is a Scaffold around an
+  // ex-tab screen — both are places, not vocabulary
+  'AddSheet', 'PushedTab',
   // onboarding routes
   'BootSplash', 'WelcomeScreen', 'WelcomeView', 'PairingScreen', 'PairingView',
   'ProfileSetupScreen', 'ProfileSetupView',

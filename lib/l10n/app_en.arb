@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "OpenStrap",
+  "appTitle": "Rebound",
   "@appTitle": {
     "description": "App name shown in the OS task switcher / MaterialApp title."
   },

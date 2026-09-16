@@ -148,6 +148,8 @@ Map<String, Widget> galleryCases() => {...goldenCases(), ...extraCases()};
 /// The cases the goldens photograph. Named separately from [extraCases] only
 /// because a PNG per case per theme per scale is a file somebody has to
 /// review — see the note at the bottom of the golden test.
+void _noop() {}
+
 Map<String, Widget> goldenCases() => {
       // The one number the whole app is judged by, and the picture the app
       // leaves someone else's phone. Both are photographed rather than merely
@@ -171,6 +173,30 @@ Map<String, Widget> goldenCases() => {
       // shot because a 9:16 card is where the column's arithmetic has the
       // most room to go wrong, not because it is a different design.
       'share_card_story': _shareCard(photo: false, format: PosterFormat.story),
+      // The reference app's shapes, as transcribed.
+      'score_ring': const ScoreRing(
+          value: '85', unit: '%', label: 'Recovery', frac: .85, color: C.green),
+      'score_ring_small': const ScoreRing(
+          value: '14.2', label: 'Strain', frac: 14.2 / 21, color: C.blue,
+          size: 104, stroke: 8),
+      'metric_list': const MetricListCard([
+        MetricLine(LucideIcons.activity, 'Heart rate variability', '124',
+            move: Move.up, good: true),
+        MetricLine(LucideIcons.heartPulse, 'Resting heart rate', '49',
+            move: Move.up, good: false),
+        MetricLine(LucideIcons.wind, 'Respiratory rate', '14.5',
+            move: Move.up, good: null),
+        MetricLine(LucideIcons.moon, 'Sleep performance', '74%'),
+      ], legend: 'Today vs. prior 30 days'),
+      'insight_box': const InsightBox(
+          'Your HRV is elevated while your RHR, respiratory rate and sleep '
+          'are all typical, resulting in a higher recovery today.'),
+      'day_pill': const DayPill('Today', onPrev: _noop),
+      'tile': const TileCard('Health monitor',
+          child: Text('5/5 metrics')),
+      'heading_row': const HeadingRow('My Day', trailing: PlusDisc(onTap: _noop)),
+      'pill_button': const PillButton('Add activity', icon: LucideIcons.plus, onTap: _noop),
+      'tri_bar': const TriBar(0),
       'signal': const SignalCard(
           LucideIcons.heartPulse, C.blue, 'Resting heart rate', '52',
           unit: 'bpm', sub: '4 BELOW YOUR BASELINE'),
@@ -2317,7 +2343,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
   static const _scales = [1.0, 1.4, 2.0, 3.1];
 
   int _scale = 0;
-  int _theme = 0;
 
   /// Flows first. The component scroll is what the goldens shoot; the flow is
   /// what a person opens the gallery to walk.
@@ -2328,17 +2353,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final p = P.of(c);
     final cases = galleryCases();
     final flows = _mode == 0;
-    // Named, NOT `Brightness.values[_theme - 1]`. Flutter declares the enum
-    // as `{ dark, light }` — dark first — so indexing it against a
-    // ['System', 'Light', 'Dark'] tab list handed 'Light' the dark theme and
-    // 'Dark' the light one. Both tabs worked, both showed the wrong palette,
-    // and the whole point of this screen is that dark is solved separately
-    // from light: every review done through it was reviewing the other one.
-    final brightness = switch (_theme) {
-      1 => Brightness.light,
-      2 => Brightness.dark,
-      _ => Theme.of(c).brightness,
-    };
+    // One palette: the theme picker went with the light theme.
+    const brightness = Brightness.dark;
     return Scaffold(
       backgroundColor: p.bg,
       body: SafeArea(
@@ -2362,10 +2378,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
               const SizedBox(height: S.x2),
               SubTabs(const ['1.0×', '1.4×', '2.0×', '3.1×'], _scale,
                   (i) => setState(() => _scale = i),
-                  color: C.domHealth),
-              const SizedBox(height: S.x2),
-              SubTabs(const ['System', 'Light', 'Dark'], _theme,
-                  (i) => setState(() => _theme = i),
                   color: C.domHealth),
             ]),
           ),

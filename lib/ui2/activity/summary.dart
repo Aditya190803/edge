@@ -1648,10 +1648,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   const SizedBox(width: S.x2),
                   // The row rule: the name gives way, the measurement keeps
                   // its natural width and sits flush at the card edge.
-                  Text('${_kg(top.loadKg!)} × ${top.reps}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: F.n17.copyWith(color: p.ink)),
+                  // Scaled, never clipped: a measurement that has to shrink
+                  // a point at 3x text still reads; one cut to "80 k…" does
+                  // not.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('${_kg(top.loadKg!)} × ${top.reps}',
+                          maxLines: 1,
+                          style: F.n17.copyWith(color: p.ink)),
+                    ),
+                  ),
                 ]),
               ),
             ),

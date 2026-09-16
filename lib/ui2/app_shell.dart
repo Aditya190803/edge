@@ -1,14 +1,16 @@
-// The five-tab shell.
+// The shell: four destinations and one action.
 //
-// Home · Health · Nutrition · Workout · Wellness. Stable forever: the contents
-// personalise, the mental map does not. Each domain owns an accent, so colour
-// tells you where you are before the label does.
+// Home · Health · Strain · More in a floating pill, and the coach in a disc
+// beside it — the reference app's bottom edge, transcribed. The bar is
+// MONOCHROME: white for the tab you are on, grey for the rest. Logging lives
+// behind the ⊕ on Home's "My Day" heading, which is where the old Nutrition
+// and Wellness tabs went.
 //
-// There is no sixth tab, and the type system is what says so — [ShellDomain]
+// There is no fifth tab, and the type system is what says so — [ShellDomain]
 // is a closed enum and [AppShell] takes a builder keyed by it, so "just add a
 // tab for X" is a change to this file with a reviewer attached, not something
-// a screen can do on its own. Anything that feels like a sixth destination is
-// a `SubTabs` inside the domain that owns it.
+// a screen can do on its own. Anything that feels like another destination is
+// a `SubTabs` inside the domain that owns it, or a row on the ⊕ sheet.
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -16,13 +18,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'grammar.dart';
 import 'theme.dart';
 
-/// The five primary destinations, in bar order.
+/// The four primary destinations, in bar order.
 enum ShellDomain {
   home('Home', LucideIcons.house, C.domHome),
   health('Health', LucideIcons.heartPulse, C.domHealth),
-  nutrition('Nutrition', LucideIcons.utensils, C.domFood),
-  workout('Workout', LucideIcons.dumbbell, C.domMove),
-  wellness('Wellness', LucideIcons.leaf, C.domMind);
+  workout('Strain', LucideIcons.activity, C.domMove),
+  more('More', LucideIcons.menu, C.domMind);
 
   const ShellDomain(this.label, this.icon, this.accent);
 
@@ -30,7 +31,8 @@ enum ShellDomain {
   final IconData icon;
 
   /// The domain's pigment. Use `P.of(context).on(accent)` for text and
-  /// `.fill(accent)` for a filled surface — the raw value is not AA-safe.
+  /// `.fill(accent)` for a filled surface — the raw value is not AA-safe. The
+  /// bar itself never paints it.
   final Color accent;
 }
 
@@ -51,6 +53,9 @@ class AppShell extends StatefulWidget {
   /// (which domains conventionally use to scroll to top).
   final void Function(ShellDomain domain)? onSelect;
 
+  /// The coach disc that floats beside the bar. Null hides it.
+  final VoidCallback? onCoach;
+
   /// Pinned between the domain and the tab bar, above every tab. This is not
   /// a general slot — it exists for state that is RUNNING and is not on
   /// screen, which today means a minimised workout. A domain's own content
@@ -62,6 +67,7 @@ class AppShell extends StatefulWidget {
     required this.builder,
     this.initial = ShellDomain.home,
     this.onSelect,
+    this.onCoach,
     this.banner,
   });
 
@@ -86,64 +92,117 @@ class _AppShellState extends State<AppShell> {
     final p = P.of(c);
     return Scaffold(
       backgroundColor: p.bg,
-      body: SafeArea(
-        bottom: false,
-        child: Column(children: [
-          Expanded(
-            child: IndexedStack(
-              index: _current.index,
-              children: [
-                // An unvisited tab is an empty box, not a built screen — the
-                // old shell built all forty screens' worth of state on launch.
-                for (final d in ShellDomain.values)
-                  if (_built.contains(d))
-                    widget.builder(c, d)
-                  else
-                    const SizedBox.shrink(),
-              ],
+      // The bar FLOATS over the page, as the reference app's does: the
+      // domain scrolls under it, and each domain leaves room at the bottom.
+      body: Stack(fit: StackFit.expand, children: [
+        SafeArea(
+          bottom: false,
+          child: Column(children: [
+            Expanded(
+              child: IndexedStack(
+                index: _current.index,
+                children: [
+                  // An unvisited tab is an empty box, not a built screen —
+                  // the old shell built all forty screens' worth of state on
+                  // launch.
+                  for (final d in ShellDomain.values)
+                    if (_built.contains(d))
+                      widget.builder(c, d)
+                    else
+                      const SizedBox.shrink(),
+                ],
+              ),
+            ),
+            if (widget.banner != null) widget.banner!,
+          ]),
+        ),
+        Positioned(
+          left: S.x4,
+          right: S.x4,
+          bottom: 0,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: S.x3),
+              child: _FloatingBar(
+                current: _current,
+                onTap: _select,
+                onCoach: widget.onCoach,
+              ),
             ),
           ),
-          if (widget.banner != null) widget.banner!,
-        ]),
-      ),
-      bottomNavigationBar: _TabBar(current: _current, onTap: _select),
+        ),
+      ]),
     );
   }
 }
 
-class _TabBar extends StatelessWidget {
+/// The pill of four tabs, and the coach disc beside it.
+class _FloatingBar extends StatelessWidget {
   final ShellDomain current;
   final ValueChanged<ShellDomain> onTap;
+  final VoidCallback? onCoach;
 
-  const _TabBar({required this.current, required this.onTap});
+  const _FloatingBar(
+      {required this.current, required this.onTap, this.onCoach});
 
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Container(
-      decoration: BoxDecoration(
-        color: p.card,
-        border: Border(top: BorderSide(color: p.line)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
+    return Row(children: [
+      Expanded(
+        child: Container(
+          height: 76,
+          decoration: BoxDecoration(
+            color: p.card,
+            borderRadius: R.rXxl,
+            border: Border.all(color: p.line),
+          ),
           child: Row(
             children: [
               for (final d in ShellDomain.values)
                 Expanded(
-                  child: _Tab(
-                    domain: d,
-                    on: d == current,
-                    onTap: () => onTap(d),
-                  ),
+                  child: _Tab(domain: d, on: d == current, onTap: () => onTap(d)),
                 ),
             ],
           ),
         ),
       ),
-    );
+      if (onCoach != null) ...[
+        const SizedBox(width: S.x3),
+        Pressable(
+          onTap: onCoach,
+          semanticLabel: 'Coach',
+          child: Container(
+            width: 76,
+            height: 76,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: p.card,
+              shape: BoxShape.circle,
+              border: Border.all(color: p.line),
+            ),
+            child: Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: SweepGradient(colors: [p.edgeA, p.edgeB, p.edgeA]),
+              ),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration:
+                    BoxDecoration(shape: BoxShape.circle, color: p.card),
+                child: Icon(LucideIcons.sparkles, size: 16, color: p.ink),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ]);
   }
 }
 
@@ -157,7 +216,7 @@ class _Tab extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    final ink = on ? p.on(domain.accent) : p.ink3;
+    final ink = on ? p.ink : p.ink3;
     return Semantics(
       selected: on,
       child: Pressable(
@@ -166,25 +225,14 @@ class _Tab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: motion(c, Motion.base),
-              padding: EdgeInsets.symmetric(
-                  horizontal: on ? S.x3 : 0, vertical: S.x1),
-              decoration: BoxDecoration(
-                color: on ? p.wash(domain.accent) : const Color(0x00000000),
-                borderRadius: R.rPill,
-              ),
-              child: Icon(domain.icon, size: 20, color: ink),
-            ),
-            const SizedBox(height: 3),
+            Icon(domain.icon, size: 24, color: ink),
+            const SizedBox(height: S.x1),
             Text(
               domain.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: F.over.copyWith(
-                color: ink,
-                fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-              ),
+              style: F.cap.copyWith(
+                  color: ink, fontWeight: on ? FontWeight.w700 : FontWeight.w500),
             ),
           ],
         ),

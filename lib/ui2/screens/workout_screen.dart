@@ -41,7 +41,6 @@ import '../revision.dart';
 import '../theme.dart';
 import 'home_screen.dart' show calendarDaysBetween;
 import 'log_workout.dart';
-import 'start_card.dart';
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
@@ -103,12 +102,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
                 _ => _history(c, d),
               },
             ])
-              if (w is StartCard)
-                w
-              else
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: S.x4),
-                    child: w),
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: S.x4),
+                  child: w),
           ],
         );
       },
@@ -128,13 +124,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
     final p = P.of(c);
     final loc = AppLocalizations.of(c);
     return [
-      StartCard(
-        label: loc?.workoutStartSessionLabel ?? 'START A SESSION',
-        count: allActivities.length,
-        noun: loc?.workoutActivitiesNoun ?? 'activities',
-        asset: 'mascot_workout.png',
-        accent: C.purple,
-        deep: C.indigo,
+      // One white button, not a mascot card. The reference app starts an
+      // activity from a plain primary button; the count of activities is
+      // the picker's to state.
+      BigButton(
+        loc?.workoutStartSessionLabel ?? 'START A SESSION',
+        icon: LucideIcons.play,
         onTap: () => _openPicker(c, d),
       ),
       const SizedBox(height: S.x3),

@@ -536,7 +536,7 @@ void main() {
             'note': 'need_baseline:have=6,need=14',
           })));
       expect(find.text('What went into it'), findsNothing);
-      expect(find.text('What was missing'), findsOneWidget);
+      expect(find.text('WHAT WAS MISSING'), findsOneWidget);
       // Presence and history are separate facts, and both are the pipeline's.
       expect(find.textContaining('Measured · 6 nights'), findsOneWidget);
       expect(find.textContaining('Not measured · 6 nights'), findsOneWidget);
@@ -552,7 +552,7 @@ void main() {
               data: ReadinessData(
                   readiness: Metric(
                       value: 74, confidence: .8, tier: MetricTier.high))));
-      expect(find.text('What was missing'), findsNothing);
+      expect(find.text('WHAT WAS MISSING'), findsNothing);
     });
   });
 
@@ -649,22 +649,30 @@ void main() {
         theme: buildTheme(Brightness.light),
         home: ChangeNotifierProvider<CoachConfig>.value(
           value: _Coach(configured),
+          // Not a bare day: the "My Day" section, where the coach's door
+          // lives, only renders once something is measured.
           child: const Scaffold(
-              body: HomeScreen(data: HomeData(dayId: '2026-05-20'), hour: 20)),
+              body: HomeScreen(
+                  data: HomeData(
+                      dayId: '2026-05-20',
+                      steps: Metric(value: 100, confidence: 1)),
+                  hour: 20)),
         ));
 
     testWidgets('no model, no button', (t) async {
       await t.pumpWidget(frame(false));
-      expect(find.byIcon(LucideIcons.sparkles), findsNothing);
-      // The profile/settings button beside it is untouched — this is one
-      // button, not the row. (It's a gear, not an avatar — the profile photo
-      // was retired from this row; see home_screen's "Profile and settings".)
-      expect(find.byIcon(LucideIcons.settings), findsOneWidget);
+      // The coach's door on Home is the Daily Outlook row; with no model
+      // there is none. The rest of the header is untouched: the avatar (a
+      // bare user glyph when there is no name) on the left, the band on
+      // the right.
+      expect(find.textContaining('Daily Outlook'), findsNothing);
+      expect(find.byIcon(LucideIcons.user), findsOneWidget);
+      expect(find.byIcon(LucideIcons.watch), findsWidgets);
     });
 
     testWidgets('a configured coach gets its button', (t) async {
       await t.pumpWidget(frame(true));
-      expect(find.byIcon(LucideIcons.sparkles), findsOneWidget);
+      expect(find.textContaining('Daily Outlook'), findsOneWidget);
     });
   });
 
@@ -868,7 +876,7 @@ void main() {
       // Not an empty card, not a placeholder, not "we need more data". The
       // section is absent, because a model prediction nobody asked for is not
       // owed an apology.
-      expect(find.text('Today, predicted'), findsNothing);
+      expect(find.text('TODAY, PREDICTED'), findsNothing);
       expect(find.textContaining('flattest stretch'), findsNothing);
     });
 
@@ -884,7 +892,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Today, predicted'), findsOneWidget);
+      expect(find.text('TODAY, PREDICTED'), findsOneWidget);
       expect(find.textContaining('flattest stretch lands in'), findsOneWidget);
       // No score, and the chart says why there is no axis to read one off.
       expect(find.textContaining('No scale — the shape is the whole output'),

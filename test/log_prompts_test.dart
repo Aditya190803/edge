@@ -18,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:openstrap_edge/app.dart';
 import 'package:openstrap_edge/ui2/app_shell.dart' show ShellDomain;
+import 'package:openstrap_edge/ui2/screens/add_sheet.dart' show PushedTab;
 import 'package:openstrap_edge/ui2/screens/wellness_screen.dart'
     show WellnessScreen;
 import 'package:openstrap_edge/data/day_label.dart';
@@ -315,12 +316,11 @@ void main() {
       // Not the Home fallback an unknown payload gets — the route is KNOWN,
       // which is the half `/profile` and `/recap` were missing.
       expect(t.screen, kRouteMeds);
-      expect(domainForRoute(kRouteMeds), ShellDomain.wellness);
-      // Still pushes nothing, and that is now the WORKING answer rather than
-      // the ceiling it used to be: the checklist is a sub-tab of a shell tab,
-      // so anything pushed would be a second copy of Wellness over Wellness.
-      // The shell asks the screen for the tab instead.
-      expect(screenForRoute(kRouteMeds), isNull);
+      expect(domainForRoute(kRouteMeds), ShellDomain.home);
+      // Wellness is no longer a shell tab, so the reminder PUSHES it, and the
+      // shell still asks the fresh screen for the Medication sub-tab through
+      // `tabRequest` before the push.
+      expect(screenForRoute(kRouteMeds), isA<PushedTab>());
       // The number that deep link hands over. It is an index into a private
       // list, so a reorder would silently land the tap on Habits.
       expect(WellnessScreen.tabs[WellnessScreen.medsTab], 'Medication');

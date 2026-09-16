@@ -232,7 +232,7 @@ void main() {
       ], defs: lpa);
       await _pumpLabs(t, labs);
 
-      expect(find.text('Markers you named'), findsOneWidget);
+      expect(find.text('MARKERS YOU NAMED'), findsOneWidget);
       expect(find.text('1 result · nmol/L'), findsOneWidget);
 
       await t.tap(_control('Remove the Lp(a) marker'));
@@ -257,8 +257,8 @@ void main() {
           findsOneWidget);
 
       await t.tap(find.text('Remove'));
-      await _untilGone(t, find.text('Markers you named'));
-      expect(find.text('Markers you named'), findsNothing);
+      await _untilGone(t, find.text('MARKERS YOU NAMED'));
+      expect(find.text('MARKERS YOU NAMED'), findsNothing);
       expect((await t.runAsync(LocalDb.labMarkerDefs))!, isEmpty);
     });
   });

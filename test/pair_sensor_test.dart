@@ -167,13 +167,13 @@ void main() {
       ));
       // `_load()`'s own real DB read (fired from `initState`, unawaited)
       // needs the same real-async escape to ever resolve under this zone.
-      for (var i = 0; i < 60 && find.text('Paired').evaluate().isEmpty; i++) {
+      for (var i = 0; i < 60 && find.text('PAIRED').evaluate().isEmpty; i++) {
         await t.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 20)));
         await t.pump();
       }
 
-      expect(find.text('Paired'), findsOneWidget);
+      expect(find.text('PAIRED'), findsOneWidget);
       expect(find.text('R02_1234'), findsOneWidget);
       expect(find.text('Forget this sensor'), findsOneWidget);
     });

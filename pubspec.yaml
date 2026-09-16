@@ -496,7 +496,7 @@ dependencies:
   latlong2: ^0.9.1
   geolocator: ^13.0.2
 
-  # Type: Manrope + Barlow Condensed are BUNDLED under assets/fonts/ (declared
+  # Type: Figtree is BUNDLED under assets/fonts/ (declared
   # in flutter.fonts below), not pulled at runtime — see the note there.
 
   # Declarative motion (flutter_animate) and the five-pack icon mix that
@@ -629,7 +629,7 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   # The icon's own plate, so the ring the mask leaves around the artwork is the
   # same colour as the artwork's edge rather than the old cream.
-  adaptive_icon_background: "#020D1C"
+  adaptive_icon_background: "#000000"
   adaptive_icon_foreground: "assets/launcher/icon_adaptive.png"
 
 flutter:
@@ -651,21 +651,15 @@ flutter:
   # SIL Open Font License (OFL.txt alongside the .ttf files, from
   # https://github.com/google/fonts).
   fonts:
-    - family: Barlow Condensed
+    - family: Figtree
       fonts:
-        - asset: assets/fonts/BarlowCondensed/BarlowCondensed-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/BarlowCondensed/BarlowCondensed-ExtraBold.ttf
-          weight: 800
-    - family: Manrope
-      fonts:
-        - asset: assets/fonts/Manrope/Manrope-400.ttf
+        - asset: assets/fonts/Figtree/Figtree-400.ttf
           weight: 400
-        - asset: assets/fonts/Manrope/Manrope-500.ttf
+        - asset: assets/fonts/Figtree/Figtree-500.ttf
           weight: 500
-        - asset: assets/fonts/Manrope/Manrope-600.ttf
+        - asset: assets/fonts/Figtree/Figtree-600.ttf
           weight: 600
-        - asset: assets/fonts/Manrope/Manrope-700.ttf
+        - asset: assets/fonts/Figtree/Figtree-700.ttf
           weight: 700
-        - asset: assets/fonts/Manrope/Manrope-800.ttf
+        - asset: assets/fonts/Figtree/Figtree-800.ttf
           weight: 800

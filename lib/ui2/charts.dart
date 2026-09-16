@@ -615,6 +615,78 @@ class Ring extends CustomPainter {
       o.v != v || o.t != t || o.solid != solid || o.color != color;
 }
 
+/// The score dial as an OPEN arc: 270° of track with the gap at the bottom,
+/// the way the reference app draws sleep, recovery and strain. The number
+/// sits in the middle and the gap is where its label goes.
+///
+/// [glow] paints a soft second pass under the arc in the same colour — the
+/// one place in the app light is allowed to spill, and only on a measured
+/// value. Calibrating and absent states pass `false` and stay matte.
+class Gauge extends CustomPainter {
+  final double v;
+  final Color color, track;
+  final double stroke, t;
+  final bool glow;
+
+  Gauge(this.v, this.color, this.track,
+      {this.stroke = 10, this.t = 1, this.glow = false});
+
+  /// Where the arc starts (bottom-left) and how far it can run.
+  static const start = 3 * pi / 4;
+  static const span = 3 * pi / 2;
+
+  @override
+  void paint(Canvas cv, Size s) {
+    final c = Offset(s.width / 2, s.height / 2);
+    final r = min(s.width, s.height) / 2 - stroke / 2;
+    if (r <= 0) return;
+    final rect = Rect.fromCircle(center: c, radius: r);
+    cv.drawArc(
+      rect,
+      start,
+      span,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..color = track,
+    );
+    final sweep = span * v.clamp(0, 1) * t.clamp(0, 1);
+    if (sweep <= 0) return;
+    if (glow) {
+      cv.drawArc(
+        rect,
+        start,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke * 1.6
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: .28)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, stroke * .9),
+      );
+    }
+    cv.drawArc(
+      rect,
+      start,
+      sweep,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant Gauge o) =>
+      o.v != v || o.t != t || o.color != color || o.glow != glow ||
+      o.track != track || o.stroke != stroke;
+}
+
 /// A ring made of discrete dashes rather than a continuous arc — for a value
 /// that is still filling (a baseline calibrating night by night), so "not
 /// solid yet" is literally true of the shape, not just a softer tint of the

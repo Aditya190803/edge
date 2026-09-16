@@ -15,6 +15,8 @@ import '../../data/local_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/metric.dart';
 import '../ui2.dart';
+import '../../data/day_label.dart' show todayLabel;
+import 'driver_breakdown.dart';
 import 'home_screen.dart';
 import 'investigate.dart';
 import 'metric_detail.dart';
@@ -48,6 +50,11 @@ class ReadinessData {
   /// as five consecutive days.
   final List<double?> series;
 
+  /// Each input's reading against this user's own usual — the rows under the
+  /// ring. Assembled by [driverFacts] from the same breakdown; nothing here
+  /// computes.
+  final List<DriverFacts> facts;
+
   const ReadinessData({
     this.readiness = Metric.empty,
     this.breakdown = const [],
@@ -55,6 +62,7 @@ class ReadinessData {
     this.heldOverNight,
     this.series = const [],
     this.absentDiag,
+    this.facts = const [],
   });
 
   /// The absence diagnostic off a stored day bundle. Read straight from
@@ -82,20 +90,26 @@ class ReadinessData {
     final bd = v['breakdown'];
 
     final readiness = overnightMetric(today, daily is Map ? daily['readiness'] : null);
+    final breakdown = [
+      for (final e in (bd is List ? bd : const []))
+        if (e is Map) e.cast<String, dynamic>(),
+    ];
+    // The baselines block, for the reading beside each input. A read that
+    // fails costs the rows their comparison and nothing else.
+    Map<String, dynamic>? baselines;
+    try {
+      final heart = await repo.getDayHeart(todayLabel());
+      baselines = heart['baselines'] is Map
+          ? (heart['baselines'] as Map).cast<String, dynamic>()
+          : null;
+    } catch (_) {
+      baselines = null;
+    }
 
     return ReadinessData(
       readiness: readiness,
-      // `narrative` and the glass-box `score` are DELIBERATELY not read. Both
-      // belong to the deprecated percentile score, which bands at 70/40 while
-      // the headline composite bands at 61/37/26 (see `readinessBand`) —
-      // printing its verdict under the ring put "You're ready" directly
-      // beneath "45 · Take it easy". The
-      // breakdown below IS worth keeping; it is a parallel ranking of the same
-      // four inputs, and the footer now says so.
-      breakdown: [
-        for (final e in (bd is List ? bd : const []))
-          if (e is Map) e.cast<String, dynamic>(),
-      ],
+      breakdown: breakdown,
+      facts: driverFacts(breakdown: breakdown, baselines: baselines),
       inputsUsed: (v['inputs_used'] as num?)?.toInt() ?? 0,
       heldOverNight: heldOverNightOf(today),
       series: denseDays(pointsOf(chart), 90),
@@ -191,48 +205,72 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
             Section(l?.readinessDetailWhatWasMissing ?? 'What was missing',
                 _absence(c, p, d.absentDiag!)),
         ] else
-          Surface(
-            child: Column(children: [
-              SizedBox(
-                width: 150,
-                height: 150,
-                child: Stack(alignment: Alignment.center, children: [
-                  CustomPaint(
-                    size: const Size(150, 150),
-                    painter: Ring(d.readiness.normalized(100), p.on(band.color),
-                        p.track,
-                        stroke: 14, t: animate(c, 1)),
-                  ),
-                  Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('${v.round()}', style: F.n48.copyWith(color: p.ink)),
-                    Text(band.label, style: F.cap.copyWith(color: p.ink3)),
-                  ]),
-                ]),
+          // THE HERO IS ON THE PAGE, not in a card: the ring, the number in
+          // white, the label inside — then the readings card pointing up at
+          // it, and one sentence.
+          Padding(
+            padding: const EdgeInsets.only(top: S.x4, bottom: S.x2),
+            child: Center(
+              child: ScoreRing(
+                value: '${v.round()}',
+                unit: '%',
+                label: l?.readinessDetailTitle ?? 'Recovery',
+                sub: band.label,
+                frac: d.readiness.normalized(100),
+                color: p.on(band.color),
               ),
-            ]),
+            ),
           ),
-
-        if (d.breakdown.isNotEmpty) ...[
-          Section(l?.readinessDetailWhatWentIntoIt ?? 'What went into it',
-              _breakdown(c, p, d)),
-          const SizedBox(height: S.x4),
-          Surface(
-            elevation: 0,
-            color: p.card2,
-            child: Row(children: [
-              Expanded(
-                child: Text(
-                  l?.readinessDetailInputsFooter(
-                          d.inputsUsed, d.breakdown.length) ??
-                      '${d.inputsUsed}/${d.breakdown.length} inputs. Each one is '
-                          'ranked against your own history — a parallel view of the '
-                          'same inputs, not slices of the number above.',
-                  style: F.cap.copyWith(color: p.ink3, height: 1.5),
+          if (d.facts.isNotEmpty) ...[
+            // The reading beside each input when the baselines block gave
+            // one; otherwise the signed contribution the score itself
+            // carried, so the card is never empty on a scored day.
+            MetricListCard([
+              for (final f in d.facts)
+                MetricLine(
+                  f.spec.icon,
+                  f.spec.title,
+                  f.value != null
+                      ? metricValue(f.spec.unit, f.value)
+                      : f.contribution != null
+                          ? '${f.contribution! >= 0 ? '+' : ''}'
+                              '${f.contribution!.toStringAsFixed(1)}'
+                          : (l?.readinessDetailNotAvailable ?? 'not available'),
+                  baseline: f.usual == null
+                      ? ''
+                      : metricValue(f.spec.unit, f.usual),
+                  move: (f.delta ?? f.contribution) == null
+                      ? null
+                      : (f.delta ?? f.contribution)! > 0
+                          ? Move.up
+                          : (f.delta ?? f.contribution)! < 0
+                              ? Move.down
+                              : Move.flat,
+                  // Judged only past the smallest change worth calling one;
+                  // inside the usual spread the arrow stays grey. A bare
+                  // contribution is already signed good/bad by the score.
+                  good: f.delta != null
+                      ? (!f.beyondUsualSpread
+                          ? null
+                          : (f.delta! > 0) == f.spec.higherBetter)
+                      : f.contribution == null
+                          ? null
+                          : f.contribution! >= 0,
+                  onTap: () => go(c, MetricDetail(f.spec.chartKey)),
                 ),
-              ),
-            ]),
-          ),
-        ] else if (v != null)
+            ], legend: 'Today vs. your usual'),
+            const SizedBox(height: S.x3),
+            InsightBox(_sentence(d, band.label)),
+          ],
+          if (d.series.any((v) => v != null)) ...[
+            const HeadingRow('Weekly Trends'),
+            _weekCard(c, p, d),
+          ],
+
+        // The old weight-and-contribution card is one tap down, on the
+        // Investigate screen; the readings card above is what this screen
+        // says about the inputs now.
+        if (d.breakdown.isEmpty && v != null)
           Section(
             l?.readinessDetailWhatWentIntoIt ?? 'What went into it',
             StatusCard(
@@ -261,6 +299,76 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
         investigateRow(c, () => go(c, const Investigate('readiness'))),
       ],
     ]);
+  }
+
+  /// The last seven days as bars in their own band colour, today on a lit
+  /// column — the reference app's "RECOVERY" weekly card.
+  Widget _weekCard(BuildContext c, P p, ReadinessData d) {
+    final l = AppLocalizations.of(c);
+    final n = d.series.length;
+    final week = [for (var i = n - 7; i < n; i++) i < 0 ? null : d.series[i]];
+    final today = DateTime.now();
+    return Container(
+      padding: const EdgeInsets.all(S.x4),
+      decoration: BoxDecoration(color: p.card, borderRadius: R.rLg),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Expanded(
+            child: Text((l?.readinessDetailTitle ?? 'Recovery').toUpperCase(),
+                style: F.over.copyWith(color: p.ink)),
+          ),
+          Icon(LucideIcons.chevronRight, size: 18, color: p.ink3),
+        ]),
+        const SizedBox(height: S.x4),
+        SizedBox(
+          height: bigText(c) ? 300 : 200,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (var i = 0; i < 7; i++) ...[
+              if (i > 0) const SizedBox(width: S.x2),
+              Expanded(
+                child: _WeekColumn(
+                  value: week[i],
+                  day: DateTime(today.year, today.month, today.day - (6 - i)),
+                  today: i == 6,
+                  l: l,
+                ),
+              ),
+            ],
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  /// One sentence, from the inputs that actually moved: which ones sat
+  /// outside their usual, which way, and the band that came out of it.
+  String _sentence(ReadinessData d, String band) {
+    final up = <String>[], down = <String>[], flat = <String>[];
+    for (final f in d.facts) {
+      if (!f.used || f.delta == null) continue;
+      final name = f.spec.title;
+      if (!f.beyondUsualSpread) {
+        flat.add(name);
+      } else if (f.delta! > 0) {
+        up.add(name);
+      } else {
+        down.add(name);
+      }
+    }
+    String list(List<String> a) => a.length == 1
+        ? a[0]
+        : '${a.sublist(0, a.length - 1).join(', ')} and ${a.last}';
+    final parts = <String>[
+      if (up.isNotEmpty) '${list(up)} ${up.length == 1 ? 'is' : 'are'} above your usual',
+      if (down.isNotEmpty) '${list(down)} ${down.length == 1 ? 'is' : 'are'} below your usual',
+    ];
+    if (parts.isEmpty && flat.isNotEmpty) {
+      return 'Every input sat inside its usual range, which lands recovery at '
+          '"${band.toLowerCase()}" today.';
+    }
+    final typical = flat.isEmpty ? '' : ', while ${list(flat)} ${flat.length == 1 ? 'is' : 'are'} typical';
+    return '${parts.join(' and ')}$typical, which lands recovery at '
+        '"${band.toLowerCase()}" today.';
   }
 
   /// The last 90 CALENDAR days, trimmed to start at the first day that
@@ -367,75 +475,60 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
     ]);
   }
 
-  Widget _breakdown(BuildContext c, P p, ReadinessData d) {
-    final rows = d.breakdown;
-    // THE WEIGHT THAT WAS USED, not the catalog weight. The score is
-    // `wpsum / wsum` over the USABLE inputs only, so the raw .40/.30/.18/.12
-    // are what each input would have carried had everything been present — with
-    // skin temperature missing, HRV's 40% actually carried 45.5%.
-    final wsum = rows
-        .where((r) => r['used'] == true)
-        .fold<double>(0, (a, r) => a + ((r['weight'] as num?)?.toDouble() ?? 0));
-    return Surface(
-      pad: const EdgeInsets.symmetric(horizontal: S.x4),
+}
+
+/// One day of the weekly card: the score over the bar in the band's colour,
+/// the weekday and date under it; today's column sits on a lit ground.
+class _WeekColumn extends StatelessWidget {
+  final double? value;
+  final DateTime day;
+  final bool today;
+  final AppLocalizations? l;
+  const _WeekColumn(
+      {required this.value, required this.day, required this.today, this.l});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final v = value;
+    final band = readinessBand(v, l);
+    final col = p.on(band.color);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: S.x1),
+      decoration: BoxDecoration(
+          color: today ? p.card2 : const Color(0x00000000),
+          borderRadius: R.rSm),
       child: Column(children: [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) Divider(color: p.line, height: 1),
-          _row(c, p, rows[i], wsum),
-        ],
-      ]),
-    );
-  }
-
-  Widget _row(BuildContext c, P p, Map<String, dynamic> r, double wsum) {
-    final l = AppLocalizations.of(c);
-    final key = r['label']?.toString() ?? '';
-    final raw = (r['weight'] as num?)?.toDouble();
-    final contribution = (r['weighted_contribution'] as num?);
-    final used = r['used'] == true;
-    final pastMdc = r['past_mdc'] == true;
-    // No weight, or an input that carried none, means no percentage — `?? 0`
-    // printed a confident "0% weight" for a number nobody reported.
-    final share = !used || raw == null || wsum <= 0 ? null : raw / wsum;
-
-    final parts = [
-      if (share != null)
-        l?.readinessDetailWeightPercent((share * 100).round()) ??
-            '${(share * 100).round()}% weight',
-      if (!used) l?.readinessDetailNotAvailable ?? 'not available',
-      if (used && contribution == null)
-        l?.readinessDetailContributionNotReported ?? 'contribution not reported',
-      // The temperature input is a raw sensor deviation, not a calibrated
-      // temperature. It gets said, every time.
-      if (key == 'temp')
-        l?.readinessDetailRelativeUncalibrated ?? 'relative, uncalibrated',
-      // An unlabelled glyph is not an explanation. This is the
-      // smallest-worthwhile-change gate, so it says what it means.
-      if (used && !pastMdc)
-        l?.readinessDetailWithinSpread ?? 'within your usual spread',
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: S.x3),
-      child: Row(children: [
+        // The label rides the bar: laid out bottom-up so the bar's height is
+        // a fraction of what is left under the label, never of nothing.
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(driverLabel(key), style: F.body.copyWith(color: p.ink)),
-            Text(parts.join(' · '),
-                style: F.over.copyWith(color: p.ink3)),
+          child: Column(children: [
+            Text(v == null ? '' : '${v.round()}%',
+                style: F.cap.copyWith(
+                    color: col, fontWeight: FontWeight.w700)),
+            const SizedBox(height: S.x1),
+            Expanded(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: v == null ? 0 : (v / 100).clamp(.04, 1.0),
+                  child: Container(
+                    width: 14,
+                    decoration:
+                        BoxDecoration(color: col, borderRadius: R.rSm),
+                  ),
+                ),
+              ),
+            ),
           ]),
         ),
-        // No contribution number means no number — never a bare em-dash. The
-        // sub-line above says which case it is.
-        if (used && contribution != null) ...[
-          const SizedBox(width: S.x3),
-          Text(
-            '${contribution >= 0 ? '+' : '−'}'
-            '${contribution.abs().toStringAsFixed(1)}',
-            style: F.n17.copyWith(
-                color: p.on(contribution >= 0 ? C.green : C.orange)),
-          ),
-        ],
+        const SizedBox(height: S.x2),
+        Text(weekdayShortName(day.weekday, l),
+            style: F.cap.copyWith(
+                color: today ? p.ink : p.ink3,
+                fontWeight: today ? FontWeight.w700 : FontWeight.w500)),
+        Text('${day.day}',
+            style: F.cap.copyWith(color: today ? p.ink : p.ink3)),
       ]),
     );
   }

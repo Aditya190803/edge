@@ -539,47 +539,167 @@ class _SleepDetailState extends State<SleepDetail> {
     final watched = (inBed == null || unobserved == null || unobserved <= 0)
         ? null
         : math.max(0, inBed - unobserved);
-    return Surface(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(hm(tst), style: F.n48.copyWith(color: p.ink)),
-        const SizedBox(height: S.x1),
-        Text(l?.sleepDetailTotalSleep ?? 'Total sleep',
-            style: F.cap.copyWith(color: p.ink3)),
-        if (from.isNotEmpty && to.isNotEmpty) ...[
-          const SizedBox(height: S.x4),
-          Row(children: [
-            Icon(LucideIcons.moon, size: 15, color: p.ink3),
-            const SizedBox(width: S.x2),
-            Flexible(
-              child: Text('$from → $to',
-                  style: F.body
-                      .copyWith(color: p.ink, fontWeight: FontWeight.w600)),
-            ),
-          ]),
-        ],
-        if (inBed != null || eff != null) ...[
-          const SizedBox(height: S.x4),
-          InlineMetrics([
-            if (inBed != null) (l?.sleepDetailInBed ?? 'IN BED', hm(inBed), C.indigo),
-            if (watched != null)
-              (l?.sleepDetailWatched ?? 'WATCHED', hm(watched), C.sky),
-            if (eff != null)
-              (watched == null
-                  ? (l?.sleepDetailAsleepOfThat ?? 'ASLEEP OF THAT')
-                  : (l?.sleepDetailAsleep ?? 'ASLEEP'),
-                  _pct(eff * 100), C.green),
-          ]),
-        ],
-        if (watched != null) ...[
-          const SizedBox(height: S.x3),
-          Text(
+    // THE RING: hours slept against the need the coach computed. With no
+    // need there is no fraction, so the track draws empty and the number is
+    // the duration itself — a ring filled against a hardcoded 480 would be
+    // inventing the user's need.
+    final need = d.need.value;
+    final frac = tst == null || need == null || need <= 0
+        ? null
+        : (tst / need).clamp(0.0, 1.0);
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.only(top: S.x2, bottom: S.x2),
+        child: ScoreRing(
+          value: frac == null ? hmClock(tst) : '${(frac * 100).round()}',
+          unit: frac == null ? '' : '%',
+          label: frac == null
+              ? (l?.sleepDetailTotalSleep ?? 'Total sleep')
+              : 'Hours vs. needed',
+          sub: frac == null ? '' : '${hm(tst)} of ${hm(need)}',
+          frac: frac,
+          color: C.sleep,
+        ),
+      ),
+      MetricListCard([
+        if (frac != null)
+          MetricLine(LucideIcons.moon, 'Hours vs. needed',
+              '${(frac * 100).round()}%',
+              tri: frac < .7 ? 0 : (frac < .85 ? 1 : 2)),
+        if (eff != null)
+          MetricLine(
+              LucideIcons.chartNoAxesColumn,
+              watched == null
+                  ? (l?.sleepDetailAsleepOfThat ?? 'Asleep of that')
+                  : (l?.sleepDetailAsleep ?? 'Asleep'),
+              _pct(eff * 100),
+              tri: eff < .85 ? 0 : (eff < .9 ? 1 : 2)),
+        if (tst != null)
+          MetricLine(LucideIcons.clock, l?.sleepDetailTotalSleep ?? 'Total sleep',
+              hm(tst)),
+        if (from.isNotEmpty && to.isNotEmpty)
+          MetricLine(LucideIcons.bedDouble, 'Asleep', from, baseline: 'to $to'),
+        if (inBed != null)
+          MetricLine(LucideIcons.bedSingle, l?.sleepDetailInBed ?? 'In bed',
+              hm(inBed)),
+        if (watched != null)
+          MetricLine(LucideIcons.eye, l?.sleepDetailWatched ?? 'Watched',
+              hm(watched)),
+      ], legend: 'key', legendTri: true),
+      if (frac != null) ...[
+        const SizedBox(height: S.x3),
+        _hoursVsNeeded(c, p, tst!, need!, d.debt.value),
+      ],
+      if (watched != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(S.x1, S.x3, S.x1, 0),
+          child: Text(
             l?.sleepDetailWatchedExplain(hm(watched), hm(inBed!)) ??
                 'We watched ${hm(watched)} of your ${hm(inBed!)} in bed; the rest '
                     'is not a measurement. Asleep, and the stage shares below, are out '
                     'of the time we watched.',
             style: F.over.copyWith(color: p.ink3, height: 1.5),
           ),
-        ],
+        ),
+    ]);
+  }
+
+  /// "HOURS VS. NEEDED": the percentage, then hours slept as one bar over
+  /// the need as a segmented bar, with the segments named underneath.
+  Widget _hoursVsNeeded(BuildContext c, P p, num tst, num need, num? debt) {
+    final pct = ((tst / need) * 100).round();
+    final base = debt == null ? need : (need - debt).clamp(0, need);
+    Widget bar(String caption, String value, Widget fill, {bool captionFirst = true}) =>
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (captionFirst)
+            Row(children: [
+              Expanded(
+                child: Text(caption.toUpperCase(),
+                    style: F.over.copyWith(color: p.ink2)),
+              ),
+              Text(value, style: F.n17.copyWith(color: p.ink)),
+            ]),
+          if (captionFirst) const SizedBox(height: S.x2),
+          SizedBox(height: 22, child: fill),
+          if (!captionFirst) const SizedBox(height: S.x2),
+          if (!captionFirst)
+            Row(children: [
+              Expanded(
+                child: Text(caption.toUpperCase(),
+                    style: F.over.copyWith(color: p.ink2)),
+              ),
+              Text(value, style: F.n17.copyWith(color: p.ink)),
+            ]),
+        ]);
+    Widget row(Color col, String name, String value) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: S.x1),
+          child: Row(children: [
+            Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(color: col, borderRadius: R.rSm)),
+            const SizedBox(width: S.x3),
+            Expanded(child: Text(name, style: F.cap.copyWith(color: p.ink2))),
+            Text(value, style: F.cap.copyWith(color: p.ink, fontWeight: FontWeight.w700)),
+          ]),
+        );
+    return Container(
+      padding: const EdgeInsets.all(S.x4),
+      decoration: BoxDecoration(color: p.card, borderRadius: R.rLg),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('HOURS VS. NEEDED', style: F.caps.copyWith(color: p.ink)),
+        const SizedBox(height: S.x3),
+        Row(crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('$pct%', style: F.n34.copyWith(color: p.ink)),
+            ]),
+        const SizedBox(height: S.x4),
+        bar('Hours of sleep', hmClock(tst),
+            FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: (tst / need).clamp(0.02, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: R.rSm,
+                  gradient: LinearGradient(
+                      colors: [p.card2, C.sleep.withValues(alpha: .9)]),
+                ),
+              ),
+            )),
+        const SizedBox(height: S.x4),
+        bar('Sleep needed', hmClock(need),
+            Row(children: [
+              Expanded(
+                flex: (base * 100).round().clamp(1, 100000),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: p.card2,
+                      borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(R.sm))),
+                ),
+              ),
+              if (debt != null && debt > 0)
+                Expanded(
+                  flex: (debt * 100).round().clamp(1, 100000),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: p.ink2,
+                        borderRadius: const BorderRadius.horizontal(
+                            right: Radius.circular(R.sm))),
+                  ),
+                ),
+            ]),
+            captionFirst: false),
+        const SizedBox(height: S.x4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: S.x3, vertical: S.x2),
+          decoration: BoxDecoration(color: p.card2, borderRadius: R.rSm),
+          child: Column(children: [
+            row(p.line, 'Healthy minimum', hmClock(base)),
+            if (debt != null && debt > 0) row(p.ink2, 'Sleep debt', '+${hmClock(debt)}'),
+          ]),
+        ),
       ]),
     );
   }

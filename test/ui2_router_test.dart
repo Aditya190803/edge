@@ -32,7 +32,7 @@ import 'package:openstrap_edge/ui2/onboarding/welcome.dart'
     show isEncryptedBackup;
 import 'package:openstrap_edge/ui2/screens/log_workout.dart'
     show WorkoutSuggestionScreen;
-import 'package:openstrap_edge/ui2/screens/nutrition_screen.dart';
+import 'package:openstrap_edge/ui2/screens/add_sheet.dart' show PushedTab;
 import 'package:openstrap_edge/ui2/profile/devices.dart';
 import 'package:openstrap_edge/ui2/profile/profile.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
@@ -134,6 +134,7 @@ void main() {
       expect(domainForTab(2), ShellDomain.health);
       expect(domainForTab(3), ShellDomain.health);
       expect(domainForTab(4), ShellDomain.workout);
+      expect(ShellDomain.values.last, ShellDomain.more);
       // A payload from a build that had more tabs than we do.
       expect(domainForTab(9), ShellDomain.home);
       expect(domainForTab(-1), ShellDomain.home);
@@ -143,10 +144,10 @@ void main() {
       const routes = {
         kRouteAiMorning: ShellDomain.home,
         kRouteAiEvening: ShellDomain.home,
-        kRouteJournalCompose: ShellDomain.wellness,
-        kRouteBreathing: ShellDomain.wellness,
+        kRouteJournalCompose: ShellDomain.home,
+        kRouteBreathing: ShellDomain.home,
         kRouteWorkoutSuggestion: ShellDomain.workout,
-        kRouteWater: ShellDomain.nutrition,
+        kRouteWater: ShellDomain.home,
       };
       routes.forEach((route, domain) {
         expect(domainForRoute(route), domain, reason: route);
@@ -156,7 +157,7 @@ void main() {
       // The water reminder lands on Nutrition now — the water tile there
       // steps and clears in place, and the single-field screen it used to
       // open was reachable from nowhere else.
-      expect(screenForRoute(kRouteWater), isA<NutritionScreen>());
+      expect(screenForRoute(kRouteWater), isA<PushedTab>());
       // Payload routes that predate the five-tab shell, and that
       // `resolveTapRoute` does not carry yet — the destinations exist here so
       // they stop landing on Home the moment it does.

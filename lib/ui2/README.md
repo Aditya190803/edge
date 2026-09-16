@@ -7,7 +7,7 @@ import 'package:openstrap_edge/ui2/ui2.dart';
 ```
 
 Five files: `theme.dart` (tokens), `grammar.dart` (components), `charts.dart`
-and `paint_activity.dart` (painters), `app_shell.dart` (the five tabs).
+and `paint_activity.dart` (painters), `app_shell.dart` (four tabs and the ⊕).
 
 ---
 
@@ -49,7 +49,7 @@ the whole reason visual fixes stopped regressing.
 final p = P.of(context);   // first line of every build()
 ```
 
-### Surfaces and ink (both themes, always)
+### Surfaces and ink (dark only)
 
 | Token | What it is |
 |---|---|

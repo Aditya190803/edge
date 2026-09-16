@@ -75,7 +75,11 @@ String? coachSubtitle(BuildContext c) {
 }
 
 class CoachScreen extends StatefulWidget {
-  const CoachScreen({super.key});
+  /// True when this is the Coach TAB rather than a pushed route: the header
+  /// then draws no back chevron, because there is nothing under it to pop.
+  final bool inShell;
+
+  const CoachScreen({super.key, this.inShell = false});
 
   @override
   State<CoachScreen> createState() => _CoachScreenState();
@@ -373,6 +377,7 @@ class _CoachScreenState extends State<CoachScreen> {
               padding: const EdgeInsets.symmetric(horizontal: S.x4),
               child: NavBar(
                 l?.coachNavTitle ?? 'Coach',
+                back: !widget.inShell,
                 sub: cfg.configured ? cfg.model : (l?.coachNotSetUp ?? 'Not set up'),
                 trailing: Pressable(
                   semanticLabel: l?.coachMenuSemantic ?? 'Chats and AI settings',

@@ -18,7 +18,10 @@ import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/locale_controller.dart';
 import '../ui2.dart';
+import '../screens/add_sheet.dart' show PushedTab;
 import '../screens/coach.dart' show CoachSetup, coachSubtitle;
+import '../screens/nutrition_screen.dart';
+import '../screens/wellness_screen.dart';
 import 'devices.dart';
 import 'settings.dart';
 
@@ -65,28 +68,32 @@ class SetRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: S.x3),
         child: Row(children: [
-          Container(
+          // Graphite disc, white glyph. The [color] each row declares is kept
+          // for the one case that needs it — danger — and otherwise not spent:
+          // a settings list in twelve accent colours is a settings list that
+          // shouts.
+          // A bare outlined glyph, the reference app's size, then the title
+          // in caps and the sub-line in grey.
+          SizedBox(
             width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration:
-                BoxDecoration(color: p.wash(accent), borderRadius: R.rSm),
             child: glyph != null
-                ? glyph!(p.on(accent))
-                : Icon(icon, size: 16, color: p.on(accent)),
+                ? glyph!(danger ? p.on(accent) : p.ink2)
+                : Icon(icon, size: 26, color: danger ? p.on(accent) : p.ink2),
           ),
-          const SizedBox(width: S.x3),
+          const SizedBox(width: S.x4),
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title,
-                  style: F.body.copyWith(color: danger ? p.on(C.red) : p.ink)),
+                  style: F.head.copyWith(
+                      color: danger ? p.on(C.red) : p.ink,
+                      fontWeight: FontWeight.w700)),
               if (value.isNotEmpty && bigText(c))
                 Text(value,
                     style: F.cap.copyWith(
                         color: p.ink3, fontWeight: FontWeight.w600)),
               if (sub.isNotEmpty)
-                Text(sub, style: F.over.copyWith(color: p.ink3)),
+                Text(sub, style: F.cap.copyWith(color: p.ink3)),
             ]),
           ),
           // THE ROW RULE (see MetricRow): the title is the only flexible part,
@@ -112,18 +119,23 @@ class SetRow extends StatelessWidget {
 /// A titled card of [SetRow]s, hairline-separated.
 Widget settingsGroup(BuildContext c, String title, List<Widget> rows) {
   final p = P.of(c);
-  return Section(
-    title,
-    Surface(
-      pad: const EdgeInsets.symmetric(horizontal: S.x4),
-      child: Column(children: [
-        for (var i = 0; i < rows.length; i++) ...[
-          rows[i],
-          if (i < rows.length - 1) Divider(color: p.line, height: 1),
-        ],
-      ]),
+  // The reference app's More tab: a caps group title, then every row as
+  // its own card.
+  return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    Padding(
+      padding: const EdgeInsets.fromLTRB(S.x1, S.x8, S.x1, S.x3),
+      child: Text(title.toUpperCase(),
+          style: F.caps.copyWith(color: p.ink)),
     ),
-  );
+    for (var i = 0; i < rows.length; i++) ...[
+      if (i > 0) const SizedBox(height: S.x3),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x2),
+        decoration: BoxDecoration(color: p.card, borderRadius: R.rLg),
+        child: rows[i],
+      ),
+    ],
+  ]);
 }
 
 /// Push a screen, keeping the enclosing domain accent. Returns when it pops,
@@ -213,7 +225,9 @@ class ProfileStats {
 }
 
 class ProfileHome extends StatefulWidget {
-  const ProfileHome({super.key});
+  /// True when this is the More TAB: no back chevron, room for the bar.
+  final bool inShell;
+  const ProfileHome({super.key, this.inShell = false});
 
   @override
   State<ProfileHome> createState() => _ProfileHomeState();
@@ -253,6 +267,7 @@ class _ProfileHomeState extends State<ProfileHome> {
         future: _stats,
         builder: (c, snap) => ProfileHomeView(
           stats: snap.data,
+          inShell: widget.inShell,
           onDevices: () => _open(c, const MyDevices()),
           onSettings: () => _open(c, const MoreSettings()),
           onEdit: () => _open(c, const EditProfile()),
@@ -266,6 +281,7 @@ class ProfileHomeView extends StatelessWidget {
   /// zero, and a zero rendered during a load is a wrong number on screen.
   final ProfileStats? stats;
   final VoidCallback? onDevices, onSettings, onEdit, onCoach;
+  final bool inShell;
 
   const ProfileHomeView(
       {super.key,
@@ -274,6 +290,7 @@ class ProfileHomeView extends StatelessWidget {
       this.onCoach,
       this.onSettings,
       this.onEdit,
+      this.inShell = false,
       });
 
   @override
@@ -287,11 +304,13 @@ class ProfileHomeView extends StatelessWidget {
         child: Column(children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.profileTitle ?? 'Profile'),
+            child: NavBar(inShell ? 'More' : (l?.profileTitle ?? 'Profile'),
+                back: !inShell),
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
+              padding: EdgeInsets.fromLTRB(
+                  S.x4, 0, S.x4, inShell ? S.x16 + S.x12 : S.x10),
               children: [
                 const SizedBox(height: S.x4),
                 settingsGroup(c, l?.profileQuickAccessGroup ?? 'Quick access', [
@@ -328,6 +347,19 @@ class ProfileHomeView extends StatelessWidget {
                       AppLocalizations.of(c)?.profileLanguage ?? 'Language',
                       sub: _languageLabel(c, c.watch<LocaleController>().code),
                       onTap: () => _pickLanguage(c))),
+                ]),
+                // The two screens that used to be shell tabs. The ⊕ on the
+                // tab bar is the everyday door; this is the one you can be
+                // told to go to.
+                settingsGroup(c, 'Log', [
+                  SetRow(LucideIcons.utensils, C.orange, 'Nutrition',
+                      sub: 'Food, macros, water',
+                      onTap: () => goto(c,
+                          const PushedTab('Nutrition', NutritionScreen()))),
+                  SetRow(LucideIcons.leaf, C.sleep, 'Wellness',
+                      sub: 'Mind, habits, medication, cycle',
+                      onTap: () => goto(c,
+                          const PushedTab('Wellness', WellnessScreen()))),
                 ]),
                 settingsGroup(c, l?.profileYourDataGroup ?? 'Your data', [
                   SetRow(LucideIcons.database, C.green,

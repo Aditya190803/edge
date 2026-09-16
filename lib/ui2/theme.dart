@@ -21,9 +21,11 @@
 //      which do not consult a theme at all. Dialogs still use Flutter's own
 //      fade-and-scale — small, centred, and the least nauseogenic of the
 //      three — so they are deliberately left alone.
-//   3. BOTH THEMES ARE DESIGNED. Every colour is defined for light and dark in
-//      the same expression. There is no token that exists only inside a
-//      dark-mode branch.
+//   3. ONE THEME. The app is dark only, the way the wearable app it takes
+//      its look from is dark only: black ground, graphite cards, white ink,
+//      and colour spent on the three scores and nothing else. `P` still
+//      takes a `dark` flag so old call sites compile, but every value it
+//      returns is the dark one — there is no light palette to drift from.
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -34,37 +36,47 @@ import 'package:flutter/material.dart';
 /// them fail AA on white. Run them through [P.on] (accent as text) or
 /// [P.fill] (accent as a filled surface under [P.inkOnFill]) first.
 class C {
-  // primary
-  static const green = Color(0xFF22C55E);
-  static const greenD = Color(0xFF16A34A);
-  static const blue = Color(0xFF3B82F6);
-  static const purple = Color(0xFF8B5CF6);
+  // ── THE THREE SCORES. These are the only saturated colours the eye should
+  // land on. Recovery is a traffic light; strain is blue; sleep is a cool
+  // desaturated blue that never competes with recovery.
+  /// High recovery, 67–100 %.
+  static const green = Color(0xFF16EC06);
+  /// Medium recovery, 34–66 %.
+  static const yellow = Color(0xFFFFDE00);
+  /// Low recovery, 0–33 %.
+  static const red = Color(0xFFFF0026);
+  /// Strain, activities, heart-rate zones.
+  static const blue = Color(0xFF0093E7);
+  /// Sleep — hours, stages, the sleep dial.
+  static const sleep = Color(0xFF7BA1BB);
+  /// Calls to action, highlights, positive evaluations, sleep need.
+  static const teal = Color(0xFF00F19F);
+  /// Recovery-related data that carries no valuation (HRV, RHR lines).
+  static const recoveryBlue = Color(0xFF67AEE6);
 
-  // secondary
-  static const orange = Color(0xFFF97316);
-  static const red = Color(0xFFEF4444);
-  static const teal = Color(0xFF14B8A6);
-  static const yellow = Color(0xFFEAB308);
-  static const pink = Color(0xFFEC4899);
-  static const indigo = Color(0xFF6366F1);
+  // ── ALIASES kept for the existing call sites. A screen that says
+  // `C.purple` means "the training accent", and that is strain blue here.
+  static const greenD = Color(0xFF12B805);
+  static const purple = blue;
+  static const indigo = recoveryBlue;
+  static const strain = blue;
+  /// Warm secondary — zone 3/4, "take it easy", a warning that is not red.
+  static const orange = Color(0xFFFF9F1C);
+  static const pink = Color(0xFFFF5C8A);
 
-  /// Two light blues the ramps need and nothing else does: the light-sleep
-  /// lane sits between REM and deep, and zone 1 sits below `blue`. They live
-  /// here rather than inside the painters because a palette that is partly in
-  /// theme.dart and partly in charts.dart is two palettes.
-  static const sky = Color(0xFF7DD3FC);
-  static const blueSoft = Color(0xFF93C5FD);
+  /// The two lighter blues the sleep lanes need: light sleep sits between REM
+  /// and deep, and zone 1 sits below `blue`.
+  static const sky = Color(0xFFA9C7D8);
+  static const blueSoft = sleep;
 
   /// The route ramp, and only the route ramp.
   ///
   /// Brighter and more saturated than the UI accents on purpose: this is the
   /// one mark in the app that is drawn over an arbitrary photograph and a
-  /// darkened basemap rather than over a known surface, and the UI greens and
-  /// reds — tuned to clear 4.5:1 as TEXT on a card — go muddy there.
+  /// darkened basemap rather than over a known surface.
   ///
   /// Deliberately NOT in [all]. `all` is the set the contrast sweep measures
   /// as ink and as fill, and these are neither: they are a line on a picture.
-  /// Putting them in would be asking the wrong question of them.
   static const routeFast = Color(0xFF7CFF6B);
   static const routeMid = Color(0xFFFFC83D);
   static const routeHard = Color(0xFFFF8A30);
@@ -72,81 +84,84 @@ class C {
 
   /// The basemap's two ends, which is the whole of the map's styling: every
   /// tile pixel is mapped onto the line between them by `_themeFilter`.
-  ///
-  /// What makes the map READABLE is the distance between these two, not how
-  /// low either one is. Both ends have been wrong once:
-  ///
-  ///   · ceiling `#4A5568` — OSM's land polygon is near-white and lands on
-  ///     the ceiling, so the whole card became a mid-grey slab.
-  ///   · ceiling `#232B39` — dark enough that land, water and roads all
-  ///     collapsed into each other and the map vanished entirely. On a card
-  ///     with no photo the map IS the content, so that is worse.
-  ///
-  /// This pair keeps the card unmistakably dark while leaving enough range
-  /// between water, land and roads to read as a place. It is also the only
-  /// lever there is on the labels and street names, which are rendered into
-  /// the raster and cannot be asked for separately — they sit near the
-  /// ceiling, so a ceiling this far down leaves them as texture, not type.
   static const mapFloor = Color(0xFF0A1018);
   static const mapCeil = Color(0xFF44536D);
 
-  // neutrals
-  static const n900 = Color(0xFF0F172A);
-  static const n800 = Color(0xFF1E293B);
-  static const n600 = Color(0xFF475569);
-  static const n500 = Color(0xFF64748B);
-  static const n400 = Color(0xFF94A3B8);
-  static const n300 = Color(0xFFCBD5E1);
-  static const n200 = Color(0xFFE2E8F0);
-  static const n100 = Color(0xFFF1F5F9);
-  static const n50 = Color(0xFFF8FAFC);
+  // neutrals — one graphite ramp, black at the bottom
+  static const n900 = Color(0xFF0A0B0C);
+  static const n800 = Color(0xFF1B1E21);
+  static const n600 = Color(0xFF4A5259);
+  static const n500 = Color(0xFF6B737B);
+  static const n400 = Color(0xFF8A929A);
+  static const n300 = Color(0xFFB9C0C7);
+  static const n200 = Color(0xFFD5DADF);
+  static const n100 = Color(0xFFE9ECEF);
+  static const n50 = Color(0xFFF5F6F7);
 
   static const white = Color(0xFFFFFFFF);
+  static const black = Color(0xFF000000);
 
-  /// Each domain owns an accent — the mental map is colour-coded, and the map
-  /// is the point. These five are the five tabs, in order, forever.
-  static const domHome = green;
-  static const domHealth = blue;
+  /// The tab accents. The bar itself is monochrome now — white for the tab
+  /// you are on, grey for the rest — so these only colour what a domain draws
+  /// inside itself.
+  static const domHome = teal;
+  static const domHealth = recoveryBlue;
   static const domFood = orange;
-  static const domMove = purple;
-  static const domMind = teal;
+  static const domMove = blue;
+  static const domMind = sleep;
 
   /// Every accent the contrast test sweeps. Adding a colour above without
   /// adding it here means it ships unverified.
   static const all = <Color>[
-    green, greenD, blue, purple, orange, red, teal, yellow, pink, indigo,
-    sky, blueSoft,
+    green, greenD, yellow, red, blue, sleep, teal, recoveryBlue,
+    purple, indigo, orange, pink, sky, blueSoft,
     domHome, domHealth, domFood, domMove, domMind,
   ];
 }
 
 /// ── SURFACES + LEGIBLE INK ────────────────────────────────────────────────
 ///
-/// Brightness-resolved. `P.of(context)` in every build method.
+/// `P.of(context)` in every build method. Dark only: the flag is kept so the
+/// hundreds of `P(true)` / `P(false)` sites and the tests keep compiling, but
+/// both resolve to the same palette.
 class P {
   final bool dark;
-  const P(this.dark);
+  const P([this.dark = true]);
 
-  static P of(BuildContext c) => P(Theme.of(c).brightness == Brightness.dark);
+  static P of(BuildContext c) => const P(true);
 
-  Color get bg => dark ? const Color(0xFF0B1017) : C.n50;
-  Color get card => dark ? const Color(0xFF151C26) : C.white;
-  Color get card2 => dark ? const Color(0xFF1D2632) : C.n100;
-  Color get line => dark ? const Color(0xFF232D3B) : C.n200;
-  Color get track => dark ? const Color(0xFF232D3B) : C.n200;
+  /// The page. Black, so an OLED panel switches the pixels off and the cards
+  /// read as objects sitting on nothing.
+  /// The page: not pure black but a blue-black, the way the reference app's
+  /// ground reads — cards lift off it as graphite, not as grey on void.
+  Color get bg => const Color(0xFF12171B);
+  /// A raised card.
+  Color get card => const Color(0xFF1E2429);
+  /// A recessed card — status, segmented tracks, a card inside a card.
+  Color get card2 => const Color(0xFF282E34);
+  Color get line => const Color(0xFF343B42);
+  /// The empty part of a ring, drawn a step above the card so the arc's
+  /// remainder still reads as a shape.
+  Color get track => const Color(0xFF2E353B);
 
-  Color get ink => dark ? const Color(0xFFF1F5F9) : C.n900;
-  Color get ink2 => dark ? const Color(0xFF94A3B8) : C.n600;
+  Color get ink => const Color(0xFFFFFFFF);
+  Color get ink2 => const Color(0xFFB9C0C7);
 
-  /// The muted caption ink. Hand-solved to clear 4.5:1 on [card2], the darkest
-  /// (light theme) / lightest (dark theme) surface it can sit on — so it is
-  /// legible on every surface, not just the one it was eyeballed against.
-  /// The values it replaces measured 4.34:1 and 3.21:1 respectively.
-  Color get ink3 => dark ? const Color(0xFF7F8DA0) : const Color(0xFF627188);
+  /// The muted caption ink. Hand-solved to clear 4.5:1 on [card2], the
+  /// lightest surface it can sit on — so it is legible on every surface, not
+  /// just the one it was eyeballed against.
+  Color get ink3 => const Color(0xFF929AA2);
+
+  /// The two ends of the insight box's hairline gradient.
+  Color get edgeA => const Color(0xFF3F8CFF);
+  Color get edgeB => const Color(0xFF9B6CFF);
 
   /// The ink that goes on top of a [fill]. White by construction — [fill]
   /// darkens the accent until white clears AA on it.
   Color get inkOnFill => C.white;
+
+  /// The ink on a [ink]-filled surface: the white pill button's label.
+  Color get inkOnInk => C.black;
 
   /// [accent] rendered as TEXT on one of this brightness' surfaces, nudged
   /// toward the page ink until it clears [_aa] against the worst legal
@@ -160,9 +175,8 @@ class P {
   /// solver only ever nudges toward the page ink, so clearing the second
   /// surface cannot un-clear the first.
   Color on(Color accent) {
-    final toward = dark ? ink : C.n900;
-    final flat = _solve(accent, toward, card2, dark);
-    return _solve(flat, toward, Color.alphaBlend(wash(accent), card2), dark);
+    final flat = _solve(accent, ink, card2, true);
+    return _solve(flat, ink, Color.alphaBlend(wash(accent), card2), true);
   }
 
   /// [accent] rendered as a FILLED surface under [inkOnFill], darkened until
@@ -176,27 +190,22 @@ class P {
   /// solved against, and a caller asking for 1.6 was pushing muted ink to
   /// 2.99:1 on its own card. A wash darker than a wash is a fill.
   Color wash(Color accent, {double strength = 1}) =>
-      accent.withValues(alpha: (dark ? .18 : .11) * strength.clamp(0.0, 1.0));
+      accent.withValues(alpha: .16 * strength.clamp(0.0, 1.0));
 
-  List<BoxShadow> el(int level) {
-    if (level <= 0) return const [];
-    if (dark) {
-      return [
+  /// Elevation is FLAT on a black ground. A shadow under a graphite card on
+  /// black is invisible at best and a muddy halo at worst, so every level
+  /// returns nothing — the card's own tone against the page is the lift.
+  List<BoxShadow> el(int level) => const [];
+
+  /// The glow under a live score arc — the one place light is allowed to
+  /// spill. Cheap: one blurred shadow in the arc's own colour.
+  List<BoxShadow> glow(Color accent) => [
         BoxShadow(
-          color: const Color(0xFF000000).withValues(alpha: .32 + level * .06),
-          blurRadius: 6.0 * level,
-          offset: Offset(0, level.toDouble()),
+          color: accent.withValues(alpha: .35),
+          blurRadius: 24,
+          spreadRadius: -6,
         ),
       ];
-    }
-    return [
-      BoxShadow(
-        color: C.n900.withValues(alpha: .04 + level * .015),
-        blurRadius: 5.0 * level,
-        offset: Offset(0, level * 1.2),
-      ),
-    ];
-  }
 
   // ── the solver ──────────────────────────────────────────────────────────
   // WCAG 2.1 AA for body text. Non-text UI is allowed 3:1, but a caption that
@@ -245,93 +254,100 @@ class P {
 
 /// ── TYPE ── 7 steps, 3 weights, tabular figures on anything that changes ──
 ///
-/// The family is the platform's own text face where it exists, falling back to
-/// the bundled Manrope (assets/fonts/Manrope) everywhere else — so Android and
-/// the golden tests render the same shapes the design was drawn in rather than
-/// silently landing on Roboto.
+/// One bundled family, no platform face. Figtree is the open-source cut
+/// closest to Proxima Nova, which is what the reference app sets every word
+/// AND every score in — the scores are the same geometric face at bold, not
+/// a condensed numeral. Labels are set in CAPS with ~12 % tracking; that
+/// tracking is the single most recognisable thing about the look.
 class F {
-  static const _f = '.SF Pro Text';
-  static const _fb = ['Manrope'];
+  static const _f = 'Figtree';
+  static const _n = 'Figtree';
   static const _tab = [FontFeature.tabularFigures()];
 
   // The 7 steps.
   static const display = TextStyle(
       fontFamily: _f,
-      fontFamilyFallback: _fb,
       fontSize: 34,
       height: 40 / 34,
       fontWeight: FontWeight.w700,
-      letterSpacing: -.8);
+      letterSpacing: -.4);
   static const t1 = TextStyle(
       fontFamily: _f,
-      fontFamilyFallback: _fb,
       fontSize: 28,
       height: 34 / 28,
       fontWeight: FontWeight.w700,
-      letterSpacing: -.5);
+      letterSpacing: -.2);
   static const t2 = TextStyle(
       fontFamily: _f,
-      fontFamilyFallback: _fb,
       fontSize: 22,
       height: 28 / 22,
       fontWeight: FontWeight.w600,
-      letterSpacing: -.4);
+      letterSpacing: -.1);
   static const head = TextStyle(
       fontFamily: _f,
-      fontFamilyFallback: _fb,
       fontSize: 17,
       height: 24 / 17,
-      fontWeight: FontWeight.w600,
-      letterSpacing: -.2);
+      fontWeight: FontWeight.w600);
   static const body = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
-      fontSize: 15,
-      height: 22 / 15,
-      letterSpacing: -.1);
+      fontFamily: _f, fontSize: 15, height: 22 / 15, fontWeight: FontWeight.w500);
   static const cap = TextStyle(
-      fontFamily: _f, fontFamilyFallback: _fb, fontSize: 13, height: 18 / 13);
+      fontFamily: _f, fontSize: 13, height: 18 / 13, fontWeight: FontWeight.w500);
+
+  /// The caps label. Every dial name, section head and metric name in the
+  /// reference app is this: small, semibold, uppercase, tracked 10 %.
   static const over = TextStyle(
       fontFamily: _f,
-      fontFamilyFallback: _fb,
       fontSize: 11,
       height: 14 / 11,
-      fontWeight: FontWeight.w600,
-      letterSpacing: .5);
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.3);
 
-  // Numerals — a parallel display ramp. Tabular, so a live value never jitters
-  // its own layout as digits change.
-  static const n48 = TextStyle(
+  /// A section heading: [over] one step up. Callers pass the text already in
+  /// caps — the style does not transform, so a screen reader hears words.
+  static const caps = TextStyle(
       fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontSize: 13,
+      height: 18 / 13,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.5);
+
+  // Numerals — a parallel display ramp in the condensed face. Tabular, so a
+  // live value never jitters its own layout as digits change.
+  /// The hero dial on a detail screen.
+  static const n64 = TextStyle(
+      fontFamily: _n,
+      fontSize: 64,
+      height: 1,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -2,
+      fontFeatures: _tab);
+  static const n48 = TextStyle(
+      fontFamily: _n,
       fontSize: 48,
       height: 1,
       fontWeight: FontWeight.w700,
-      letterSpacing: -1.8,
+      letterSpacing: -1.4,
       fontFeatures: _tab);
   static const n34 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
-      fontSize: 34,
+      fontFamily: _n,
+      fontSize: 30,
       height: 1,
       fontWeight: FontWeight.w700,
-      letterSpacing: -1.2,
+      letterSpacing: -.8,
       fontFeatures: _tab);
   static const n24 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
-      fontSize: 24,
+      fontFamily: _n,
+      fontSize: 22,
       height: 1,
       fontWeight: FontWeight.w700,
-      letterSpacing: -.7,
+      letterSpacing: -.4,
       fontFeatures: _tab);
   static const n17 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
       fontSize: 17,
       height: 1,
-      fontWeight: FontWeight.w600,
-      letterSpacing: -.3,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -.2,
       fontFeatures: _tab);
 }
 
@@ -447,17 +463,24 @@ class _Gated extends PageTransitionsBuilder {
   }
 }
 
-ThemeData buildTheme(Brightness b) {
-  final p = P(b == Brightness.dark);
+/// The one theme. [b] is accepted so every existing `buildTheme(Brightness.x)`
+/// call still compiles, and ignored: there is no light palette.
+ThemeData buildTheme([Brightness b = Brightness.dark]) {
+  const p = P(true);
   return ThemeData(
-    brightness: b,
+    brightness: Brightness.dark,
     scaffoldBackgroundColor: p.bg,
-    colorScheme:
-        ColorScheme.fromSeed(seedColor: C.green, brightness: b, surface: p.card),
-    fontFamily: '.SF Pro Text',
-    fontFamilyFallback: const ['Manrope'],
+    colorScheme: ColorScheme.dark(
+      primary: C.teal,
+      secondary: C.blue,
+      surface: p.card,
+      onSurface: p.ink,
+      error: C.red,
+    ),
+    fontFamily: 'Figtree',
     splashFactory: NoSplash.splashFactory,
     highlightColor: const Color(0x00000000),
+    dividerColor: p.line,
     pageTransitionsTheme: PageTransitionsTheme(builders: {
       for (final e in const PageTransitionsTheme().builders.entries)
         e.key: _Gated(e.value),

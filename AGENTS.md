@@ -55,7 +55,7 @@ Line counts drift constantly; don't trust a number here, `wc -l` the file.
   `fired_keys.dart` is the persistent fire-once guard.
 - `coach/` — read-only SQL over allow-listed `v_*` views behind a deny-list guard.
 - `ui2/` — 66 files (`lib/ui` was deleted in the UI rebuild): `ui2/theme.dart`
-  and `ui2/grammar.dart` (design system), `ui2/charts.dart`, `ui2/screens/`
+  (dark-only tokens) and `ui2/grammar.dart` (design system), `ui2/charts.dart`, `ui2/screens/`
   (shared metric/trend IA), plus `ui2/onboarding/`, `ui2/activity/`,
   `ui2/profile/`.
 - Also `ai/` (BYOK), `gps/`, `health/` (HealthKit/Health Connect export),

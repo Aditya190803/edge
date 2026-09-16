@@ -232,8 +232,8 @@ void main() {
       testWidgets('recovery paints its cards — $where', (t) async {
         await _openRecovery(t, dark: dark, scale: scale, repo: _Repo());
 
-        expect(find.text('What charged and drained you'), findsOneWidget);
-        expect(find.text('Sleep need tonight'), findsOneWidget);
+        expect(find.text('WHAT CHARGED AND DRAINED YOU'), findsOneWidget);
+        expect(find.text('SLEEP NEED TONIGHT'), findsOneWidget);
         expect(find.byType(DriverBreakdown), findsOneWidget);
         _expectCardPainted(t);
       }, timeout: const Timeout(Duration(seconds: 60)));
@@ -286,7 +286,7 @@ void main() {
         // Every one of those is now ABSENT, which is a state this screen
         // already renders honestly — so the section is still here and still
         // says why, rather than the page being gone.
-        expect(find.text('Sleep need tonight'), findsOneWidget);
+        expect(find.text('SLEEP NEED TONIGHT'), findsOneWidget);
         expect(find.text('No sleep need yet'), findsOneWidget);
         _expectCardPainted(t);
       }, timeout: const Timeout(Duration(seconds: 60)));

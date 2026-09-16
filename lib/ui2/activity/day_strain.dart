@@ -25,7 +25,7 @@ import '../../data/day_label.dart';
 import '../../data/local_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/metric.dart' show whyFromNote;
-import '../screens/home_screen.dart' show repoOf, monthName;
+import '../screens/home_screen.dart' show repoOf, monthName, hmClock;
 import '../screens/metric_detail.dart' show detailScaffold;
 import '../ui2.dart';
 import 'catalogue.dart' show zonesWhy;
@@ -269,7 +269,36 @@ class _DayStrainDetailState extends State<DayStrainDetail> {
     }
     final axis = AxisSpec.of(d.curve.whereType<double>(), floor: 0)!;
     final drawn = d.curve.where((v) => v != null).length;
+    final z = d.zoneMin;
+    final low = z == null || z.length < 5 ? null : z[0] + z[1] + z[2];
+    final high = z == null || z.length < 5 ? null : z[3] + z[4];
     return [
+      if (d.strain != null) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: S.x2, bottom: S.x2),
+          child: Center(
+            child: ScoreRing(
+              value: d.strain!.toStringAsFixed(1),
+              label: l?.dayStrainTitle ?? 'Day strain',
+              frac: (d.strain! / 21).clamp(0.0, 1.0),
+              color: C.blue,
+            ),
+          ),
+        ),
+        MetricListCard([
+          if (low != null)
+            MetricLine(LucideIcons.heart, 'Heart rate zones 1–3', hmClock(low)),
+          if (high != null)
+            MetricLine(LucideIcons.heartPulse, 'Heart rate zones 4–5', hmClock(high)),
+          if (d.peakHr != null)
+            MetricLine(LucideIcons.activity, l?.dayStrainPeakHr ?? 'Peak HR',
+                '${d.peakHr}'),
+          if (d.wornMin != null)
+            MetricLine(LucideIcons.watch, l?.dayStrainWorn ?? 'Worn',
+                hmClock(d.wornMin)),
+        ]),
+        const SizedBox(height: S.x4),
+      ],
       Surface(
         child: Column(children: [
           ChartFrame(

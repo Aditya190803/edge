@@ -43,7 +43,7 @@ void main() {
     await tester.pumpWidget(_wrap(
         const MoreSettingsView(version: '0.9.26 (57)', devMode: false)));
     expect(find.text('Component gallery'), findsNothing);
-    expect(find.text('Developer'), findsNothing);
+    expect(find.text('DEVELOPER'), findsNothing);
     // …and the row that reveals it says nothing about what it does.
     expect(find.text('Version'), findsOneWidget);
   });
@@ -56,7 +56,13 @@ void main() {
       devMode: true,
       onGallery: () => opened = true,
     )));
-    expect(find.text('Developer'), findsOneWidget);
+    // Every settings row is its own card now, so the developer group sits
+    // below the fold of even a tall phone: scroll to it first.
+    await tester.dragUntilVisible(find.text('DEVELOPER'),
+        find.byType(ListView).first, const Offset(0, -400));
+    expect(find.text('DEVELOPER'), findsOneWidget);
+    await tester.dragUntilVisible(find.text('Component gallery'),
+        find.byType(ListView).first, const Offset(0, -400));
     await tester.tap(find.text('Component gallery'));
     expect(opened, isTrue);
   });
@@ -116,35 +122,6 @@ void main() {
                 '${screen.runtimeType}.');
       }
     }
-  });
-
-  // The theme tabs shipped INVERTED: `Brightness.values[i - 1]` against a
-  // ['System', 'Light', 'Dark'] list, and Flutter declares the enum dark-first,
-  // so 'Light' rendered dark and 'Dark' rendered light. Both tabs worked and
-  // both lied, which is the worst version of this bug — the screen exists
-  // because dark is solved separately from light, so every review done through
-  // it was reviewing the palette the reviewer had not selected.
-  testWidgets('the theme tabs are not inverted', (tester) async {
-    _tallPhone(tester);
-    await tester.pumpWidget(_wrap(const GalleryScreen()));
-    await tester.pump();
-
-    Brightness shownAfterTapping(String tab) {
-      final scope = tester.widget<Theme>(find
-          .descendant(of: find.byType(GalleryScreen), matching: find.byType(Theme))
-          .first);
-      return scope.data.brightness;
-    }
-
-    await tester.tap(find.text('Light'));
-    await tester.pump();
-    expect(shownAfterTapping('Light'), Brightness.light,
-        reason: 'the Light tab is rendering the dark palette.');
-
-    await tester.tap(find.text('Dark'));
-    await tester.pump();
-    expect(shownAfterTapping('Dark'), Brightness.dark,
-        reason: 'the Dark tab is rendering the light palette.');
   });
 
   // A GPS activity's fixture must carry real coordinates, or the card has no

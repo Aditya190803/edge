@@ -767,17 +767,18 @@ Widget _frame(Widget child, Brightness b, double scale) => MediaQuery(
 );
 
 Future<void> _loadType() async {
-  final files = Directory(
-    'assets/fonts/Manrope',
-  ).listSync().whereType<File>().where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text', 'Menlo']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
-      loader.addFont(
-        f.readAsBytes().then(
-          (b) => ByteData.sublistView(Uint8List.fromList(b)),
-        ),
-      );
+  // The one bundled family, so a golden shows the type the app ships.
+  for (final e in const {
+    'Figtree': 'assets/fonts/Figtree',
+  }.entries) {
+    final loader = FontLoader(e.key);
+    for (final f in Directory(e.value)
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.ttf'))) {
+      loader.addFont(f
+          .readAsBytes()
+          .then((b) => ByteData.sublistView(Uint8List.fromList(b))));
     }
     await loader.load();
   }
@@ -804,7 +805,7 @@ void main() {
 
   for (final scale in const [1.0, 2.0]) {
     final tag = scale == 1.0 ? '1x' : '2x';
-    for (final brightness in Brightness.values) {
+    for (final brightness in const [Brightness.dark]) {
       final theme = brightness.name;
       group('$theme · $tag text', () {
         cases.forEach((name, widget) {

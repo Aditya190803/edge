@@ -61,7 +61,7 @@ TextStyle _manrope({
   double? letterSpacing,
   Color? color,
 }) => TextStyle(
-  fontFamily: 'Manrope',
+  fontFamily: 'Figtree',
   fontSize: fontSize,
   fontWeight: fontWeight,
   height: height,
@@ -85,7 +85,7 @@ class AppText {
     required double height,
     required double letterSpacing,
   }) => TextStyle(
-    fontFamily: 'Barlow Condensed',
+    fontFamily: 'Figtree',
     fontSize: fontSize,
     fontWeight: fontWeight,
     height: height,
@@ -209,7 +209,7 @@ ThemeData buildOpenStrapTheme(Palette p) {
             ? Typography.material2021().white
             : Typography.material2021().black)
         .apply(
-      fontFamily: 'Manrope',
+      fontFamily: 'Figtree',
       bodyColor: p.ink,
       displayColor: p.ink,
     ),

@@ -17,6 +17,7 @@ import 'theme/theme_controller.dart';
 import 'theme/theme_switcher.dart';
 import 'widget/widget_service.dart';
 import 'ui2/activity/catalogue.dart';
+import 'ui2/activity/picker.dart';
 import 'ui2/activity/live.dart';
 import 'ui2/onboarding/pairing.dart' show OnboardingBypass;
 import 'ui2/onboarding/profile_setup.dart';
@@ -25,7 +26,9 @@ import 'ui2/onboarding/splash.dart';
 import 'ui2/onboarding/welcome.dart';
 import 'ui2/profile/alarm.dart';
 import 'ui2/profile/profile.dart';
+import 'ui2/screens/add_sheet.dart';
 import 'ui2/screens/ai_briefing.dart';
+import 'ui2/screens/coach.dart' show CoachScreen;
 import 'ui2/screens/calm_breathing.dart';
 import 'ui2/screens/what_changed.dart';
 import 'ui2/screens/health_screen.dart';
@@ -123,11 +126,12 @@ class _OpenStrapAppState extends State<OpenStrapApp> with WidgetsBindingObserver
     final theme = context.watch<ThemeController>();
     final locale = context.watch<LocaleController>();
     return MaterialApp(
-      title: 'OpenStrap',
+      title: 'Rebound',
       debugShowCheckedModeBanner: false,
-      // The palette is the design system's, the CHOICE is still the user's.
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
+      // ONE THEME. The app is dark only; `buildTheme` ignores its argument
+      // and the controller reports dark whatever was stored.
+      theme: buildTheme(),
+      darkTheme: buildTheme(),
       themeMode: theme.materialThemeMode,
       locale: locale.locale, // null = follow the OS locale
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -340,13 +344,12 @@ ShellDomain domainForTab(int tab) => switch (tab) {
 /// build.
 ShellDomain domainForRoute(String route) => switch (routePath(route)) {
       kRouteAiMorning || kRouteAiEvening => ShellDomain.home,
-      kRouteJournalCompose || kRouteBreathing => ShellDomain.wellness,
-      // Water is a journal field that lives on Nutrition — that is the tab
-      // behind the log screen, and where a "back" from it should land.
-      kRouteWater => ShellDomain.nutrition,
-      // The medication reminder. Wellness owns the Medication tab and its
-      // checklist, which is where a dose is actually recorded.
-      kRouteMeds => ShellDomain.wellness,
+      // Journal, breathing, water and medication all open a PUSHED screen
+      // over Home now — there is no Wellness or Nutrition tab for them to
+      // land on. Home is the base under all four.
+      kRouteJournalCompose || kRouteBreathing => ShellDomain.home,
+      kRouteWater => ShellDomain.home,
+      kRouteMeds => ShellDomain.home,
       // The movement/sedentary nudges. Today (Home) is where the steps/rings
       // they point at live; there is no move screen to push, so
       // screenForRoute returns null for it — same shape as /meds below.
@@ -404,7 +407,7 @@ Widget? screenForRoute(String route) => switch (routePath(route)) {
       // a whole screen for this one field; it was reachable ONLY from here,
       // which is how the tile that everybody actually used stayed add-only for
       // so long — the thing that could clear a value was behind a notification.
-      kRouteWater => const NutritionScreen(),
+      kRouteWater => const PushedTab('Nutrition', NutritionScreen()),
       // The detected bout, with the three answers to it: log it, adjust the
       // times first, or say it never happened.
       // The medication reminder pushes NOTHING, and still lands on the
@@ -412,7 +415,7 @@ Widget? screenForRoute(String route) => switch (routePath(route)) {
       // a second copy of a shell tab over the shell. `_consume` asks Wellness
       // for the tab instead (`WellnessScreen.tabRequest`) — the deep link is
       // wired, the answer here stays null.
-      kRouteMeds => null,
+      kRouteMeds => const PushedTab('Wellness', WellnessScreen()),
       // A CONSTRUCTOR ARGUMENT is right here and wrong for `/meds` above: this
       // screen is PUSHED by `_consume`, so every tap builds a fresh one and the
       // id reaches it. Wellness is a shell tab kept alive in the IndexedStack,
@@ -504,10 +507,9 @@ class _ShellState extends State<_Shell> {
     // the base the payload was built with, not a second destination.
     if (s != null && s.isNotEmpty) {
       _go(domainForRoute(s));
-      // A route whose destination is a SUB-tab, which no pushed screen can
-      // express. Asked for AFTER `_go` (which may re-key the shell and build a
-      // fresh Wellness) and cleared a frame later, so whichever state ends up
-      // on screen has seen it — see `WellnessScreen.tabRequest`.
+      // Wellness is PUSHED for a dose reminder now, not a tab, so the request
+      // is set before the push and the fresh screen reads it in `initState`.
+      // Cleared a frame later, as before — see `WellnessScreen.tabRequest`.
       if (routePath(s) == kRouteMeds) {
         WellnessScreen.tabRequest.value = WellnessScreen.medsTab;
         WidgetsBinding.instance.addPostFrameCallback(
@@ -552,14 +554,56 @@ class _ShellState extends State<_Shell> {
         _domain = d;
         Prefs.setInt(Prefs.shellTab, d.index);
       },
+      onCoach: () => Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const CoachScreen())),
       builder: (c, d) => switch (d) {
-        ShellDomain.home => const HomeScreen(),
+        ShellDomain.home => HomeScreen(onAdd: () => _add(c)),
         ShellDomain.health => const HealthScreen(),
-        ShellDomain.nutrition => const NutritionScreen(),
         ShellDomain.workout => const WorkoutScreen(),
-        ShellDomain.wellness => const WellnessScreen(),
+        ShellDomain.more => const ProfileHome(inShell: true),
       },
     );
+  }
+
+  /// The ⊕ sheet: everything the user can log, in one place. The old
+  /// Nutrition and Wellness tabs are behind two of these rows.
+  Future<void> _add(BuildContext c) async {
+    final choice = await showAddSheet(c);
+    if (choice == null || !c.mounted) return;
+    final nav = Navigator.of(c);
+    switch (choice) {
+      case AddChoice.workout:
+        final app = c.read<AppState>();
+        final repo = app.repo;
+        double? weight;
+        try {
+          weight = repo == null
+              ? null
+              : (await repo.getProfile())['weight_kg'] as double?;
+        } catch (_) {
+          weight = null;
+        }
+        final history = await loadSetHistory();
+        await nav.push(MaterialPageRoute<void>(
+            builder: (_) => ActivityPicker(
+                weightKg: weight,
+                host: activityHost(app, history: history))));
+      case AddChoice.pastWorkout:
+        await nav.push(
+            MaterialPageRoute<void>(builder: (_) => const LogWorkout()));
+      case AddChoice.journal:
+        await nav.push(
+            MaterialPageRoute<void>(builder: (_) => const JournalCompose()));
+      case AddChoice.breathe:
+        await nav.push(
+            MaterialPageRoute<void>(builder: (_) => const CalmBreathing()));
+      case AddChoice.food:
+        await nav.push(MaterialPageRoute<void>(
+            builder: (_) => const PushedTab('Nutrition', NutritionScreen())));
+      case AddChoice.wellness:
+        await nav.push(MaterialPageRoute<void>(
+            builder: (_) => const PushedTab('Wellness', WellnessScreen())));
+    }
   }
 }
 
