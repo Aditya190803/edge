@@ -707,8 +707,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - assets/images/2.0x/
-    - assets/images/3.0x/
     # The three community brand marks the one-icon-family rule (see
     # lucide_icons_flutter below) deliberately doesn't cover — a generic
     # Lucide glyph can't stand in for GitHub/Discord/Reddit's own logos.
@@ -721,21 +719,40 @@ flutter:
   # SIL Open Font License (OFL.txt alongside the .ttf files, from
   # https://github.com/google/fonts).
   fonts:
-    - family: Barlow Condensed
+    # Strata: Anybody cut at two fixed widths (numerals / titles), Albert Sans
+    # for body, Azeret Mono for survey labels. Static instances cut from the
+    # variable masters with fontTools so `fontWeight` selects a real face.
+    - family: Anybody Wide
       fonts:
-        - asset: assets/fonts/BarlowCondensed/BarlowCondensed-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/BarlowCondensed/BarlowCondensed-ExtraBold.ttf
-          weight: 800
-    - family: Manrope
-      fonts:
-        - asset: assets/fonts/Manrope/Manrope-400.ttf
-          weight: 400
-        - asset: assets/fonts/Manrope/Manrope-500.ttf
-          weight: 500
-        - asset: assets/fonts/Manrope/Manrope-600.ttf
+        - asset: assets/fonts/Anybody/AnybodyWide-600.ttf
           weight: 600
-        - asset: assets/fonts/Manrope/Manrope-700.ttf
+        - asset: assets/fonts/Anybody/AnybodyWide-700.ttf
           weight: 700
-        - asset: assets/fonts/Manrope/Manrope-800.ttf
+        - asset: assets/fonts/Anybody/AnybodyWide-800.ttf
           weight: 800
+    - family: Anybody Semi
+      fonts:
+        - asset: assets/fonts/Anybody/AnybodySemi-600.ttf
+          weight: 600
+        - asset: assets/fonts/Anybody/AnybodySemi-700.ttf
+          weight: 700
+        - asset: assets/fonts/Anybody/AnybodySemi-800.ttf
+          weight: 800
+    - family: Albert Sans
+      fonts:
+        - asset: assets/fonts/AlbertSans/AlbertSans-400.ttf
+          weight: 400
+        - asset: assets/fonts/AlbertSans/AlbertSans-500.ttf
+          weight: 500
+        - asset: assets/fonts/AlbertSans/AlbertSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/AlbertSans/AlbertSans-700.ttf
+          weight: 700
+    - family: Azeret Mono
+      fonts:
+        - asset: assets/fonts/AzeretMono/AzeretMono-400.ttf
+          weight: 400
+        - asset: assets/fonts/AzeretMono/AzeretMono-500.ttf
+          weight: 500
+        - asset: assets/fonts/AzeretMono/AzeretMono-600.ttf
+          weight: 600
