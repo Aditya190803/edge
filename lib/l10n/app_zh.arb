@@ -2386,5 +2386,16 @@
   "homeLast7Days": "最近 7 天",
   "homeSevenDayAvg": "7 天平均 {value}",
   "homeAvgValue": "平均 {value}",
-  "homeRowHrv": "心率变异性"
+  "homeRowHrv": "心率变异性",
+  "healthOvernightVitals": "夜间生命体征",
+  "healthTypical": "正常",
+  "healthAboveUsual": "高于平常",
+  "healthBelowUsual": "低于平常",
+  "healthInUsualRange": "{total} 项中有 {have} 项在你的常规范围内",
+  "healthUsualRangeNote": "你的常规范围取自你最近 30 晚的中间部分。",
+  "healthNotEnoughNights": "夜晚数据不足，尚无常规范围",
+  "healthSearchMeasures": "搜索指标",
+  "healthMeasuresCount": "{count} 项指标",
+  "healthAllCategories": "全部",
+  "healthNoMatch": "没有匹配项"
 }

@@ -2386,5 +2386,16 @@
   "homeLast7Days": "Letzte 7 Tage",
   "homeSevenDayAvg": "7-Tage-Ø {value}",
   "homeAvgValue": "Ø {value}",
-  "homeRowHrv": "HRV"
+  "homeRowHrv": "HRV",
+  "healthOvernightVitals": "Nächtliche Vitalwerte",
+  "healthTypical": "Üblich",
+  "healthAboveUsual": "Über üblich",
+  "healthBelowUsual": "Unter üblich",
+  "healthInUsualRange": "{have} von {total} in deinem üblichen Bereich",
+  "healthUsualRangeNote": "Dein üblicher Bereich ist die Mitte deiner eigenen letzten 30 Nächte.",
+  "healthNotEnoughNights": "Noch nicht genug Nächte für einen üblichen Bereich",
+  "healthSearchMeasures": "Messwerte suchen",
+  "healthMeasuresCount": "{count} Messwerte",
+  "healthAllCategories": "Alle",
+  "healthNoMatch": "Keine Treffer"
 }

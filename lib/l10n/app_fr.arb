@@ -2386,5 +2386,16 @@
   "homeLast7Days": "7 derniers jours",
   "homeSevenDayAvg": "Moy. 7 jours {value}",
   "homeAvgValue": "Moy. {value}",
-  "homeRowHrv": "VFC"
+  "homeRowHrv": "VFC",
+  "healthOvernightVitals": "Signes vitaux nocturnes",
+  "healthTypical": "Habituel",
+  "healthAboveUsual": "Au-dessus de l'habitude",
+  "healthBelowUsual": "En dessous de l'habitude",
+  "healthInUsualRange": "{have} sur {total} dans ta plage habituelle",
+  "healthUsualRangeNote": "Ta plage habituelle est le cœur de tes 30 dernières nuits.",
+  "healthNotEnoughNights": "Pas encore assez de nuits pour une plage habituelle",
+  "healthSearchMeasures": "Rechercher des mesures",
+  "healthMeasuresCount": "{count} mesures",
+  "healthAllCategories": "Toutes",
+  "healthNoMatch": "Aucun résultat"
 }

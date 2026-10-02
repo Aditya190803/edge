@@ -383,6 +383,15 @@ const _catalogue = <_Cat>[
 /// list, which cannot call `AppLocalizations.of(context)` itself — so the
 /// lookup happens here, at render time, keyed off the same literal English
 /// text/row key the const list already carries as its fallback.
+/// Each category's glyph and colour, in catalogue order.
+const _catLook = <(IconData, Color)>[
+  (LucideIcons.heart, C.red),
+  (LucideIcons.moon, C.indigo),
+  (LucideIcons.wind, C.teal),
+  (LucideIcons.flame, C.orange),
+  (LucideIcons.thermometer, C.purple),
+];
+
 String _catTitle(AppLocalizations? l, String title) => switch (title) {
       'Heart & rhythm' => l?.healthCatHeartRhythm ?? title,
       'Sleep' => l?.healthRowSleep ?? title,
@@ -472,6 +481,10 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         l?.healthTabLabs ?? 'Labs',
       ];
   late int _tab = widget.tab;
+
+  /// Explore's search text and the category it is narrowed to, if any.
+  String _q = '';
+  int? _cat;
 
   HealthData? _d;
   VitalsData? _v;
@@ -638,7 +651,7 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
   // ─────────────── OVERVIEW ───────────────
   Widget _overview(BuildContext c, HealthData d) {
     final l = AppLocalizations.of(c);
-    final rows = <Widget>[];
+    final rows = <_Vital>[];
     final gaps = <Widget>[];
 
     // ALL FIVE ROWS ARE READ FROM THE NIGHT, so all five take the same
@@ -664,12 +677,8 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         if (s != null) gaps.add(s);
         return;
       }
-      rows.add(VitalTile(icon, col, name, value,
-          sub: sub,
-          unit: unit,
-          series: series,
-          rising: rising,
-          onTap: () => go(c, MetricDetail(metricKey))));
+      rows.add(_Vital(icon, col, name, sub, value, unit, m.value!.toDouble(),
+          valuesOf(d.points(metricKey)), metricKey));
     }
 
     // Five of these rows come off the overnight block, and `getToday` holds
@@ -827,9 +836,8 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         const EcgEntryCard(),
         const SizedBox(height: S.x3),
       ],
-      // The night's readings as a two-up grid of tiles: each one a reading
-      // you can take in without reading a row across.
-      if (rows.isNotEmpty) TileGrid(rows),
+      // The night's readings, each against the user's OWN usual range.
+      if (rows.isNotEmpty) _vitalsCard(c, rows),
       for (final g in gaps) ...[const SizedBox(height: S.x3), g],
 
       // OBSERVATIONS — the illness watch, wrapped, plus a door to the other
@@ -940,6 +948,135 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
       // that. If someone logs food completely for months AND weighs in
       // repeatedly, the thing to build is still not a verdict on the person.
     ]);
+  }
+
+  /// The overnight vitals, the way a health app checks them in: each
+  /// reading on a bar against the middle of your own last thirty nights,
+  /// and a word for where it sits. The range is YOURS — never a population
+  /// norm — and a reading outside it is a difference, not a verdict, so it is
+  /// never drawn as a warning.
+  Widget _vitalsCard(BuildContext c, List<_Vital> rows) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    final ranges = [for (final v in rows) v.usual()];
+    final judged = ranges.whereType<(double, double)>().toList();
+    var inside = 0;
+    for (var i = 0; i < rows.length; i++) {
+      final r = ranges[i];
+      if (r != null && rows[i].now >= r.$1 && rows[i].now <= r.$2) inside++;
+    }
+    return Surface(
+      pad: EdgeInsets.zero,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(S.x4, S.x4, S.x4, S.x2),
+          child: Row(children: [
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                  color: p.tile(C.domHealth),
+                  shape: R.shape(const BorderRadius.all(Radius.circular(8)))),
+              child: Icon(LucideIcons.heartPulse, size: 17, color: p.inkOnFill),
+            ),
+            const SizedBox(width: S.x3),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(l?.healthOvernightVitals ?? 'Overnight vitals',
+                    style: F.head.copyWith(color: p.ink)),
+                if (judged.isNotEmpty)
+                  Text(
+                      l?.healthInUsualRange('$inside', '${judged.length}') ??
+                          '$inside of ${judged.length} in your usual range',
+                      style: F.cap.copyWith(
+                          color: inside == judged.length
+                              ? p.on(C.green)
+                              : p.ink2,
+                          fontWeight: FontWeight.w600)),
+              ]),
+            ),
+          ]),
+        ),
+        for (var i = 0; i < rows.length; i++) ...[
+          Divider(height: 1, thickness: .5, color: p.line, indent: S.x4),
+          _vitalRow(c, rows[i], ranges[i]),
+        ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(S.x4, S.x1, S.x4, S.x4),
+          child: Text(
+              l?.healthUsualRangeNote ??
+                  'Your usual range is the middle of your own last 30 nights.',
+              style: F.over.copyWith(color: p.ink3)),
+        ),
+      ]),
+    );
+  }
+
+  Widget _vitalRow(BuildContext c, _Vital v, (double, double)? usual) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    final word = usual == null
+        ? null
+        : v.now > usual.$2
+            ? (l?.healthAboveUsual ?? 'Above usual')
+            : v.now < usual.$1
+                ? (l?.healthBelowUsual ?? 'Below usual')
+                : (l?.healthTypical ?? 'Typical');
+    final typical = usual != null && v.now >= usual.$1 && v.now <= usual.$2;
+    return Pressable(
+      onTap: () => go(c, MetricDetail(v.key)),
+      semanticLabel: [v.name, '${v.value} ${v.unit}'.trim(), v.sub, ?word]
+          .where((x) => x.isNotEmpty)
+          .join(', '),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x3, S.x3),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Icon(v.icon, size: 16, color: p.on(v.color)),
+            const SizedBox(width: S.x2),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(v.name,
+                    style: F.body.copyWith(
+                        color: p.ink, fontWeight: FontWeight.w500)),
+                if (v.sub.isNotEmpty)
+                  Text(v.sub, style: F.over.copyWith(color: p.ink3)),
+              ]),
+            ),
+            const SizedBox(width: S.x2),
+            Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 2, children: [
+              Text(v.value, style: F.n24.copyWith(color: p.ink)),
+              if (v.unit.isNotEmpty)
+                Text(v.unit, style: F.over.copyWith(color: p.ink3)),
+            ]),
+            const SizedBox(width: S.x1),
+            Icon(LucideIcons.chevronRight, size: 15, color: p.ink3),
+          ]),
+          const SizedBox(height: S.x2),
+          Row(children: [
+            const SizedBox(width: 16 + S.x2),
+            Expanded(
+              child: usual == null
+                  ? Text(
+                      l?.healthNotEnoughNights ??
+                          'Not enough nights yet for a usual range',
+                      style: F.over.copyWith(color: p.ink3))
+                  : RangeBar(usual.$1, usual.$2, v.now,
+                      color: v.color, flagOutside: false),
+            ),
+            if (word != null) ...[
+              const SizedBox(width: S.x3),
+              Text(word,
+                  style: F.over.copyWith(
+                      color: typical ? p.on(C.green) : p.ink2,
+                      fontWeight: FontWeight.w700)),
+            ],
+            const SizedBox(width: 15 + S.x1),
+          ]),
+        ]),
+      ),
+    );
   }
 
   // ─────────────── TRENDS ───────────────
@@ -1288,6 +1425,19 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
             unit: l?.healthMeasuresUnit ?? 'measures'),
       ),
       const SizedBox(height: S.x3),
+      SearchField(
+        hint: l?.healthSearchMeasures ?? 'Search measures',
+        onChanged: (v) => setState(() => _q = v),
+      ),
+      const SizedBox(height: S.x3),
+      // The categories as cards, the way a health record is browsed: each a
+      // door that narrows the list to itself, and tapping it again opens it
+      // back up.
+      TileGrid([
+        for (var i = 0; i < _catalogue.length; i++)
+          _catCard(c, i, e.counts),
+      ]),
+      const SizedBox(height: S.x3),
       // Not a promise of insight — a statement of what a tap gets you. Every
       // row below opens the same drill-down: the chart, your own range, the
       // method in full, and the paper it came from.
@@ -1295,20 +1445,90 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
           l?.healthEachOneOpens ??
               'Each one opens its chart, your own range, and how it is worked out.',
           style: F.over.copyWith(color: p.ink3, height: 1.6)),
-      for (final f in _catalogue) _family(c, p, f, e.counts),
+      ...() {
+        final shown = [
+          for (var i = 0; i < _catalogue.length; i++)
+            if (_cat == null || _cat == i)
+              ?_family(c, p, _catalogue[i], e.counts),
+        ];
+        return shown.isEmpty
+            ? [
+                const SizedBox(height: S.x4),
+                StatusCard(l?.healthNoMatch ?? 'Nothing matches', '',
+                    fix: '', icon: LucideIcons.searchX),
+              ]
+            : shown;
+      }(),
     ]);
   }
 
-  Widget _family(BuildContext c, P p, _Cat f, Map<String, int> counts) {
+  /// Whether [r] answers the search box: its title or its one-line blurb.
+  bool _matches(AppLocalizations? l, _CatRow r) {
+    final q = _q.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return specOf(r.key).title.toLowerCase().contains(q) ||
+        _rowBlurb(l, r.key, r.blurb).toLowerCase().contains(q);
+  }
+
+  /// A category card: its colour, its glyph, its name, how many measures it
+  /// holds. Selected, it carries a ring of its own colour.
+  Widget _catCard(BuildContext c, int i, Map<String, int> counts) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    final f = _catalogue[i];
+    final (icon, col) = _catLook[i];
+    final on = _cat == i;
+    return Pressable(
+      onTap: () => setState(() => _cat = on ? null : i),
+      semanticLabel: _catTitle(l, f.title),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(S.x3 + 2),
+        decoration: ShapeDecoration(
+          shape: R.shape(R.rLg,
+              side: on
+                  ? BorderSide(color: p.on(col), width: 2)
+                  : BorderSide.none),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color.alphaBlend(p.wash(col), p.card), p.card],
+          ),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+                color: p.tile(col), shape: const CircleBorder()),
+            child: Icon(icon, size: 18, color: p.inkOnFill),
+          ),
+          const SizedBox(height: S.x3),
+          Text(_catTitle(l, f.title),
+              style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w700)),
+          Text(
+              l?.healthMeasuresCount('${f.rows.length}') ??
+                  '${f.rows.length} measures',
+              style: F.over.copyWith(color: p.ink3)),
+        ]),
+      ),
+    );
+  }
+
+  /// One category's list, narrowed by the search box — or null when the
+  /// search leaves nothing in it, so an empty heading never renders.
+  Widget? _family(BuildContext c, P p, _Cat f, Map<String, int> counts) {
     final l = AppLocalizations.of(c);
     final have = [
       for (final r in f.rows)
-        if ((counts[r.series] ?? 0) > 0) r,
+        if ((counts[r.series] ?? 0) > 0 && _matches(l, r)) r,
     ];
     final none = [
       for (final r in f.rows)
-        if ((counts[r.series] ?? 0) == 0) r,
+        if ((counts[r.series] ?? 0) == 0 && _matches(l, r)) r,
     ];
+    if (have.isEmpty && none.isEmpty) return null;
 
     return Section(
       _catTitle(l, f.title),
@@ -1746,5 +1966,33 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
       value.dispose();
       takenOn.dispose();
     }
+  }
+}
+
+/// One overnight vital on the Overview card: how it is named and drawn, the
+/// reading now, and the stored history its usual range is read from.
+class _Vital {
+  final IconData icon;
+  final Color color;
+  final String name, sub, value, unit;
+  final double now;
+  final List<double> history;
+  final String key;
+  const _Vital(this.icon, this.color, this.name, this.sub, this.value,
+      this.unit, this.now, this.history, this.key);
+
+  /// The middle 80 % of the last thirty stored nights before this one —
+  /// tenth to ninetieth percentile, so one odd night does not stretch it.
+  /// Null under seven nights: a usual range drawn from three is a guess.
+  (double, double)? usual() {
+    final past = history.length > 1
+        ? history.sublist(0, history.length - 1)
+        : const <double>[];
+    final win = past.length > 30 ? past.sublist(past.length - 30) : past;
+    if (win.length < 7) return null;
+    final sorted = [...win]..sort();
+    double q(double f) => sorted[((sorted.length - 1) * f).round()];
+    final lo = q(.1), hi = q(.9);
+    return hi > lo ? (lo, hi) : (lo - .5, hi + .5);
   }
 }

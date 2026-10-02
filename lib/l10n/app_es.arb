@@ -2415,5 +2415,16 @@
   "homeLast7Days": "Últimos 7 días",
   "homeSevenDayAvg": "Media 7 días {value}",
   "homeAvgValue": "Media {value}",
-  "homeRowHrv": "VFC"
+  "homeRowHrv": "VFC",
+  "healthOvernightVitals": "Constantes nocturnas",
+  "healthTypical": "Habitual",
+  "healthAboveUsual": "Por encima de lo habitual",
+  "healthBelowUsual": "Por debajo de lo habitual",
+  "healthInUsualRange": "{have} de {total} en tu rango habitual",
+  "healthUsualRangeNote": "Tu rango habitual es la parte central de tus últimas 30 noches.",
+  "healthNotEnoughNights": "Aún no hay suficientes noches para un rango habitual",
+  "healthSearchMeasures": "Buscar medidas",
+  "healthMeasuresCount": "{count} medidas",
+  "healthAllCategories": "Todas",
+  "healthNoMatch": "Sin coincidencias"
 }

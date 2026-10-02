@@ -651,6 +651,21 @@ class VitalTile extends StatelessWidget {
                 style: F.over.copyWith(color: p.ink3),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
+          // The recent run as a small line — the shape, not a scale, so it
+          // carries no axis; the detail screen is where values are read off.
+          if (series.whereType<double>().length >= 2) ...[
+            const SizedBox(height: S.x3),
+            ExcludeSemantics(
+              child: SizedBox(
+                height: 30,
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: LineChart(series, p.on(color),
+                      dots: true, dotInk: p.card, t: animate(c, 1)),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -705,8 +720,14 @@ class TileGrid extends StatelessWidget {
 class RangeBar extends StatelessWidget {
   final double low, high, value;
   final Color color;
+
+  /// Whether a reading outside the interval is drawn as a flag (orange). On
+  /// for a clinical reference interval; OFF for a personal "usual range",
+  /// where outside is a difference, not a verdict — a high HRV night is not
+  /// bad news.
+  final bool flagOutside;
   const RangeBar(this.low, this.high, this.value,
-      {super.key, this.color = C.green});
+      {super.key, this.color = C.green, this.flagOutside = true});
 
   @override
   Widget build(BuildContext c) {
@@ -716,7 +737,7 @@ class RangeBar extends StatelessWidget {
     final lo = math.min(low, value) - pad, hi = math.max(high, value) + pad;
     double x(double v) => ((v - lo) / (hi - lo)).clamp(0.0, 1.0);
     final inside = value >= low && value <= high;
-    final dot = inside ? p.tile(color) : p.tile(C.orange);
+    final dot = inside || !flagOutside ? p.tile(color) : p.tile(C.orange);
     return ExcludeSemantics(
       child: SizedBox(
         height: 12,

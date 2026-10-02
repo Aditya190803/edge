@@ -2386,5 +2386,16 @@
   "homeLast7Days": "पिछले 7 दिन",
   "homeSevenDayAvg": "7 दिन औसत {value}",
   "homeAvgValue": "औसत {value}",
-  "homeRowHrv": "HRV"
+  "homeRowHrv": "HRV",
+  "healthOvernightVitals": "रात के वाइटल्स",
+  "healthTypical": "सामान्य",
+  "healthAboveUsual": "सामान्य से ऊपर",
+  "healthBelowUsual": "सामान्य से नीचे",
+  "healthInUsualRange": "{total} में से {have} आपकी सामान्य सीमा में",
+  "healthUsualRangeNote": "आपकी सामान्य सीमा आपकी पिछली 30 रातों का मध्य भाग है।",
+  "healthNotEnoughNights": "सामान्य सीमा के लिए अभी पर्याप्त रातें नहीं",
+  "healthSearchMeasures": "माप खोजें",
+  "healthMeasuresCount": "{count} माप",
+  "healthAllCategories": "सभी",
+  "healthNoMatch": "कुछ नहीं मिला"
 }
