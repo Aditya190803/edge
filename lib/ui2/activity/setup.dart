@@ -127,12 +127,25 @@ title: a.name,
 children: [
                 Center(
                   child: Column(children: [
+                    // The activity as an app-icon tile: filled, its glyph
+                    // knocked out in white, lifted off the page.
                     Container(
-                      width: 84,
-                      height: 84,
-                      decoration: BoxDecoration(
-                          color: p.wash(a.color), shape: BoxShape.circle),
-                      child: Icon(a.icon, size: 38, color: p.on(a.color)),
+                      width: 96,
+                      height: 96,
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        shape: R.shape(R.rXl),
+                        shadows: p.el(3),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color.lerp(p.tile(a.color), C.white, .15)!,
+                            p.tile(a.color),
+                          ],
+                        ),
+                      ),
+                      child: Icon(a.icon, size: 46, color: p.inkOnFill),
                     ),
                     const SizedBox(height: S.x4),
                     Text(a.name, style: F.t2.copyWith(color: p.ink)),

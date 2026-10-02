@@ -603,19 +603,10 @@ ThemeData buildTheme(Brightness b) {
       scrolledUnderElevation: 0,
       titleTextStyle: F.head.copyWith(color: p.ink),
     ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: p.card2,
-      hintStyle: F.body.copyWith(color: p.ink3),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x3),
-      border: const OutlineInputBorder(
-          borderRadius: R.rMd, borderSide: BorderSide.none),
-      enabledBorder: const OutlineInputBorder(
-          borderRadius: R.rMd, borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: R.rMd, borderSide: BorderSide(color: tint, width: 1.5)),
-    ),
+    // NO inputDecorationTheme. Most fields in lib/ui2 are collapsed
+    // decorations inside their own styled containers; a theme-level fill or
+    // focus border reaches into every one of them, and drew a blue outline
+    // inside the search capsule.
     pageTransitionsTheme: PageTransitionsTheme(builders: {
       for (final e in const PageTransitionsTheme().builders.entries)
         e.key: _Gated(e.value),

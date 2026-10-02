@@ -34,6 +34,7 @@ import '../../state/prefs.dart';
 import '../../state/units_controller.dart';
 import '../charts.dart';
 import '../grammar.dart';
+import '../page.dart';
 import '../paint_activity.dart';
 import '../profile/profile.dart';
 import '../screens/home_screen.dart' show unitsOf;
@@ -644,19 +645,64 @@ class SessionStats extends StatelessWidget {
     // Solved against the page, not raw pigment: the poster paints its rings on
     // one dark card it controls, and this one lands on both themes.
     final accent = p.on(r.activity.color);
-    final rows = <Widget>[];
-    for (final s in sessionStats(r, unitsOf(c))) {
-      if (rows.isNotEmpty) rows.add(Divider(color: p.line, height: S.x5));
-      final (value, unit) = splitStatUnit(s.$2);
-      rows.add(PosterStatRow(
-        icon: statIcon(s.$1),
-        label: s.$1,
-        value: value,
-        unit: unit,
-        accent: accent,
-      ));
-    }
-    return Surface(child: Column(children: rows));
+    // A grid of stat tiles, two across — the way a finished workout is read
+    // in a fitness app: what it is in small caps, the number large in the
+    // activity's own colour. Past the restack point each takes a full row.
+    final tiles = <Widget>[
+      for (final s in sessionStats(r, unitsOf(c)))
+        () {
+          final (value, unit) = splitStatUnit(s.$2);
+          return Semantics(
+            label: '${s.$1}, $value ${unit ?? ''}'.trim(),
+            child: ExcludeSemantics(
+              child: Container(
+                padding: const EdgeInsets.all(S.x3),
+                decoration: ShapeDecoration(
+                  color: p.card,
+                  shape: R.shape(R.rLg),
+                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(statIcon(s.$1), size: 13, color: accent),
+                        const SizedBox(width: S.x1),
+                        Flexible(
+                          child: Text(s.$1.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: F.over.copyWith(
+                                  color: p.ink3,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: .4)),
+                        ),
+                      ]),
+                      const SizedBox(height: S.x2),
+                      // scaleDown, never wrap: '27 bpm in 60 s' broke into
+                      // three lines inside half a row.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(value, style: F.n24.copyWith(color: accent)),
+                          const SizedBox(width: 3),
+                          if (unit != null && unit.isNotEmpty)
+                            Text(unit,
+                                style: F.over.copyWith(
+                                    color: p.ink3,
+                                    fontWeight: FontWeight.w600)),
+                        ],
+                      )),
+                    ]),
+              ),
+            ),
+          );
+        }(),
+    ];
+    return TileGrid(tiles);
   }
 }
 
@@ -974,9 +1020,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     final p = P.of(c);
     _u = unitsOf(c);
     // Only a saved session has an id to correct — a draft on screen because
-    // the write threw has nowhere to put it. Reserving the two-icon width
-    // for a row that only ever draws one icon would shove the title left on
-    // every unsaved-session summary for no reason.
+    // the write threw has nowhere to put it, so it gets no edit button.
     final canChangeType = r.sessionId != null;
     // GPX export only makes sense for a session with an actual recorded
     // route — offering it on a lift or a match would be a button that can
@@ -989,97 +1033,66 @@ class _ActivitySummaryState extends State<ActivitySummary> {
         (arch == Arch.route || arch == Arch.journey) &&
         r.geo.length >= 2;
     final l = AppLocalizations.of(c);
-    final iconCount = 1 + (canChangeType ? 1 : 0);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(
-              a.name,
-              sub: _shortDate(r.start).toUpperCase(),
-              // Each icon is a Pressable with S.tap's own 44 pt minimum hit
-              // box (grammar.dart's accessibility floor, not optional) —
-              // S.tap * n alone is short of that plus the gaps between them,
-              // which is exactly the RenderFlex overflow this avoids.
-              trailingWidth: iconCount == 1
-                  ? S.tap
-                  : S.tap * iconCount + S.x3 * (iconCount - 1),
-              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (canChangeType) ...[
-                  Pressable(
-                    semanticLabel:
-                        l?.activitySummaryChangeType ?? 'Change activity type',
-                    onTap: () => _changeType(c),
-                    child: Icon(LucideIcons.pencil, size: 18, color: p.ink2),
-                  ),
-                  const SizedBox(width: S.x3),
-                ],
-                Pressable(
-                  semanticLabel: l?.activitySummaryShareThis(
-                          a.name.toLowerCase()) ??
-                      'Share this ${a.name.toLowerCase()}',
-                  onTap: () => Navigator.of(c).push(MaterialPageRoute(
-                      builder: (_) => ShareSheet(r))),
-                  child: Icon(LucideIcons.share2, size: 19, color: p.ink2),
-                ),
-              ]),
-            ),
-          ),
-          // A dedicated, plainly-labeled button rather than a bare icon in the
-          // nav bar — this is the one export action worth naming outright.
-          // Text only: no Strava logo/imagery, per the no-brand-assets policy
-          // (the brand name as plain text is fine, brand marks are not).
-          if (canExportGpx)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(S.x4, S.x2, S.x4, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Pressable(
-                  onTap: () => _exportGpx(c),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(LucideIcons.upload, size: 16, color: p.ink2),
-                    const SizedBox(width: S.x2),
-                    Text(
-                        l?.activitySummaryShareToStrava ?? 'Share to Strava',
-                        style: F.body.copyWith(
-                            color: p.ink2, fontWeight: FontWeight.w600)),
-                  ]),
-                ),
+    return HealthPage(
+      title: a.name,
+      sub: _shortDate(r.start),
+      actions: [
+        if (canChangeType)
+          BarButton(LucideIcons.pencil,
+              l?.activitySummaryChangeType ?? 'Change activity type',
+              onTap: () => _changeType(c)),
+        BarButton(
+            LucideIcons.share2,
+            l?.activitySummaryShareThis(a.name.toLowerCase()) ??
+                'Share this ${a.name.toLowerCase()}',
+            onTap: () => Navigator.of(c)
+                .push(MaterialPageRoute(builder: (_) => ShareSheet(r)))),
+      ],
+      accessory: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // A dedicated, plainly-labeled button rather than a bare icon in
+          // the bar — this is the one export action worth naming outright.
+          // Text only: no Strava logo/imagery, per the no-brand-assets policy.
+          if (canExportGpx) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Pressable(
+                onTap: () => _exportGpx(c),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.upload, size: 16, color: p.on(C.blue)),
+                  const SizedBox(width: S.x2),
+                  Text(l?.activitySummaryShareToStrava ?? 'Share to Strava',
+                      style: F.body.copyWith(
+                          color: p.on(C.blue), fontWeight: FontWeight.w600)),
+                ]),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            // Display labels are localized; `_tabs` itself stays the fixed
-            // English keys the switch below matches by NAME.
-            child: SubTabs(
-                [
-                  for (final t in _tabs)
-                    switch (t) {
-                      'Overview' => l?.activitySummaryTabOverview ?? 'Overview',
-                      'Splits' => l?.activitySummaryTabSplits ?? 'Splits',
-                      _ => l?.activitySummaryTabGraphs ?? 'Graphs',
-                    },
-                ],
-                tab,
-                (i) => setState(() => tab = i),
-                color: a.color),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, S.x4, S.x4, S.x10),
-              // By NAME: the tab list is shorter for the archetypes that have
-              // no splits, so index 1 is not always the same tab.
-              children: switch (_tabs[tab]) {
-                'Overview' => _overview(c, p),
-                'Splits' => _splits(c, p),
-                _ => _graphs(c, p),
-              },
-            ),
-          ),
-        ]),
+            const SizedBox(height: S.x2),
+          ],
+          // Display labels are localized; `_tabs` itself stays the fixed
+          // English keys the switch below matches by NAME.
+          SubTabs(
+              [
+                for (final t in _tabs)
+                  switch (t) {
+                    'Overview' => l?.activitySummaryTabOverview ?? 'Overview',
+                    'Splits' => l?.activitySummaryTabSplits ?? 'Splits',
+                    _ => l?.activitySummaryTabGraphs ?? 'Graphs',
+                  },
+              ],
+              tab,
+              (i) => setState(() => tab = i),
+              color: a.color),
+        ],
       ),
+      // By NAME: the tab list is shorter for the archetypes that have no
+      // splits, so index 1 is not always the same tab.
+      children: switch (_tabs[tab]) {
+        'Overview' => _overview(c, p),
+        'Splits' => _splits(c, p),
+        _ => _graphs(c, p),
+      },
     );
   }
 
@@ -1106,9 +1119,42 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       // natural width; the hero takes the rest and, like the share card's,
       // scales down rather than truncating — a cut-off measurement is not a
       // measurement.
-      Row(children: [
-        Expanded(
-          child: FittedBox(
+      // The hero card: washed in the activity's own colour, its glyph in a
+      // tile, what the number is, and the number large.
+      Container(
+        padding: const EdgeInsets.all(S.x4),
+        decoration: ShapeDecoration(
+          shape: R.shape(R.rXl),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color.alphaBlend(p.wash(a.color), p.card), p.card],
+          ),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                  color: p.tile(a.color), shape: R.shape(R.rSm)),
+              child: Icon(a.icon, size: 18, color: p.inkOnFill),
+            ),
+            const SizedBox(width: S.x2),
+            Expanded(
+              child: Text(hero.$3,
+                  style: F.cap.copyWith(
+                      color: p.on(a.color), fontWeight: FontWeight.w700)),
+            ),
+            if (r.private) ...[
+              const SizedBox(width: S.x2),
+              Pill(l?.activitySummaryPrivate ?? 'Private', C.n500,
+                  icon: LucideIcons.lock),
+            ],
+          ]),
+          const SizedBox(height: S.x3),
+          FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Row(
@@ -1119,19 +1165,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       style: F.n48.copyWith(color: p.ink), maxLines: 1),
                   if (hero.$2.isNotEmpty) ...[
                     const SizedBox(width: S.x2),
-                    Text(hero.$2, style: F.body.copyWith(color: p.ink3)),
+                    Text(hero.$2,
+                        style: F.body.copyWith(
+                            color: p.ink3, fontWeight: FontWeight.w600)),
                   ],
                 ]),
           ),
-        ),
-        if (r.private) ...[
-          const SizedBox(width: S.x3),
-          Pill(l?.activitySummaryPrivate ?? 'Private', C.n500,
-              icon: LucideIcons.lock),
-        ],
-      ]),
-      const SizedBox(height: S.x1),
-      Text(hero.$3, style: F.cap.copyWith(color: p.ink2)),
+        ]),
+      ),
       const SizedBox(height: S.x5),
       ..._definingObject(c, p),
       const SizedBox(height: S.x5),
