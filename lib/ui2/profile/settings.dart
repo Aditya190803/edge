@@ -230,9 +230,9 @@ class _IconRow extends StatelessWidget {
           width: 32,
           height: 32,
           alignment: Alignment.center,
-          decoration:
-              BoxDecoration(color: p.wash(C.indigo), borderRadius: R.rSm),
-          child: Icon(LucideIcons.image, size: 16, color: p.on(C.indigo)),
+          decoration: ShapeDecoration(
+              color: p.tile(C.indigo), shape: R.shape(R.rSm)),
+          child: Icon(LucideIcons.image, size: 16, color: p.inkOnFill),
         ),
         const SizedBox(width: S.x3),
         Expanded(

@@ -335,9 +335,9 @@ class _Quick extends StatelessWidget {
           Container(
             width: 38,
             height: 38,
-            decoration:
-                BoxDecoration(color: p.wash(a.color), borderRadius: R.rMd),
-            child: Icon(a.icon, size: 18, color: p.on(a.color)),
+            decoration: ShapeDecoration(
+                color: p.tile(a.color), shape: R.shape(R.rMd)),
+            child: Icon(a.icon, size: 18, color: p.inkOnFill),
           ),
           const SizedBox(height: S.x2),
           Padding(

@@ -1728,10 +1728,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(
-                        color: p.wash(C.yellow), borderRadius: R.rMd),
-                    child: Icon(LucideIcons.trophy,
-                        size: 19, color: p.on(C.yellow)),
+                    decoration: ShapeDecoration(
+                        color: p.tile(C.yellow), shape: R.shape(R.rMd)),
+                    child: Icon(LucideIcons.trophy, size: 19, color: p.inkOnFill),
                   ),
                   const SizedBox(width: S.x3),
                   Expanded(
@@ -2028,8 +2027,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         width: 22,
                         height: 22,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: p.wash(C.red), borderRadius: R.rSm),
+                        decoration: ShapeDecoration(
+                            color: p.wash(C.red), shape: const CircleBorder()),
                         child: Text('${i + 1}',
                             style: F.over.copyWith(color: p.on(C.red))),
                       ),
@@ -2123,8 +2122,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           width: 24,
           height: 24,
           alignment: Alignment.center,
-          decoration:
-              BoxDecoration(color: p.wash(C.purple), borderRadius: R.rSm),
+          decoration: ShapeDecoration(
+              color: p.wash(C.purple), shape: const CircleBorder()),
           child: Text('$n', style: F.over.copyWith(color: p.on(C.purple))),
         ),
         const SizedBox(width: S.x3),

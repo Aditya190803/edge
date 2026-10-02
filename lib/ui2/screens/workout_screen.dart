@@ -914,9 +914,9 @@ class _QuickTile extends StatelessWidget {
         Container(
           width: 40,
           height: 40,
-          decoration:
-              BoxDecoration(color: p.wash(a.color), borderRadius: R.rMd),
-          child: Icon(a.icon, size: 19, color: p.on(a.color)),
+          decoration: ShapeDecoration(
+              color: p.tile(a.color), shape: R.shape(R.rMd)),
+          child: Icon(a.icon, size: 19, color: p.inkOnFill),
         ),
         const SizedBox(height: S.x2),
         Text(a.name,
@@ -971,9 +971,9 @@ class _HistoryRow extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration:
-                BoxDecoration(color: p.wash(a.color), borderRadius: R.rMd),
-            child: Icon(a.icon, size: 19, color: p.on(a.color)),
+            decoration: ShapeDecoration(
+                color: p.tile(a.color), shape: R.shape(R.rMd)),
+            child: Icon(a.icon, size: 19, color: p.inkOnFill),
           ),
           const SizedBox(width: S.x3),
           Expanded(

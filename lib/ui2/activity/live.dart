@@ -1535,8 +1535,8 @@ class _LiveStrengthState extends State<LiveStrength> {
                     width: 24,
                     height: 24,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                        color: p.wash(C.purple), borderRadius: R.rSm),
+                    decoration: ShapeDecoration(
+                        color: p.wash(C.purple), shape: const CircleBorder()),
                     child: Text('${i + 1}',
                         style: F.over.copyWith(color: p.on(C.purple))),
                   ),

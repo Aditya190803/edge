@@ -267,10 +267,9 @@ class _AppRow extends StatelessWidget {
                     width: 32,
                     height: 32,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                        color: p.wash(C.purple), borderRadius: R.rSm),
-                    child: Icon(LucideIcons.appWindow,
-                        size: 16, color: p.on(C.purple)),
+                    decoration: ShapeDecoration(
+                        color: p.tile(C.purple), shape: R.shape(R.rSm)),
+                    child: Icon(LucideIcons.appWindow, size: 16, color: p.inkOnFill),
                   ),
           ),
           const SizedBox(width: S.x3),

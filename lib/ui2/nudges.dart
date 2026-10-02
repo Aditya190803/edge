@@ -125,9 +125,9 @@ class _AskCard extends StatelessWidget {
               width: 32,
               height: 32,
               alignment: Alignment.center,
-              decoration:
-                  BoxDecoration(color: p.wash(color), borderRadius: R.rSm),
-              child: glyph(p.on(color)),
+              decoration: ShapeDecoration(
+                  color: p.tile(color), shape: R.shape(R.rSm)),
+              child: glyph(p.inkOnFill),
             ),
             const SizedBox(width: S.x3),
             Expanded(

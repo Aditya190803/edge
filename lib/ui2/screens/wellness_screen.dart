@@ -1389,11 +1389,9 @@ class MedRow extends StatelessWidget {
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
-                color: p.wash(C.blue),
-                borderRadius: R.rMd,
-              ),
-              child: Icon(LucideIcons.pill, size: 17, color: p.on(C.blue)),
+              decoration: ShapeDecoration(
+                  color: p.tile(C.blue), shape: R.shape(R.rMd)),
+              child: Icon(LucideIcons.pill, size: 17, color: p.inkOnFill),
             ),
             const SizedBox(width: S.x3),
             Expanded(

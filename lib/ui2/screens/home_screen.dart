@@ -2161,9 +2161,9 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
           Container(
             width: 34,
             height: 34,
-            decoration:
-                BoxDecoration(color: p.wash(col), borderRadius: R.rSm),
-            child: Icon(i, size: 16, color: p.on(col)),
+            decoration: ShapeDecoration(
+                color: p.tile(col), shape: R.shape(R.rSm)),
+            child: Icon(i, size: 16, color: p.inkOnFill),
           ),
           const SizedBox(width: S.x3),
           Expanded(

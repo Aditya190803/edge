@@ -336,9 +336,9 @@ class _SuggestionCard extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: p.wash(colour), borderRadius: R.rMd),
-            child: Icon(a?.icon ?? LucideIcons.activity,
-                size: 19, color: p.on(colour)),
+            decoration: ShapeDecoration(
+                color: p.tile(colour), shape: R.shape(R.rMd)),
+            child: Icon(a?.icon ?? LucideIcons.activity, size: 19, color: p.inkOnFill),
           ),
           const SizedBox(width: S.x3),
           Expanded(
