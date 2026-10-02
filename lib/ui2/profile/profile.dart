@@ -281,6 +281,72 @@ class _ProfileHomeState extends State<ProfileHome> {
       );
 }
 
+/// Who this is: a large avatar, the name, and what this install holds —
+/// the identity card at the top of a health profile. Built only from what the
+/// screen already read; while that read is in flight the counts are absent,
+/// never zero.
+class _ProfileHeader extends StatelessWidget {
+  final ProfileStats? stats;
+  const _ProfileHeader({this.stats});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    final name = stats?.name?.trim() ?? '';
+    final initials = name.isEmpty
+        ? ''
+        : name
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .take(2)
+            .map((w) => w.characters.first.toUpperCase())
+            .join();
+    final s = stats;
+    final line = [
+      if (s != null)
+        l?.profileSourcesCount(s.sources) ??
+            '${s.sources} source${s.sources == 1 ? '' : 's'}',
+      if (s?.storageBytes != null) formatBytes(s!.storageBytes!),
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(top: S.x2, bottom: S.x2),
+      child: Column(children: [
+        Container(
+          width: 88,
+          height: 88,
+          alignment: Alignment.center,
+          decoration: ShapeDecoration(
+            shape: const CircleBorder(),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [p.tile(C.sky), p.fill(C.domHome)],
+            ),
+            shadows: p.el(3),
+          ),
+          child: initials.isEmpty
+              ? Icon(LucideIcons.userRound, size: 40, color: p.inkOnFill)
+              : Text(initials,
+                  style: F.n34.copyWith(color: p.inkOnFill)),
+        ),
+        if (name.isNotEmpty) ...[
+          const SizedBox(height: S.x3),
+          Text(name,
+              textAlign: TextAlign.center,
+              style: F.t2.copyWith(color: p.ink)),
+        ],
+        if (line.isNotEmpty) ...[
+          const SizedBox(height: S.x1),
+          Text(line,
+              textAlign: TextAlign.center,
+              style: F.cap.copyWith(color: p.ink3)),
+        ],
+      ]),
+    );
+  }
+}
+
 class ProfileHomeView extends StatelessWidget {
   /// Null while the counts are still being read — the numbers are absent, not
   /// zero, and a zero rendered during a load is a wrong number on screen.
@@ -303,7 +369,7 @@ class ProfileHomeView extends StatelessWidget {
     return HealthPage(
 title: l?.profileTitle ?? 'Profile',
 children: [
-                const SizedBox(height: S.x4),
+                _ProfileHeader(stats: s),
                 settingsGroup(c, l?.profileQuickAccessGroup ?? 'Quick access', [
                   SetRow(LucideIcons.watch, C.blue,
                       l?.profileMyDevices ?? 'My devices',

@@ -12473,5 +12473,17 @@
   "healthAllCategories": "All",
   "@healthAllCategories": {"description": "Explore filter: every category."},
   "healthNoMatch": "Nothing matches",
-  "@healthNoMatch": {"description": "Explore search with no results."}
+  "@healthNoMatch": {"description": "Explore search with no results."},
+  "welcomeFeatureDecodedTitle": "Decoded on your phone",
+  "@welcomeFeatureDecodedTitle": {"description": "Welcome feature row title."},
+  "welcomeFeatureDecodedBody": "The band's raw signal becomes numbers here, not on a server.",
+  "@welcomeFeatureDecodedBody": {"description": "Welcome feature row body."},
+  "welcomeFeatureYouTitle": "Measured against you",
+  "@welcomeFeatureYouTitle": {"description": "Welcome feature row title."},
+  "welcomeFeatureYouBody": "Scores are read against your own nights, not a population average.",
+  "@welcomeFeatureYouBody": {"description": "Welcome feature row body."},
+  "welcomeFeatureKeepTitle": "Yours to keep",
+  "@welcomeFeatureKeepTitle": {"description": "Welcome feature row title."},
+  "welcomeFeatureKeepBody": "Export, back up or reset everything from Settings, any time.",
+  "@welcomeFeatureKeepBody": {"description": "Welcome feature row body."}
 }

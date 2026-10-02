@@ -2426,5 +2426,11 @@
   "healthSearchMeasures": "Buscar medidas",
   "healthMeasuresCount": "{count} medidas",
   "healthAllCategories": "Todas",
-  "healthNoMatch": "Sin coincidencias"
+  "healthNoMatch": "Sin coincidencias",
+  "welcomeFeatureDecodedTitle": "Decodificado en tu teléfono",
+  "welcomeFeatureDecodedBody": "La señal en bruto de la pulsera se convierte en números aquí, no en un servidor.",
+  "welcomeFeatureYouTitle": "Comparado contigo",
+  "welcomeFeatureYouBody": "Las puntuaciones se leen frente a tus propias noches, no a una media de población.",
+  "welcomeFeatureKeepTitle": "Tuyo para siempre",
+  "welcomeFeatureKeepBody": "Exporta, haz copia o restablece todo desde Ajustes cuando quieras."
 }

@@ -2397,5 +2397,11 @@
   "healthSearchMeasures": "Messwerte suchen",
   "healthMeasuresCount": "{count} Messwerte",
   "healthAllCategories": "Alle",
-  "healthNoMatch": "Keine Treffer"
+  "healthNoMatch": "Keine Treffer",
+  "welcomeFeatureDecodedTitle": "Auf deinem Telefon dekodiert",
+  "welcomeFeatureDecodedBody": "Das Rohsignal des Bands wird hier zu Zahlen, nicht auf einem Server.",
+  "welcomeFeatureYouTitle": "An dir gemessen",
+  "welcomeFeatureYouBody": "Werte werden an deinen eigenen Nächten gemessen, nicht an einem Bevölkerungsdurchschnitt.",
+  "welcomeFeatureKeepTitle": "Deine Daten",
+  "welcomeFeatureKeepBody": "Exportiere, sichere oder lösche alles jederzeit in den Einstellungen."
 }

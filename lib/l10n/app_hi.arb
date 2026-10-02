@@ -2397,5 +2397,11 @@
   "healthSearchMeasures": "माप खोजें",
   "healthMeasuresCount": "{count} माप",
   "healthAllCategories": "सभी",
-  "healthNoMatch": "कुछ नहीं मिला"
+  "healthNoMatch": "कुछ नहीं मिला",
+  "welcomeFeatureDecodedTitle": "आपके फ़ोन पर डिकोड",
+  "welcomeFeatureDecodedBody": "बैंड का कच्चा सिग्नल यहीं संख्याओं में बदलता है, किसी सर्वर पर नहीं।",
+  "welcomeFeatureYouTitle": "आपसे तुलना",
+  "welcomeFeatureYouBody": "स्कोर आपकी अपनी रातों से तुलना करके पढ़े जाते हैं, किसी औसत से नहीं।",
+  "welcomeFeatureKeepTitle": "आपका, आपके पास",
+  "welcomeFeatureKeepBody": "सेटिंग्स से कभी भी सब कुछ निर्यात, बैकअप या रीसेट करें।"
 }

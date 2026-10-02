@@ -194,16 +194,52 @@ class PairingView extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(S.x4, S.x8, S.x4, S.x8),
           children: [
-            Icon(
-                blocked == null
-                    ? LucideIcons.bluetooth
-                    : LucideIcons.bluetoothOff,
-                size: 36,
-                color: p.on(C.blue)),
+            // The radar: the glyph in a filled disc inside fading rings —
+            // "looking for something nearby" as a picture. Static on purpose:
+            // the phase text says whether a search is running, and a loop
+            // here would have to pass the reduced-motion gate to exist.
+            Center(
+              child: SizedBox(
+                width: 168,
+                height: 168,
+                child: Stack(alignment: Alignment.center, children: [
+                  for (final (d, a) in const [(168.0, .06), (128.0, .10), (92.0, .16)])
+                    Container(
+                      width: d,
+                      height: d,
+                      decoration: ShapeDecoration(
+                        color: (blocked == null ? p.on(C.blue) : p.ink3)
+                            .withValues(alpha: a),
+                        shape: const CircleBorder(),
+                      ),
+                    ),
+                  Container(
+                    width: 64,
+                    height: 64,
+                    alignment: Alignment.center,
+                    decoration: ShapeDecoration(
+                      color: blocked == null ? p.fill(C.blue) : p.ink3,
+                      shape: const CircleBorder(),
+                      shadows: p.el(3),
+                    ),
+                    child: Icon(
+                        blocked == null
+                            ? LucideIcons.bluetooth
+                            : LucideIcons.bluetoothOff,
+                        size: 30,
+                        color: p.inkOnFill),
+                  ),
+                ]),
+              ),
+            ),
             const SizedBox(height: S.x5),
-            Text(_title(c, phase, blocker), style: F.t1.copyWith(color: p.ink)),
+            Text(_title(c, phase, blocker),
+                textAlign: TextAlign.center,
+                style: F.t1.copyWith(color: p.ink)),
             const SizedBox(height: S.x3),
-            Text(_body(c, phase, blocker), style: F.body.copyWith(color: p.ink2)),
+            Text(_body(c, phase, blocker),
+                textAlign: TextAlign.center,
+                style: F.body.copyWith(color: p.ink2)),
             if (blocked?.fix != null) ...[
               const SizedBox(height: S.x3),
               Text(blocked!.fix!,

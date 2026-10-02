@@ -2397,5 +2397,11 @@
   "healthSearchMeasures": "搜索指标",
   "healthMeasuresCount": "{count} 项指标",
   "healthAllCategories": "全部",
-  "healthNoMatch": "没有匹配项"
+  "healthNoMatch": "没有匹配项",
+  "welcomeFeatureDecodedTitle": "在你的手机上解码",
+  "welcomeFeatureDecodedBody": "手环的原始信号在这里变成数字，而不是在服务器上。",
+  "welcomeFeatureYouTitle": "与你自己比较",
+  "welcomeFeatureYouBody": "分数参照你自己的夜晚，而不是人群平均值。",
+  "welcomeFeatureKeepTitle": "数据归你所有",
+  "welcomeFeatureKeepBody": "随时可在设置中导出、备份或重置全部数据。"
 }

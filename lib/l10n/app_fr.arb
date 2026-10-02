@@ -2397,5 +2397,11 @@
   "healthSearchMeasures": "Rechercher des mesures",
   "healthMeasuresCount": "{count} mesures",
   "healthAllCategories": "Toutes",
-  "healthNoMatch": "Aucun résultat"
+  "healthNoMatch": "Aucun résultat",
+  "welcomeFeatureDecodedTitle": "Décodé sur ton téléphone",
+  "welcomeFeatureDecodedBody": "Le signal brut du bracelet devient des chiffres ici, pas sur un serveur.",
+  "welcomeFeatureYouTitle": "Comparé à toi",
+  "welcomeFeatureYouBody": "Les scores se lisent par rapport à tes propres nuits, pas à une moyenne de population.",
+  "welcomeFeatureKeepTitle": "À toi de garder",
+  "welcomeFeatureKeepBody": "Exporte, sauvegarde ou réinitialise tout depuis les Réglages, à tout moment."
 }

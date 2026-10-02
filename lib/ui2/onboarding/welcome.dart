@@ -560,16 +560,15 @@ class WelcomeView extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(S.x4, S.x8, S.x4, S.x8),
           children: [
-            // The app's mark as the system would show it: a continuous-corner
-            // tile in Health's pink with the pulse glyph knocked out in white.
-            Align(
-              alignment: Alignment.centerLeft,
+            // The app's mark as the system would show it, centred over a
+            // centred title — the shape of a first-run screen on the platform.
+            Center(
               child: Container(
-                width: 72,
-                height: 72,
+                width: 88,
+                height: 88,
                 alignment: Alignment.center,
                 decoration: ShapeDecoration(
-                  shape: R.shape(R.rLg),
+                  shape: R.shape(R.rXl),
                   shadows: p.el(3),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -577,25 +576,41 @@ class WelcomeView extends StatelessWidget {
                     colors: [p.tile(C.pink), p.tile(C.red)],
                   ),
                 ),
-                child: Icon(LucideIcons.activity, size: 38, color: p.inkOnFill),
+                child: Icon(LucideIcons.activity, size: 46, color: p.inkOnFill),
               ),
             ),
             const SizedBox(height: S.x6),
             Text(l?.welcomeHeadline ?? 'Your band, decoded here',
+                textAlign: TextAlign.center,
                 style: F.display.copyWith(color: p.ink)),
             const SizedBox(height: S.x3),
             Text(
               l?.welcomeSubhead ??
                   'Every number is computed on this phone from the raw signal.',
+              textAlign: TextAlign.center,
               style: F.body.copyWith(color: p.ink2),
             ),
-            const SizedBox(height: S.x6),
-            Align(
-              alignment: Alignment.centerLeft,
+            const SizedBox(height: S.x3),
+            Center(
               child: Pill(l?.pillLocalNoCloud ?? 'Local · no cloud', C.green,
                   icon: LucideIcons.shieldCheck),
             ),
             const SizedBox(height: S.x8),
+            // What the app is, as three statements it can stand behind.
+            _Feature(LucideIcons.cpu, C.blue,
+                l?.welcomeFeatureDecodedTitle ?? 'Decoded on your phone',
+                l?.welcomeFeatureDecodedBody ??
+                    "The band's raw signal becomes numbers here, not on a server."),
+            _Feature(LucideIcons.userRound, C.green,
+                l?.welcomeFeatureYouTitle ?? 'Measured against you',
+                l?.welcomeFeatureYouBody ??
+                    'Scores are read against your own nights, not a population '
+                        'average.'),
+            _Feature(LucideIcons.lockKeyhole, C.pink,
+                l?.welcomeFeatureKeepTitle ?? 'Yours to keep',
+                l?.welcomeFeatureKeepBody ??
+                    'Export, back up or reset everything from Settings, any time.'),
+            const SizedBox(height: S.x4),
             BigButton(l?.welcomeSetUpMyBand ?? 'Set up my band',
                 icon: LucideIcons.bluetooth,
                 color: C.blue,
@@ -636,6 +651,40 @@ class WelcomeView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// One line of what the app is: a coloured glyph, a short title, a sentence.
+class _Feature extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title, body;
+  const _Feature(this.icon, this.color, this.title, this.body);
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(S.x2, 0, S.x2, S.x5),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: ShapeDecoration(
+              color: p.tile(color), shape: R.shape(R.rMd)),
+          child: Icon(icon, size: 21, color: p.inkOnFill),
+        ),
+        const SizedBox(width: S.x4),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: F.head.copyWith(color: p.ink)),
+            const SizedBox(height: 2),
+            Text(body, style: F.cap.copyWith(color: p.ink2, height: 1.4)),
+          ]),
+        ),
+      ]),
     );
   }
 }
