@@ -23,13 +23,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 // The cases are the GALLERY's cases. One list, so the pictures in here and
 // the screen a developer opens on a phone cannot describe two different
 // design systems — and so a component added to one is added to both.
 import 'package:openstrap_edge/ui2/profile/gallery.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_type.dart';
+import 'support/preview.dart';
 
 /// The golden is the component, not the page: capturing this boundary means a
 /// PNG the size of the thing under test, and a diff that points at the card
@@ -65,25 +66,7 @@ Widget _frame(Widget child, Brightness b, double scale) => MediaQuery(
 /// harness's block glyphs. A golden nobody can read is a golden nobody
 /// reviews, and an unreviewed golden gets `--update-goldens`-ed over the top
 /// of the bug it was supposed to catch.
-Future<void> _loadType() async {
-  final files = Directory('assets/fonts/Manrope')
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.ttf'));
-  // Registered under both names. `.SF Pro Text` does not exist off Apple
-  // hardware, so on Android and in the test harness the type IS Manrope —
-  // registering it under the primary name makes the goldens show what a
-  // non-Apple user actually sees, rather than the harness's fallback blocks.
-  for (final family in const ['Manrope', '.SF Pro Text']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
-      loader.addFont(f
-          .readAsBytes()
-          .then((b) => ByteData.sublistView(Uint8List.fromList(b))));
-    }
-    await loader.load();
-  }
-}
+Future<void> _loadType() => loadAppType();
 
 /// The golden PNGs are NOT in the repo. They are machine-specific — two Flutter
 /// SDKs disagree on antialiasing — and 27 MB of them was purged from history,
@@ -107,6 +90,14 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
     await _loadType();
   });
+
+  group('preview', () {
+    all.forEach((name, widget) {
+      if (!previewWants(name)) return;
+      testWidgets(name, (tester) =>
+          shoot(tester, _frame(widget, Brightness.dark, kPreviewScale), 'ui_$name'));
+    });
+  }, skip: !kPreview);
 
   for (final scale in const [1.0, 2.0]) {
     final tag = scale == 1.0 ? '1x' : '2x';

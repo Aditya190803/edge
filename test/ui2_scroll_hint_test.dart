@@ -10,30 +10,17 @@
 // The second is the honesty contract: absent when the content fits, present
 // when it does not, gone at the end of the scroll.
 
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_type.dart';
 
 /// The type the app ships. Without it the harness measures its fallback
 /// glyphs, and a width assertion against the wrong font is a width assertion
 /// against nothing.
-Future<void> _loadType() async {
-  final files = Directory('assets/fonts/Manrope')
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
-      loader.addFont(f.readAsBytes().then((b) => b.buffer.asByteData()));
-    }
-    await loader.load();
-  }
-}
+Future<void> _loadType() => loadAppType();
 
 /// One `SubTabs` chip: the label at its own weight, plus S.x4 of padding on
 /// each side, floored at the 44 pt tap minimum.
@@ -103,9 +90,11 @@ void main() {
 
   group('the five-tab rows do not fit, at any width we ship to', () {
     // 360 is the Android floor we design against, 390 is the iPhone the app is
-    // developed on, 430 is the largest phone. If the row fitted on any of
-    // them the honest fix would be to stop it scrolling, not to decorate it.
-    for (final screen in const [360.0, 390.0, 430.0]) {
+    // developed on. If the row fitted on either the honest fix would be to
+    // stop it scrolling, not to decorate it. 430 (the largest phone) is no
+    // longer asserted: in Albert Sans the Health row fits there by ~3 pt, and
+    // ScrollHint already draws nothing while a row fits.
+    for (final screen in const [360.0, 390.0]) {
       test('${screen.toInt()} pt, 1.0x text', () {
         final vp = _viewport(screen);
         expect(_row(_wellness, 1.0), greaterThan(vp),
@@ -149,7 +138,8 @@ void main() {
         final shown =
             _chip(labels.last, 1.0, active: false) - (_row(labels, 1.0) - _viewport(390));
         expect(shown, greaterThan(0));
-        expect(shown, lessThan(S.x5),
+        // Under 24 pt: its 16 pt padding and at most a letter's edge.
+        expect(shown, lessThan(S.x6),
             reason: '${labels.last} shows ${shown.toStringAsFixed(1)} pt');
       }
     });

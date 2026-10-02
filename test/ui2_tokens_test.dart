@@ -119,7 +119,8 @@ void main() {
     test('no ${rule.name} outside the token boundary', () {
       final hits = <String>[];
       for (final f in files) {
-        final rel = f.path.replaceFirst(RegExp(r'^\./'), '');
+        // Forward slashes on every OS, so the allow-list matches on Windows too.
+        final rel = f.path.replaceAll(r'\', '/').replaceFirst(RegExp(r'^\./'), '');
         if (rule.allow.contains(rel)) continue;
         final lines = codeLines(f.readAsStringSync());
         for (var i = 0; i < lines.length; i++) {

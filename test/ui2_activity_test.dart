@@ -15,7 +15,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:openstrap_edge/data/local_repository.dart';
@@ -35,6 +34,8 @@ import 'package:openstrap_edge/ui2/screens/workout_screen.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_type.dart';
+import 'support/preview.dart';
 
 // ── deterministic fixtures ─────────────────────────────────────────────────
 
@@ -117,21 +118,7 @@ Widget _frame(Widget child, Brightness b, double scale) => MediaQuery(
       ),
     );
 
-Future<void> _loadType() async {
-  final files = Directory('assets/fonts/Manrope')
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
-      loader.addFont(f
-          .readAsBytes()
-          .then((b) => ByteData.sublistView(Uint8List.fromList(b))));
-    }
-    await loader.load();
-  }
-}
+Future<void> _loadType() => loadAppType();
 
 /// Enough repo for [DayStrainData.load]: the persisted strain curve and the
 /// day's wear, which is all that screen reads.
@@ -1854,6 +1841,14 @@ void main() {
       'setup_run': ActivitySetup(activityByName('running')!, weightKg: 72.4),
     };
 
+    if (kPreview) {
+      cases.forEach((name, widget) {
+        if (!previewWants(name)) return;
+        testWidgets('preview $name', (tester) =>
+            shoot(tester, _frame(widget, Brightness.dark, kPreviewScale), 'act_$name'));
+      });
+    }
+
     for (final scale in const [1.0, 2.0]) {
       final tag = scale == 1.0 ? '1x' : '2x';
       for (final brightness in Brightness.values) {
@@ -1873,5 +1868,5 @@ void main() {
         });
       }
     }
-  }, skip: _noGoldens);
+  }, skip: kPreview ? false : _noGoldens);
 }

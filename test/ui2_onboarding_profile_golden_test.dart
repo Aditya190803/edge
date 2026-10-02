@@ -15,7 +15,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +32,8 @@ import 'package:openstrap_edge/ui2/profile/devices.dart';
 import 'package:openstrap_edge/ui2/profile/profile.dart';
 import 'package:openstrap_edge/ui2/profile/settings.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_type.dart';
+import 'support/preview.dart';
 
 /// Fixed, so a golden is never a function of the calendar or of a real band.
 final _synced = DateTime(2026, 8, 22, 7, 12);
@@ -170,21 +171,7 @@ Widget _frame(Widget child, Brightness b, double scale) => MediaQuery(
 
 /// The bundled type, so the goldens show words instead of the harness's block
 /// glyphs. An unreadable golden is an unreviewed golden.
-Future<void> _loadType() async {
-  final files = Directory('assets/fonts/Manrope')
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
-      loader.addFont(f
-          .readAsBytes()
-          .then((b) => ByteData.sublistView(Uint8List.fromList(b))));
-    }
-    await loader.load();
-  }
-}
+Future<void> _loadType() => loadAppType();
 
 /// The golden PNGs are NOT in the repo. They are machine-specific — two Flutter
 /// SDKs disagree on antialiasing — and 27 MB of them was purged from history,
@@ -204,6 +191,14 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
     await _loadType();
   });
+
+  group('preview', () {
+    cases.forEach((name, widget) {
+      if (!previewWants(name)) return;
+      testWidgets(name, (tester) =>
+          shoot(tester, _frame(widget, Brightness.dark, kPreviewScale), 'op_$name'));
+    });
+  }, skip: !kPreview);
 
   for (final scale in const [1.0, 2.0]) {
     final tag = scale == 1.0 ? '1x' : '2x';

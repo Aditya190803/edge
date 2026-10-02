@@ -12,12 +12,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openstrap_edge/data/lab_catalogue.dart';
 import 'package:openstrap_edge/models/metric.dart';
 import 'package:openstrap_edge/ui2/screens/screens.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_type.dart';
+import 'support/preview.dart';
 
 /// Deterministic — a golden that depends on a random number is a golden that
 /// records noise.
@@ -766,22 +767,7 @@ Widget _frame(Widget child, Brightness b, double scale) => MediaQuery(
   ),
 );
 
-Future<void> _loadType() async {
-  final files = Directory(
-    'assets/fonts/Manrope',
-  ).listSync().whereType<File>().where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text', 'Menlo']) {
-    final loader = FontLoader(family);
-    for (final f in files) {
-      loader.addFont(
-        f.readAsBytes().then(
-          (b) => ByteData.sublistView(Uint8List.fromList(b)),
-        ),
-      );
-    }
-    await loader.load();
-  }
-}
+Future<void> _loadType() => loadAppType();
 
 /// The golden PNGs are NOT in the repo. They are machine-specific — two Flutter
 /// SDKs disagree on antialiasing — and 27 MB of them was purged from history,
@@ -801,6 +787,21 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
     await _loadType();
   });
+
+  group('preview', () {
+    cases.forEach((name, widget) {
+      if (!previewWants(name)) return;
+      testWidgets(name, (tester) async {
+        tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(_frame(widget, Brightness.dark, 1));
+        await tester.pumpAndSettle();
+        await growToContent(tester);
+        await savePreview(tester, _shot, name);
+      });
+    });
+  }, skip: !kPreview);
 
   for (final scale in const [1.0, 2.0]) {
     final tag = scale == 1.0 ? '1x' : '2x';

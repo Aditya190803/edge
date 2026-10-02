@@ -93,6 +93,30 @@ EcgReading _reading({
 );
 
 void main() {
+  testWidgets('saved ECG row keeps its result and heart rate at 3.1x', (
+    t,
+  ) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        home: MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(3.1)),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: EcgReadingRow(reading: _reading()),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(t.takeException(), isNull);
+    expect(find.text('77'), findsOneWidget);
+    expect(find.text('bpm'), findsOneWidget);
+  });
+
   group('capture body per phase', () {
     testWidgets('waiting: instructions, illustration, status, preview label', (
       t,
@@ -439,49 +463,46 @@ void main() {
     // A tap handler must not `watch` a provider: provider asserts outside
     // build and the predicate's own catch swallows it, so the gate reads
     // "not configured" no matter what the user has set up.
-    testWidgets(
-      'goes to the coach, not back to setup',
-      (t) async {
-        SharedPreferences.setMockInitialValues({});
-        final cfg = CoachConfig();
-        await cfg.save(
-          baseUrl: 'http://localhost:11434/v1',
-          apiKey: null,
-          model: 'm',
-        );
-        expect(cfg.configured, isTrue, reason: 'precondition');
+    testWidgets('goes to the coach, not back to setup', (t) async {
+      SharedPreferences.setMockInitialValues({});
+      final cfg = CoachConfig();
+      await cfg.save(
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: null,
+        model: 'm',
+      );
+      expect(cfg.configured, isTrue, reason: 'precondition');
 
-        final pushed = <String?>[];
-        t.view.physicalSize = const Size(1170, 2532);
-        t.view.devicePixelRatio = 3;
-        addTearDown(t.view.reset);
-        await t.pumpWidget(
-          ChangeNotifierProvider<CoachConfig>.value(
-            value: cfg,
-            child: MaterialApp(
-              theme: buildTheme(Brightness.light),
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              navigatorObservers: [_RouteLog(pushed)],
-              home: EcgDetailScreen(
-                data: EcgDetailData(
-                  reading: _reading(packets: 0),
-                  packets: const [],
-                ),
+      final pushed = <String?>[];
+      t.view.physicalSize = const Size(1170, 2532);
+      t.view.devicePixelRatio = 3;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(
+        ChangeNotifierProvider<CoachConfig>.value(
+          value: cfg,
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            navigatorObservers: [_RouteLog(pushed)],
+            home: EcgDetailScreen(
+              data: EcgDetailData(
+                reading: _reading(packets: 0),
+                packets: const [],
               ),
             ),
           ),
-        );
-        await t.pump();
+        ),
+      );
+      await t.pump();
 
-        await t.tap(find.byType(ActionCard));
-        expect(
-          pushed,
-          isNot(contains('CoachSetup')),
-          reason: 'the coach is configured — setup must not be pushed',
-        );
-      },
-    );
+      await t.tap(find.byType(ActionCard));
+      expect(
+        pushed,
+        isNot(contains('CoachSetup')),
+        reason: 'the coach is configured — setup must not be pushed',
+      );
+    });
   });
 
   group('analyze-now prompt', () {
