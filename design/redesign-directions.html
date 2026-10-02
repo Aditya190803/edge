@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStrap Edge — three dark directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..800;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@300;400;500&family=Big+Shoulders+Display:wght@500;700;800;900&family=Instrument+Sans:wght@400;500;600;700&family=Doto:wght@500;700;900&family=Anybody:wdth,wght@50..150,300..900&family=Albert+Sans:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ───────────────────────── page chrome (not a direction) ───────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:#08080A;color:#D8D6D0;font-family:"Instrument Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:0 0 120px}
+a{color:inherit}
+.wrap{max-width:1560px;margin:0 auto;padding:0 48px}
+.intro{padding:72px 0 40px;border-bottom:1px solid #1C1C20}
+.intro h1{font-family:"Instrument Sans";font-weight:600;font-size:15px;letter-spacing:.02em;color:#8A8880;text-transform:uppercase}
+.intro p.lede{font-size:40px;line-height:1.12;font-weight:500;color:#EDEBE5;max-width:1000px;margin-top:18px;letter-spacing:-.01em}
+.intro .rules{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:44px}
+.intro .rules div{border-top:1px solid #2A2A2F;padding-top:14px;font-size:14px;line-height:1.5;color:#9C9A93}
+.intro .rules b{display:block;color:#E4E2DC;font-weight:600;margin-bottom:4px}
+.jump{display:flex;gap:10px;margin-top:36px;flex-wrap:wrap}
+.jump a{text-decoration:none;font-size:13px;padding:9px 16px;border:1px solid #2A2A2F;border-radius:99px;color:#CFCDC6}
+.jump a:hover{border-color:#5A5A60}
+
+section.dir{padding:96px 0 40px;border-bottom:1px solid #1C1C20}
+.dir-head{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:end}
+.dir-head .tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#77756E}
+.dir-head h2{font-size:84px;line-height:.95;margin-top:10px;font-weight:400}
+.dir-head .thesis{font-size:17px;line-height:1.55;color:#AEACA5}
+.dir-head .thesis b{color:#EAE8E2;font-weight:600}
+.tokens{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;margin-top:44px}
+.swatches{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.sw{border-radius:10px;height:112px;padding:10px;display:flex;flex-direction:column;justify-content:flex-end;font-size:11px;line-height:1.35;border:1px solid rgba(255,255,255,.06)}
+.sw b{font-weight:600;font-size:12px}
+.type{border:1px solid #1E1E22;border-radius:12px;padding:18px 20px;display:grid;gap:10px;align-content:start}
+.type .row{display:grid;grid-template-columns:92px 1fr;align-items:baseline;gap:12px}
+.type .row span:first-child{font-size:11px;color:#77756E;letter-spacing:.08em;text-transform:uppercase}
+.phones{display:grid;grid-template-columns:repeat(4,340px);justify-content:space-between;gap:28px;margin-top:48px;align-items:start}
+.phone-col{flex:0 0 auto}
+.phone-col .cap{font-size:12px;color:#8A8880;margin:0 0 12px 4px;letter-spacing:.04em}
+.phone-col .cap b{color:#E4E2DC;font-weight:600}
+.phone{width:340px;min-height:740px;border-radius:44px;position:relative;overflow:hidden;box-shadow:0 0 0 1px #222226,0 0 0 9px #111114,0 0 0 10px #26262B,0 30px 80px rgba(0,0,0,.6)}
+.screen{position:relative;min-height:740px;display:flex;flex-direction:column}
+.screen::-webkit-scrollbar{display:none}
+.screen>.tabbar{flex:none}.screen>*:nth-last-child(2){margin-bottom:24px}
+.status{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600;position:relative;z-index:2}
+.status i{display:inline-block;width:22px;height:11px;border-radius:3px;border:1.5px solid currentColor;opacity:.8;position:relative}
+.status i:after{content:"";position:absolute;inset:1.5px;right:7px;background:currentColor;border-radius:1px}
+.variants{margin-top:56px}
+.variants h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#77756E;font-weight:500;margin-bottom:18px}
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.vcell{border-radius:18px;padding:20px;min-height:200px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.vcell .vl{font-family:"Instrument Sans";font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
+.note{margin-top:28px;font-size:14px;color:#8A8880;line-height:1.6;max-width:980px}
+.note b{color:#DAD8D1}
+.compare{padding:96px 0 0}
+.compare h2{font-size:44px;font-weight:500;letter-spacing:-.01em;color:#EDEBE5}
+.compare table{width:100%;border-collapse:collapse;margin-top:28px;font-size:14px}
+.compare th,.compare td{border-top:1px solid #222226;padding:16px 12px;text-align:left;vertical-align:top;color:#A8A69F;line-height:1.5}
+.compare th{color:#E4E2DC;font-weight:600;width:180px}
+.compare thead th{color:#77756E;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.sample{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;border:1px solid #2A2A2F;color:#8A8880;margin-left:12px;vertical-align:middle}
+
+/* ═════════════════════════ A · HOROLOGE ═════════════════════════ */
+.A{--edge:#060908;--dial:#15201C;--card:#101714;--card2:#0C1210;--ink:#EDE4CF;--ink2:#ABA591;--ink3:#737463;--gold:#C9A96A;--gold2:#8E7646;--line:#233029;--lume:#BFE8A3;--chrono:#E8573F;--steel:#8DAEF5;--steelD:#3F67C9;--rose:#E3A58E;
+  color:var(--ink);font-family:"Hanken Grotesk",sans-serif;
+  background:radial-gradient(120% 70% at 50% 18%,#18241F 0%,#0D1411 52%,var(--edge) 100%)}
+.A .eng{font-family:"Martian Mono",monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3)}
+.A .bod{font-family:"Bodoni Moda",serif;font-optical-sizing:auto;font-feature-settings:"lnum"}
+.A .pad{padding:0 22px}
+.A .hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 22px 0}
+.A .hdr .date{font-family:"Bodoni Moda";font-style:italic;font-size:22px;color:var(--ink);margin-top:4px}
+.A .crown{width:38px;height:38px;border-radius:50%;border:1px solid var(--gold2);display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#23302A,#0E1512)}
+.A .crown svg{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:1.5}
+.A .dialwrap{position:relative;width:300px;height:300px;margin:14px auto 0}
+.A .dialface{position:absolute;inset:0;border-radius:50%;
+  background:
+   repeating-conic-gradient(from 0deg,rgba(255,255,255,.028) 0deg .9deg,rgba(0,0,0,.05) .9deg 1.8deg),
+   radial-gradient(circle at 50% 42%,#223029 0%,#131C18 55%,#070B09 100%);
+  box-shadow:inset 0 0 0 1px rgba(201,169,106,.35),inset 0 0 0 7px #0A0F0D,inset 0 0 0 8px rgba(201,169,106,.18),0 18px 40px rgba(0,0,0,.55)}
+.A .dialwrap svg{position:absolute;inset:0}
+.A .dial-num{position:absolute;left:0;right:0;top:170px;text-align:center}
+.A .dial-num .n{font-family:"Bodoni Moda";font-weight:500;font-size:64px;line-height:1;letter-spacing:-.02em}
+.A .dial-num .w{font-family:"Martian Mono";font-size:9px;letter-spacing:.24em;color:var(--lume);margin-top:6px}
+.A .comps{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 22px 0}
+.A .comp{background:linear-gradient(180deg,#121A17,#0C1210);border:1px solid var(--line);border-radius:22px;padding:14px 14px 12px;display:flex;flex-direction:column;align-items:center}
+.A .comp svg{width:118px;height:118px}
+.A .comp .lbl{display:flex;justify-content:space-between;width:100%;margin-top:6px}
+.A .ledger{margin:26px 22px 0}
+.A .ledger .row{display:grid;grid-template-columns:1fr auto auto;align-items:baseline;gap:10px;padding:13px 0;border-top:1px solid var(--line)}
+.A .ledger .row:last-child{border-bottom:1px solid var(--line)}
+.A .ledger .v{font-family:"Bodoni Moda";font-size:26px;font-weight:500}
+.A .ledger .u{font-size:12px;color:var(--ink2);min-width:44px}
+.A .ledger .k{font-size:14px;color:var(--ink)}
+.A .ledger .k small{display:block;font-size:11.5px;color:var(--ink3);margin-top:2px}
+.A .sec{display:flex;align-items:center;gap:10px;margin:30px 22px 12px}
+.A .sec:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold2),transparent)}
+.A .plan{margin:0 22px;border:1px solid var(--line);border-radius:18px;padding:16px;background:var(--card2)}
+.A .plan p{font-size:14px;line-height:1.5;color:var(--ink2)}
+.A .plan p b{color:var(--ink);font-weight:600}
+.A .tabbar{position:sticky;bottom:0;margin-top:auto;padding-top:26px!important;padding:10px 12px 22px;background:linear-gradient(180deg,rgba(6,9,8,0),rgba(6,9,8,.94) 30%);z-index:5}
+.A .tabs{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);border-radius:99px;background:#0A100E;padding:6px 4px;position:relative}
+.A .tab{text-align:center;padding:9px 0 6px;position:relative}
+.A .tab svg{width:18px;height:18px;stroke:var(--ink3);fill:none;stroke-width:1.5;display:block;margin:0 auto 4px}
+.A .tab span{font-family:"Martian Mono";font-size:7.5px;letter-spacing:.16em;color:var(--ink3)}
+.A .tab.on svg{stroke:var(--ink)}.A .tab.on span{color:var(--ink)}
+.A .tab.on:before{content:"";position:absolute;top:-7px;left:50%;margin-left:-5px;border:5px solid transparent;border-top:6px solid var(--gold)}
+/* sleep */
+.A .big-dur{font-family:"Bodoni Moda";font-size:88px;line-height:.9;font-weight:500;letter-spacing:-.03em}
+.A .big-dur em{font-style:italic;font-weight:400;font-size:44px;color:var(--ink2);margin:0 4px 0 2px}
+.A .stagebar{display:grid;grid-template-columns:70px 1fr 64px;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.A .stagebar .t{height:6px;border-radius:3px;background:#1A2420;position:relative;overflow:hidden}
+.A .stagebar .t i{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.A .stagebar .d{font-family:"Bodoni Moda";font-size:18px;text-align:right}
+/* live */
+.A.live{background:radial-gradient(120% 70% at 50% 30%,#1B1512 0%,#0E0B0A 55%,#050404 100%)}
+.A .pushers{display:flex;justify-content:center;gap:26px;margin-top:26px}
+.A .pusher{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;
+  background:radial-gradient(circle at 35% 30%,#2A2622,#12100E);box-shadow:inset 0 0 0 1px rgba(201,169,106,.45),0 8px 20px rgba(0,0,0,.6)}
+.A .pusher.stop{background:radial-gradient(circle at 35% 30%,#4A1E17,#1E0B08);box-shadow:inset 0 0 0 1px rgba(232,87,63,.7),0 8px 20px rgba(0,0,0,.6);color:#FFD9D0}
+.A .zones{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 22px}
+.A .zones div{height:34px;border-radius:6px;background:#1A1512;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-family:"Martian Mono";font-size:8px;color:var(--ink3)}
+.A .zones div.on{background:linear-gradient(180deg,rgba(232,87,63,.35),rgba(232,87,63,.12));color:#FFD3C8;box-shadow:inset 0 0 0 1px rgba(232,87,63,.6)}
+/* health */
+.A .tile2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 22px}
+.A .tl{border:1px solid var(--line);border-radius:18px;padding:14px;background:var(--card2)}
+.A .tl .v{font-family:"Bodoni Moda";font-size:34px;font-weight:500;line-height:1.05;margin-top:8px}
+.A .tl .v small{font-family:"Hanken Grotesk";font-size:12px;color:var(--ink2);font-weight:500;margin-left:3px}
+.A .tl .s{font-size:12px;color:var(--ink2);margin-top:4px}
+.A .seg{display:flex;gap:18px;margin:10px 22px 0;border-bottom:1px solid var(--line)}
+.A .seg span{padding:10px 0;font-size:13px;color:var(--ink3);position:relative}
+.A .seg span.on{color:var(--ink)}
+.A .seg span.on:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--gold)}
+
+/* ═════════════════════════ B · DARKROOM ═════════════════════════ */
+.B{--bg:#0D0B0A;--card:#161210;--card2:#1D1815;--paper:#F1E8DA;--ink:#F1E8DA;--ink2:#B6AB9C;--ink3:#7E7366;--line:#2A2320;--safe:#FF5A36;--edge:#F2A03D;--go:#9ED48A;--cyan:#6FB0F0;--rose:#F08BA4;
+  color:var(--ink);background:var(--bg);font-family:"Instrument Sans",sans-serif}
+.B .dot{font-family:"Doto",monospace;font-weight:700;letter-spacing:.06em;color:var(--edge)}
+.B .shoulder{font-family:"Big Shoulders Display",sans-serif;font-weight:800;letter-spacing:-.005em}
+.B .strip{margin:6px 0 0;background:#060504;padding:9px 0;position:relative;overflow:hidden}
+.B .strip:before,.B .strip:after{content:"";position:absolute;left:-6px;right:0;height:6px;background:repeating-linear-gradient(90deg,transparent 0 8px,#2B2420 8px 16px,transparent 16px 22px)}
+.B .strip:before{top:2px}.B .strip:after{bottom:2px}
+.B .frames{display:flex;gap:6px;padding:4px 14px;margin-left:-40px}
+.B .fr{flex:0 0 58px;height:52px;border-radius:3px;background:#1B1613;display:flex;flex-direction:column;justify-content:space-between;padding:5px 6px;position:relative}
+.B .fr .d{font-family:"Big Shoulders Display";font-weight:700;font-size:20px;line-height:1;color:var(--ink2)}
+.B .fr .w{font-family:"Doto";font-weight:700;font-size:8px;color:var(--ink3);letter-spacing:.08em}
+.B .fr .glow{position:absolute;left:6px;right:6px;bottom:4px;height:3px;border-radius:2px}
+.B .fr.on{background:#2B1611;box-shadow:inset 0 0 0 1.5px var(--safe)}
+.B .fr.on .d{color:var(--paper)}.B .fr.on .w{color:var(--edge)}
+.B .edgeprint{display:flex;justify-content:space-between;padding:6px 18px 0;font-size:9px}
+.B .print{margin:18px 16px 0;background:var(--paper);padding:10px 10px 30px;border-radius:3px;box-shadow:0 20px 50px rgba(0,0,0,.6);position:relative;transform:rotate(-.6deg)}
+.B .print .img{height:250px;border-radius:1px;position:relative;overflow:hidden;
+  background:radial-gradient(90% 70% at 70% 20%,rgba(158,212,138,.28),transparent 60%),radial-gradient(120% 80% at 20% 100%,#030302,#15130F 70%);}
+.B .print .img .n{position:absolute;left:16px;bottom:6px;font-family:"Big Shoulders Display";font-weight:900;font-size:168px;line-height:.8;color:var(--paper);letter-spacing:-.02em}
+.B .print .img .lab{position:absolute;right:14px;top:14px;text-align:right}
+.B .print .img .lab b{display:block;font-family:"Big Shoulders Display";font-weight:800;font-size:26px;letter-spacing:.02em;color:var(--go);text-transform:uppercase;line-height:1}
+.B .print .img .lab span{font-size:11px;color:#CFC5B6}
+.B .print .cap{position:absolute;left:12px;right:12px;bottom:8px;display:flex;justify-content:space-between;font-family:"Instrument Sans";font-size:10.5px;color:#5E554B;font-style:italic}
+.B .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 16px 0}
+.B .mini{background:var(--card);border-radius:4px;padding:12px;position:relative;border:1px solid var(--line)}
+.B .mini .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.B .mini .v{font-family:"Big Shoulders Display";font-weight:800;font-size:52px;line-height:.95;margin-top:10px}
+.B .mini .v small{font-size:20px;color:var(--ink3);font-weight:700;margin-left:2px}
+.B .mini .bar{height:4px;background:#2A2320;border-radius:2px;margin-top:10px;position:relative}
+.B .mini .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+.B .mini .bar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--paper)}
+.B .contact{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:22px 16px 0;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.B .contact>div{background:var(--bg);padding:12px 12px 10px}
+.B .contact .fn{display:flex;justify-content:space-between;font-size:8px}
+.B .contact .v{font-family:"Big Shoulders Display";font-weight:700;font-size:32px;line-height:1;margin-top:10px}
+.B .contact .v small{font-family:"Instrument Sans";font-size:11px;font-weight:500;color:var(--ink3);margin-left:3px}
+.B .contact .k{font-size:12px;color:var(--ink2);margin-top:3px}
+.B .h{font-family:"Big Shoulders Display";font-weight:800;font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:28px 16px 10px;display:flex;justify-content:space-between;align-items:baseline}
+.B .h .dot{font-size:9px}
+.B .tabbar{position:sticky;bottom:0;margin-top:auto;background:#080706;border-top:1px solid var(--line);padding:8px 6px 22px;z-index:5}
+.B .tabs{display:grid;grid-template-columns:repeat(5,1fr)}
+.B .tab{text-align:center;padding:6px 0;font-size:10.5px;color:var(--ink3);font-weight:500}
+.B .tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;display:block;margin:0 auto 4px}
+.B .tab.on{color:var(--paper)}
+.B .tab.on svg{stroke:var(--safe);filter:drop-shadow(0 0 6px rgba(255,90,54,.7))}
+.B .photogram{margin:14px 16px 0;height:210px;border-radius:3px;position:relative;overflow:hidden;background:linear-gradient(180deg,#123B78,#0B2550 60%,#07183A)}
+.B .photogram:after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 30% 0%,rgba(255,255,255,.08),transparent 60%);mix-blend-mode:screen}
+.B.live{background:radial-gradient(90% 60% at 50% 35%,#3A0D07 0%,#1A0604 55%,#0A0302 100%)}
+.B .btn{display:flex;align-items:center;justify-content:center;height:56px;border-radius:4px;font-family:"Big Shoulders Display";font-weight:800;font-size:18px;letter-spacing:.16em;text-transform:uppercase}
+.B .heat{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin:0 16px}
+.B .heat div{aspect-ratio:1/1.25;border-radius:2px;position:relative}
+.B .heat div span{position:absolute;left:3px;top:2px;font-family:"Doto";font-weight:700;font-size:7px;color:rgba(241,232,218,.55)}
+
+/* ═════════════════════════ C · STRATA ═════════════════════════ */
+.C{--bg:#0E1011;--card:#15181A;--card2:#1A1E20;--ink:#E7E3D8;--ink2:#A6A399;--ink3:#6F6D66;--line:#252A2C;--verd:#5CC9A7;--oxide:#E0662E;--lapis:#6C89EE;--sulfur:#E8CB4F;--rhodo:#EA7F93;
+  color:var(--ink);background:var(--bg);font-family:"Albert Sans",sans-serif}
+.C .wide{font-family:"Anybody",sans-serif;font-stretch:150%;font-weight:800;letter-spacing:-.01em}
+.C .mono{font-family:"Azeret Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--ink3)}
+.C .hdr{display:flex;justify-content:space-between;align-items:center;padding:4px 20px 0}
+.C .hdr .t{font-family:"Anybody";font-stretch:125%;font-weight:700;font-size:22px}
+.C .ico{width:38px;height:38px;border-radius:12px;background:var(--card);display:grid;place-items:center;border:1px solid var(--line)}
+.C .ico svg{width:17px;height:17px;stroke:var(--ink2);fill:none;stroke-width:1.6}
+.C .topo{position:relative;height:330px;margin-top:4px}
+.C .topo svg{position:absolute;inset:0;width:100%;height:100%}
+.C .topo .n{position:absolute;left:20px;bottom:18px}
+.C .topo .n .v{font-family:"Anybody";font-stretch:150%;font-weight:800;font-size:96px;line-height:.85}
+.C .topo .n .w{font-family:"Anybody";font-stretch:120%;font-weight:600;font-size:15px;color:var(--verd);margin-top:8px}
+.C .topo .elev{position:absolute;right:20px;top:18px;text-align:right}
+.C .layers{margin:10px 20px 0;display:grid;gap:10px}
+.C .layer{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--line)}
+.C .layer .top{display:flex;justify-content:space-between;align-items:baseline}
+.C .layer .k{font-size:13px;color:var(--ink2)}
+.C .layer .v{font-family:"Anybody";font-stretch:140%;font-weight:750;font-size:30px;line-height:1}
+.C .layer .v small{font-family:"Albert Sans";font-size:12px;color:var(--ink3);font-weight:500;margin-left:4px}
+.C .band{height:14px;border-radius:4px;margin-top:12px;position:relative;overflow:hidden;background:var(--card2)}
+.C .band i{position:absolute;top:0;bottom:0;left:0}
+.C .band u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:1px}
+.C .grid4{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px}
+.C .g{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 10px}
+.C .g .v{font-family:"Anybody";font-stretch:130%;font-weight:700;font-size:26px;margin-top:6px}
+.C .g .v small{font-family:"Albert Sans";font-size:11px;color:var(--ink3);font-weight:500;margin-left:3px}
+.C .g svg{width:100%;height:26px;margin-top:6px;display:block}
+.C .h{display:flex;justify-content:space-between;align-items:baseline;margin:26px 20px 10px}
+.C .h b{font-family:"Anybody";font-stretch:120%;font-weight:700;font-size:15px}
+.C .tabbar{position:sticky;bottom:0;margin-top:auto;padding-top:24px!important;padding:0 14px 20px;z-index:5;background:linear-gradient(180deg,rgba(14,16,17,0),var(--bg) 35%)}
+.C .tabs{display:grid;grid-template-columns:repeat(5,1fr);background:#171A1C;border:1px solid var(--line);border-radius:20px;padding:6px}
+.C .tab{text-align:center;padding:8px 0 6px;border-radius:14px;font-size:10px;color:var(--ink3);font-weight:600}
+.C .tab svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6;display:block;margin:0 auto 3px}
+.C .tab.on{background:#23292A;color:var(--ink)}
+.C .tab.on svg{stroke:var(--verd)}
+.C.live{background:linear-gradient(180deg,#1A120D,#0E1011 60%)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>OpenStrap Edge · dark redesign · three directions <span class="sample">sample data</span></h1>
+    <p class="lede">Most dark health apps are near-black with one neon accent. Each direction here starts from something near a wrist sensor instead: a watch dial, a darkroom print, a terrain map.</p>
+    <div class="rules">
+      <div><b>Colour means the metric</b>Recovery, strain, sleep and heart each keep one colour in every direction, so you can tell which is which before reading the label.</div>
+      <div><b>Missing shows as missing</b>A day with no data shows "—" and says why. No ring, needle or bar ever shows a value that wasn't measured. See the "not scored" variant in each set.</div>
+      <div><b>Big type is for measured numbers</b>Only real readings get the large display face. Labels, captions and units stay small and quiet.</div>
+      <div><b>Same five tabs</b>Home · Health · Nutrition · Workout · Wellness. The layout of the app doesn't change; its visual identity does.</div>
+    </div>
+    <nav class="jump"><a href="#A">A · Horologe</a><a href="#B">B · Darkroom</a><a href="#C">C · Strata</a><a href="#compare">Compare</a></nav>
+  </header>
+
+  <!-- ═══════════════════════ A ═══════════════════════ -->
+  <section class="dir" id="A">
+    <div class="dir-head">
+      <div>
+        <div class="tag">Direction A · recommended</div>
+        <h2 style="font-family:'Bodoni Moda';font-weight:500;color:#EDE4CF">Horologe<span style="font-style:italic;color:#C9A96A">.</span></h2>
+      </div>
+      <p class="thesis">You wear this on your wrist, so it borrows from <b>fine watchmaking</b>. A smoked-green dial, gold-edged markers, glow-in-the-dark green for recovery, a red second hand for strain and blue steel for sleep. Readiness is the main dial. Sleep and strain are the small dials beside it. A live workout is a <b>stopwatch</b>. Big numbers use a high-contrast serif like a watch face. Labels are small, spaced-out capitals, like text engraved on a watch.</p>
+    </div>
+    <div class="tokens">
+      <div class="swatches">
+        <div class="sw" style="background:radial-gradient(circle at 50% 30%,#1F2B26,#060908);color:#EDE4CF"><b>Smoked dial</b>#15201C → #060908</div>
+        <div class="sw" style="background:#EDE4CF;color:#1A1A12"><b>Ivory</b>#EDE4CF · ink</div>
+        <div class="sw" style="background:#C9A96A;color:#1A140A"><b>Gold</b>#C9A96A · markers</div>
+        <div class="sw" style="background:#BFE8A3;color:#15200F"><b>Glow green</b>#BFE8A3 · recovery</div>
+        <div class="sw" style="background:#E8573F;color:#fff"><b>Stopwatch red</b>#E8573F · strain</div>
+        <div class="sw" style="background:#3F67C9;color:#fff"><b>Blue steel</b>#8DAEF5 · sleep</div>
+        <div class="sw" style="background:#E3A58E;color:#2A140C"><b>Rose gold</b>#E3A58E · heart</div>
+      </div>
+      <div class="type" style="background:#0B100E">
+        <div class="row"><span>Numerals</span><span style="font-family:'Bodoni Moda';font-size:40px;font-weight:500;color:#EDE4CF;line-height:1">72 · 7h12 · 11.4</span></div>
+        <div class="row"><span>Body</span><span style="font-family:'Hanken Grotesk';font-size:16px;color:#ABA591">Hanken Grotesk: plain and readable, so the serif numbers stand out.</span></div>
+        <div class="row"><span>Engraving</span><span style="font-family:'Martian Mono';font-size:10px;letter-spacing:.22em;color:#C9A96A">READINESS · STEADY · SYNCED 06:42</span></div>
+      </div>
+    </div>
+
+    <div class="phones">
+      <!-- A1 Today -->
+      <div class="phone-col"><div class="cap"><b>Home</b> · the dial</div>
+      <div class="phone A"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="hdr"><div><div class="eng">Synced 06:42 · Band 64%</div><div class="date">Sunday, 27 September</div></div>
+          <div class="crown"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div></div>
+        <div class="dialwrap"><div class="dialface"></div><svg id="a-dial" viewBox="0 0 300 300"></svg>
+          <div class="dial-num"><div class="n">72</div><div class="w">READINESS · STEADY</div></div></div>
+        <div class="comps">
+          <div class="comp"><svg id="a-sleep" viewBox="0 0 120 120"></svg><div class="lbl"><span class="eng">Sleep</span><span class="eng" style="color:var(--steel)">92%</span></div></div>
+          <div class="comp"><svg id="a-strain" viewBox="0 0 120 120"></svg><div class="lbl"><span class="eng">Strain</span><span class="eng" style="color:var(--chrono)">of 21</span></div></div>
+        </div>
+        <div class="sec"><span class="eng" style="color:var(--gold)">Last night</span></div>
+        <div class="ledger">
+          <div class="row"><div class="k">Heart rate variability<small>Asleep · your usual 58</small></div><div class="v">64</div><div class="u">ms ↑</div></div>
+          <div class="row"><div class="k">Resting heart rate<small>Overnight · your usual 53</small></div><div class="v" style="color:var(--rose)">51</div><div class="u">bpm ↓</div></div>
+          <div class="row"><div class="k">Respiratory rate<small>Asleep</small></div><div class="v">14.2</div><div class="u">/min</div></div>
+        </div>
+        <div class="sec"><span class="eng" style="color:var(--gold)">Today's plan</span></div>
+        <div class="plan"><p><b>Aim for 11–13 strain.</b> Your recovery supports a normal training day. You're at 11.4 now.</p></div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>HOME</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>HEALTH</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg><span>FOOD</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M10 3h4M12 3v3"/></svg><span>MOVE</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg><span>MIND</span></div>
+        </div></div>
+      </div></div></div>
+
+      <!-- A2 Sleep -->
+      <div class="phone-col"><div class="cap"><b>Sleep</b> · the night in blue steel</div>
+      <div class="phone A"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="pad" style="margin-top:8px"><div class="eng">‹ Home · Sat → Sun</div>
+          <div class="big-dur" style="margin-top:18px">7<em>h</em>12</div>
+          <div style="font-size:14px;color:var(--ink2);margin-top:10px">Asleep, of <b style="color:var(--steel);font-weight:600">7h 50m</b> your body needed · 23:18 – 06:34</div></div>
+        <div style="margin:22px 22px 0;border:1px solid var(--line);border-radius:20px;padding:14px 12px 10px;background:var(--card2)">
+          <svg id="a-hyp" viewBox="0 0 300 150" style="width:100%;display:block"></svg></div>
+        <div class="sec"><span class="eng" style="color:var(--gold)">Stages</span></div>
+        <div class="pad">
+          <div class="stagebar"><span>Awake</span><div class="t"><i style="width:9%;background:#6E6A5A"></i></div><span class="d">0:38</span></div>
+          <div class="stagebar"><span>REM</span><div class="t"><i style="width:28%;background:#8DAEF5"></i></div><span class="d">2:03</span></div>
+          <div class="stagebar"><span>Light</span><div class="t"><i style="width:51%;background:#5D82DA"></i></div><span class="d">3:41</span></div>
+          <div class="stagebar" style="border-bottom:1px solid var(--line)"><span>Deep</span><div class="t"><i style="width:20%;background:#2F4FA8"></i></div><span class="d">1:28</span></div>
+        </div>
+        <div class="sec"><span class="eng" style="color:var(--gold)">Against your usual</span></div>
+        <div class="ledger" style="margin-top:0">
+          <div class="row"><div class="k">Deep sleep<small>Your usual 1h 15m</small></div><div class="v">+13</div><div class="u">min</div></div>
+          <div class="row"><div class="k">Time to fall asleep<small>Your usual 12 min</small></div><div class="v">9</div><div class="u">min</div></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>HOME</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>HEALTH</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg><span>FOOD</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M10 3h4M12 3v3"/></svg><span>MOVE</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg><span>MIND</span></div>
+        </div></div>
+      </div></div></div>
+
+      <!-- A3 Live -->
+      <div class="phone-col"><div class="cap"><b>Live workout</b> · a stopwatch</div>
+      <div class="phone A live"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="pad" style="display:flex;justify-content:space-between;margin-top:6px"><span class="eng" style="color:var(--chrono)">● Recording · Run</span><span class="eng">Strain +8.2</span></div>
+        <div class="dialwrap" style="margin-top:22px"><div class="dialface" style="background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.025) 0deg .9deg,rgba(0,0,0,.05) .9deg 1.8deg),radial-gradient(circle at 50% 42%,#2A211C 0%,#15110E 55%,#070504 100%)"></div>
+          <svg id="a-chrono" viewBox="0 0 300 300"></svg>
+          <div class="dial-num" style="top:176px"><div class="n" style="font-size:52px">32:14</div><div class="w" style="color:var(--ink3)">ELAPSED</div></div></div>
+        <div style="text-align:center;margin-top:22px"><span class="bod" style="font-size:72px;color:var(--chrono);font-weight:500;line-height:1">156</span><span style="font-size:14px;color:var(--ink2);margin-left:6px">bpm</span>
+          <div class="eng" style="margin-top:6px">Zone 4 · 5:12 in zone</div></div>
+        <div class="zones" style="margin-top:16px"><div>1</div><div>2</div><div>3</div><div class="on">4</div><div>5</div></div>
+        <div class="pushers"><div class="pusher" style="color:var(--ink)">LAP</div><div class="pusher stop">STOP</div><div class="pusher" style="color:var(--ink)">PAUSE</div></div>
+        <div style="height:40px"></div>
+      </div></div></div>
+
+      <!-- A4 Health -->
+      <div class="phone-col"><div class="cap"><b>Health</b> · trends</div>
+      <div class="phone A"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="pad" style="margin-top:6px"><div class="eng">30 days · to 27 Sep</div><div style="font-family:'Bodoni Moda';font-size:40px;font-weight:500;margin-top:6px">Health</div></div>
+        <div class="seg"><span class="on">Overview</span><span>Vitals</span><span>Trends</span><span>Labs</span></div>
+        <div style="margin:18px 22px 0;border:1px solid var(--line);border-radius:20px;padding:16px;background:var(--card2)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="eng">Resting heart rate</span><span class="eng" style="color:var(--rose)">−2 vs usual</span></div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:8px"><span class="bod" style="font-size:52px;font-weight:500;line-height:1">51</span><span style="color:var(--ink2);font-size:13px">bpm · overnight</span></div>
+          <svg id="a-rhr" viewBox="0 0 280 110" style="width:100%;margin-top:10px;display:block"></svg></div>
+        <div class="sec"><span class="eng" style="color:var(--gold)">Vitals</span></div>
+        <div class="tile2">
+          <div class="tl"><div class="eng">HRV</div><div class="v">64<small>ms</small></div><div class="s">Usual 52–66</div></div>
+          <div class="tl"><div class="eng">Resp rate</div><div class="v">14.2<small>/min</small></div><div class="s">Usual 13.6–15.0</div></div>
+          <div class="tl"><div class="eng">Skin temp</div><div class="v">+0.2<small>°C</small></div><div class="s">From your usual</div></div>
+          <div class="tl"><div class="eng">Blood oxygen</div><div class="v" style="color:var(--ink3)">—</div><div class="s">Not measured last night</div></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>HOME</span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>HEALTH</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg><span>FOOD</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M10 3h4M12 3v3"/></svg><span>MOVE</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg><span>MIND</span></div>
+        </div></div>
+      </div></div></div>
+    </div>
+
+    <div class="variants"><h3>Horologe · component variants</h3>
+      <div class="vgrid">
+        <div class="vcell A"><span class="vl">Not scored</span>
+          <div style="display:flex;gap:14px;align-items:center"><svg id="a-empty" viewBox="0 0 120 120" style="width:96px;height:96px;flex:none"></svg>
+          <div><div class="bod" style="font-size:38px;color:var(--ink3);line-height:1">—</div><div style="font-size:13px;color:var(--ink2);line-height:1.45;margin-top:6px">No readiness today. It needs 3 more nights to learn your usual.</div></div></div>
+          <div class="eng" style="color:var(--gold)">See what's missing →</div></div>
+        <div class="vcell A"><span class="vl">Buttons</span>
+          <div style="height:50px;border-radius:99px;background:linear-gradient(180deg,#D8BC82,#B8965A);color:#1A140A;display:grid;place-items:center;font-weight:600;font-size:15px">Start a workout</div>
+          <div style="height:50px;border-radius:99px;border:1px solid var(--gold2);display:grid;place-items:center;font-size:15px;color:var(--ink)">Log food</div>
+          <div class="eng" style="text-align:center;color:var(--gold)">Sync the band</div></div>
+        <div class="vcell A"><span class="vl">Tab bar · alternative</span>
+          <div style="margin-top:auto;border-top:1px solid var(--gold2);display:grid;grid-template-columns:repeat(5,1fr);padding-top:14px;position:relative">
+            <div style="position:absolute;top:-1px;left:0;width:20%;height:1px;background:var(--ink)"></div>
+            <span class="eng" style="color:var(--ink);text-align:center">I</span><span class="eng" style="text-align:center">II</span><span class="eng" style="text-align:center">III</span><span class="eng" style="text-align:center">IV</span><span class="eng" style="text-align:center">V</span></div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr)"><span class="eng" style="color:var(--ink);text-align:center;font-size:7.5px">HOME</span><span class="eng" style="text-align:center;font-size:7.5px">HEALTH</span><span class="eng" style="text-align:center;font-size:7.5px">FOOD</span><span class="eng" style="text-align:center;font-size:7.5px">MOVE</span><span class="eng" style="text-align:center;font-size:7.5px">MIND</span></div></div>
+        <div class="vcell A"><span class="vl">Band / power reserve</span>
+          <svg id="a-power" viewBox="0 0 200 110" style="width:100%"></svg>
+          <div style="display:flex;justify-content:space-between"><span class="eng">Band charge</span><span class="bod" style="font-size:22px">64%</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ B ═══════════════════════ -->
+  <section class="dir" id="B">
+    <div class="dir-head">
+      <div>
+        <div class="tag">Direction B</div>
+        <h2 style="font-family:'Big Shoulders Display';font-weight:900;color:#F1E8DA;text-transform:uppercase;letter-spacing:.01em">Darkroom</h2>
+      </div>
+      <p class="thesis">The band records you in the dark, and a darkroom is where film gets developed. Each day is a <b>frame</b> on a strip of film you scroll through. Today's readiness is the <b>print</b> on cream paper. A month of data is a <b>contact sheet</b>. A live workout fills the screen with red safelight. Numbers use a tall condensed industrial font. The small codes in the corners use a dot-matrix font, like the text printed along the edge of film.</p>
+    </div>
+    <div class="tokens">
+      <div class="swatches">
+        <div class="sw" style="background:#0D0B0A;color:#F1E8DA"><b>Warm black</b>#0D0B0A · ground</div>
+        <div class="sw" style="background:#F1E8DA;color:#1B1510"><b>Paper</b>#F1E8DA · ink</div>
+        <div class="sw" style="background:#FF5A36;color:#1B0703"><b>Safelight</b>#FF5A36 · strain</div>
+        <div class="sw" style="background:#F2A03D;color:#1E1203"><b>Edge print</b>#F2A03D · codes</div>
+        <div class="sw" style="background:#9ED48A;color:#10200A"><b>Developer</b>#9ED48A · recovery</div>
+        <div class="sw" style="background:#123B78;color:#DDE8FF"><b>Cyanotype</b>#6FB0F0 · sleep</div>
+        <div class="sw" style="background:#F08BA4;color:#2A0C14"><b>Rose</b>#F08BA4 · heart</div>
+      </div>
+      <div class="type" style="background:#120F0D">
+        <div class="row"><span>Numerals</span><span style="font-family:'Big Shoulders Display';font-weight:900;font-size:48px;color:#F1E8DA;line-height:1">72 · 7H12 · 11.4</span></div>
+        <div class="row"><span>Body</span><span style="font-size:16px;color:#B6AB9C">Instrument Sans: modern and neutral, next to condensed numbers.</span></div>
+        <div class="row"><span>Edge print</span><span style="font-family:'Doto';font-weight:700;font-size:14px;color:#F2A03D;letter-spacing:.08em">◀ 27A ▸ SUN 06:42</span></div>
+      </div>
+    </div>
+
+    <div class="phones">
+      <div class="phone-col"><div class="cap"><b>Home</b> · today's print</div>
+      <div class="phone B"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 16px 8px"><span class="shoulder" style="font-size:26px;text-transform:uppercase;letter-spacing:.02em">Sunday</span><span class="dot" style="font-size:10px">SYNC 06:42 · BAND 64</span></div>
+        <div class="strip"><div class="frames" id="b-frames"></div></div>
+        <div class="print"><div class="img"><div class="lab"><b>Steady</b><span>Readiness</span></div><div class="n">72</div></div>
+          <div class="cap"><span>27 Sep · printed 06:42</span><span>HRV 64 · RHR 51</span></div></div>
+        <div class="pair">
+          <div class="mini"><div class="k">Strain</div><div class="v" style="color:var(--safe)">11.4<small>/21</small></div><div class="bar"><i style="width:54%;background:var(--safe)"></i><u style="left:60%"></u></div><div style="font-size:11px;color:var(--ink3);margin-top:6px">Target 12.5</div></div>
+          <div class="mini"><div class="k">Sleep</div><div class="v" style="color:var(--cyan)">7:12</div><div class="bar"><i style="width:92%;background:var(--cyan)"></i></div><div style="font-size:11px;color:var(--ink3);margin-top:6px">of 7:50 needed</div></div>
+        </div>
+        <div class="h">Contact sheet <span class="dot">FR 01–04</span></div>
+        <div class="contact">
+          <div><div class="fn"><span class="dot">01</span><span class="dot">▸</span></div><div class="v" style="color:var(--rose)">51<small>bpm</small></div><div class="k">Resting heart rate</div></div>
+          <div><div class="fn"><span class="dot">02</span><span class="dot">▸</span></div><div class="v">64<small>ms</small></div><div class="k">HRV, asleep</div></div>
+          <div><div class="fn"><span class="dot">03</span><span class="dot">▸</span></div><div class="v">8,412</div><div class="k">Steps</div></div>
+          <div><div class="fn"><span class="dot">04</span><span class="dot">▸</span></div><div class="v">2,146<small>kcal</small></div><div class="k">Energy burned</div></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab on"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 9h16M4 15h16"/></svg>Home</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Health</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg>Nutrition</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 8v8M16 8v8M3 10v4M21 10v4"/></svg>Workout</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21c-5-3-8-6-8-10a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 4-3 7-8 10z"/></svg>Wellness</div>
+        </div></div>
+      </div></div></div>
+
+      <div class="phone-col"><div class="cap"><b>Sleep</b> · the night as a cyanotype</div>
+      <div class="phone B"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="padding:6px 16px 0"><span class="dot" style="font-size:10px">◀ 26A–27A · NIGHT EXPOSURE</span>
+          <div class="shoulder" style="font-size:110px;line-height:.85;margin-top:10px;color:var(--paper)">7H12</div>
+          <div style="font-size:14px;color:var(--ink2);margin-top:8px">Asleep, of 7h 50m needed · 23:18 – 06:34</div></div>
+        <div class="photogram"><svg id="b-hyp" viewBox="0 0 328 210" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"></svg></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 16px 0"><span class="dot" style="font-size:9px">23:18</span><span class="dot" style="font-size:9px">03:00</span><span class="dot" style="font-size:9px">06:34</span></div>
+        <div class="contact" style="grid-template-columns:repeat(4,1fr)">
+          <div><div class="v" style="font-size:24px">0:38</div><div class="k">Awake</div></div>
+          <div><div class="v" style="font-size:24px">2:03</div><div class="k">REM</div></div>
+          <div><div class="v" style="font-size:24px">3:41</div><div class="k">Light</div></div>
+          <div><div class="v" style="font-size:24px;color:var(--cyan)">1:28</div><div class="k">Deep</div></div>
+        </div>
+        <div class="h">Against your usual</div>
+        <div style="margin:0 16px;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px;font-size:14px;line-height:1.5;color:var(--ink2)"><b style="color:var(--paper)">Deep sleep ran 13 min longer</b> than your usual 1h 15m. You fell asleep in 9 minutes.</div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab on"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 9h16M4 15h16"/></svg>Home</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Health</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg>Nutrition</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 8v8M16 8v8M3 10v4M21 10v4"/></svg>Workout</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21c-5-3-8-6-8-10a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 4-3 7-8 10z"/></svg>Wellness</div>
+        </div></div>
+      </div></div></div>
+
+      <div class="phone-col"><div class="cap"><b>Live workout</b> · under the safelight</div>
+      <div class="phone B live"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="padding:6px 16px;display:flex;justify-content:space-between"><span class="dot" style="font-size:10px;color:var(--safe)">● EXPOSING · RUN</span><span class="dot" style="font-size:10px">STRAIN +8.2</span></div>
+        <div style="text-align:center;margin-top:40px"><div class="shoulder" style="font-size:190px;line-height:.8;color:#FFD8CC;text-shadow:0 0 40px rgba(255,90,54,.55)">156</div>
+          <div class="dot" style="font-size:12px;color:var(--safe);margin-top:12px">BPM · ZONE 4</div></div>
+        <svg id="b-live" viewBox="0 0 328 90" style="width:100%;margin-top:30px;display:block"></svg>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin:20px 16px 0;border-top:1px solid rgba(255,90,54,.25)">
+          <div style="padding:12px 0"><div class="shoulder" style="font-size:34px">32:14</div><div style="font-size:11px;color:var(--ink2)">Elapsed</div></div>
+          <div style="padding:12px 0"><div class="shoulder" style="font-size:34px">5.21</div><div style="font-size:11px;color:var(--ink2)">km</div></div>
+          <div style="padding:12px 0"><div class="shoulder" style="font-size:34px">6'11"</div><div style="font-size:11px;color:var(--ink2)">Pace /km</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin:22px 16px 0">
+          <div class="btn" style="border:1px solid rgba(255,90,54,.5);color:#FFD8CC">Pause</div>
+          <div class="btn" style="background:var(--safe);color:#1A0402">Finish</div></div>
+      </div></div></div>
+
+      <div class="phone-col"><div class="cap"><b>Health</b> · the month as a contact sheet</div>
+      <div class="phone B"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="padding:6px 16px 0"><div class="shoulder" style="font-size:44px;text-transform:uppercase">Health</div>
+          <div style="display:flex;gap:16px;margin-top:6px;font-size:13px;color:var(--ink3)"><span style="color:var(--paper);border-bottom:2px solid var(--safe);padding-bottom:6px">Overview</span><span>Vitals</span><span>Trends</span><span>Labs</span></div></div>
+        <div class="h">Readiness · 30 frames <span class="dot">28 AUG–27 SEP</span></div>
+        <div class="heat" id="b-heat"></div>
+        <div style="display:flex;gap:14px;margin:10px 16px 0;font-size:11px;color:var(--ink3)"><span><i style="display:inline-block;width:8px;height:8px;background:#9ED48A;border-radius:1px"></i> High</span><span><i style="display:inline-block;width:8px;height:8px;background:#4E6A42;border-radius:1px"></i> Mid</span><span><i style="display:inline-block;width:8px;height:8px;background:#261F1B;border-radius:1px;outline:1px dashed #5A4E45"></i> Not scored</span></div>
+        <div class="h">Vitals</div>
+        <div class="contact">
+          <div><div class="fn"><span class="dot">RHR</span></div><div class="v" style="color:var(--rose)">51<small>bpm</small></div><div class="k">−2 vs usual</div></div>
+          <div><div class="fn"><span class="dot">HRV</span></div><div class="v">64<small>ms</small></div><div class="k">Usual 52–66</div></div>
+          <div><div class="fn"><span class="dot">RESP</span></div><div class="v">14.2<small>/min</small></div><div class="k">Asleep</div></div>
+          <div><div class="fn"><span class="dot">SPO2</span></div><div class="v" style="color:var(--ink3)">—</div><div class="k">Not measured</div></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 9h16M4 15h16"/></svg>Home</div>
+          <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Health</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg>Nutrition</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 8v8M16 8v8M3 10v4M21 10v4"/></svg>Workout</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21c-5-3-8-6-8-10a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 4-3 7-8 10z"/></svg>Wellness</div>
+        </div></div>
+      </div></div></div>
+    </div>
+
+    <div class="variants"><h3>Darkroom · component variants</h3>
+      <div class="vgrid">
+        <div class="vcell B" style="border:1px solid var(--line)"><span class="vl">Not scored — unexposed print</span>
+          <div style="background:var(--paper);padding:8px 8px 22px;border-radius:2px;transform:rotate(.8deg)"><div style="height:92px;background:repeating-linear-gradient(135deg,#1A1714 0 6px,#141210 6px 12px);display:flex;align-items:center;justify-content:center;font-family:'Big Shoulders Display';font-weight:800;font-size:44px;color:#5E554B">—</div></div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.45">Not scored. It needs 3 more nights to learn your usual.</div></div>
+        <div class="vcell B" style="border:1px solid var(--line)"><span class="vl">Buttons</span>
+          <div class="btn" style="background:var(--safe);color:#1A0402">Start workout</div>
+          <div class="btn" style="border:1px solid var(--line);color:var(--paper);font-size:15px">Log food</div>
+          <div class="dot" style="text-align:center;font-size:11px">▸ SYNC THE BAND</div></div>
+        <div class="vcell B" style="border:1px solid var(--line)"><span class="vl">Section header · alternative</span>
+          <div style="border-top:1px solid var(--paper);padding-top:8px;display:flex;justify-content:space-between"><span class="shoulder" style="font-size:22px;text-transform:uppercase">At a glance</span><span class="dot" style="font-size:10px">04 FR</span></div>
+          <div style="border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between"><span class="shoulder" style="font-size:22px;text-transform:uppercase;color:var(--ink3)">Today's plan</span><span class="dot" style="font-size:10px;color:var(--ink3)">02 FR</span></div></div>
+        <div class="vcell B" style="border:1px solid var(--line)"><span class="vl">Loading state · developing</span>
+          <div style="height:100px;border-radius:2px;background:linear-gradient(100deg,#15120F 30%,#2A1C15 50%,#15120F 70%);background-size:200% 100%;animation:dev 2.4s ease-in-out infinite"></div>
+          <div class="dot" style="font-size:10px">DEVELOPING · 3 OF 7 DAYS</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ C ═══════════════════════ -->
+  <section class="dir" id="C">
+    <div class="dir-head">
+      <div>
+        <div class="tag">Direction C</div>
+        <h2 style="font-family:'Anybody';font-stretch:150%;font-weight:800;color:#E7E3D8;font-size:76px">Strata</h2>
+      </div>
+      <p class="thesis">Your body data drawn like <b>terrain</b>. Readiness is an island: each point of score lights up another contour line toward the peak. Sleep is a <b>cross-section through the ground</b>: the deeper the sleep, the deeper the layer. Trends pile up like rock layers. The colours are minerals: green copper for recovery, rust orange for strain, blue lapis for sleep, yellow sulphur for food, pink mineral for heart. Numbers use an extra-wide font that looks like the lettering on survey maps.</p>
+    </div>
+    <div class="tokens">
+      <div class="swatches">
+        <div class="sw" style="background:#0E1011;color:#E7E3D8"><b>Basalt</b>#0E1011 · ground</div>
+        <div class="sw" style="background:#E7E3D8;color:#16171A"><b>Bone</b>#E7E3D8 · ink</div>
+        <div class="sw" style="background:#5CC9A7;color:#08201A"><b>Green copper</b>#5CC9A7 · recovery</div>
+        <div class="sw" style="background:#E0662E;color:#1E0A02"><b>Rust</b>#E0662E · strain</div>
+        <div class="sw" style="background:#6C89EE;color:#0A0F24"><b>Lapis</b>#6C89EE · sleep</div>
+        <div class="sw" style="background:#E8CB4F;color:#1E1802"><b>Sulphur</b>#E8CB4F · food</div>
+        <div class="sw" style="background:#EA7F93;color:#2A0A12"><b>Pink mineral</b>#EA7F93 · heart</div>
+      </div>
+      <div class="type" style="background:#121516">
+        <div class="row"><span>Numerals</span><span style="font-family:'Anybody';font-stretch:150%;font-weight:800;font-size:36px;color:#E7E3D8;line-height:1">72 · 7:12 · 11.4</span></div>
+        <div class="row"><span>Body</span><span style="font-family:'Albert Sans';font-size:16px;color:#A6A399">Albert Sans: friendly and compact, so it balances the wide numbers.</span></div>
+        <div class="row"><span>Survey</span><span style="font-family:'Azeret Mono';font-size:11px;color:#6F6D66;letter-spacing:.06em">ELEV 72 · 10 CONTOURS · 27.09</span></div>
+      </div>
+    </div>
+
+    <div class="phones">
+      <div class="phone-col"><div class="cap"><b>Home</b> · the island</div>
+      <div class="phone C"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="hdr"><div><div class="mono">SYNCED 06:42 · BAND 64%</div><div class="t">Sunday 27</div></div><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div></div>
+        <div class="topo"><svg id="c-topo" viewBox="0 0 360 330"></svg>
+          <div class="elev"><div class="mono">ELEV</div><div class="mono" style="color:var(--verd)">7 / 10 CONTOURS</div></div>
+          <div class="n"><div class="v">72</div><div class="w">Readiness · steady</div></div></div>
+        <div class="layers">
+          <div class="layer"><div class="top"><span class="k">Strain</span><span class="v" style="color:var(--oxide)">11.4<small>of 21</small></span></div>
+            <div class="band"><i style="width:54%;background:repeating-linear-gradient(90deg,var(--oxide) 0 3px,#B4501F 3px 5px)"></i><u style="left:59.5%"></u></div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="mono">0</span><span class="mono">TARGET 12.5</span><span class="mono">21</span></div></div>
+          <div class="layer"><div class="top"><span class="k">Sleep</span><span class="v" style="color:var(--lapis)">7:12<small>of 7:50</small></span></div>
+            <div class="band" style="display:flex"><i style="position:static;width:9%;background:#4A4F55"></i><i style="position:static;width:28%;background:#9DB0F5"></i><i style="position:static;width:43%;background:#6C89EE"></i><i style="position:static;width:12%;background:#3A4FA8"></i></div>
+            <div style="display:flex;gap:12px;margin-top:6px"><span class="mono">AWAKE</span><span class="mono">REM</span><span class="mono">LIGHT</span><span class="mono">DEEP</span></div></div>
+        </div>
+        <div class="h"><b>At a glance</b><span class="mono">LAST NIGHT</span></div>
+        <div class="grid4">
+          <div class="g"><div class="mono">HRV</div><div class="v">64<small>ms</small></div><svg id="c-sp1" viewBox="0 0 140 26"></svg></div>
+          <div class="g"><div class="mono">RESTING HR</div><div class="v" style="color:var(--rhodo)">51<small>bpm</small></div><svg id="c-sp2" viewBox="0 0 140 26"></svg></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 18l5-9 4 6 3-4 6 7z"/></svg>Home</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Health</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg>Food</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M13 4l-2 6h5l-6 10 2-7H7z"/></svg>Move</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10z"/></svg>Mind</div>
+        </div></div>
+      </div></div></div>
+
+      <div class="phone-col"><div class="cap"><b>Sleep</b> · a cross-section of the night</div>
+      <div class="phone C"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="padding:4px 20px 0"><div class="mono">‹ HOME · SAT → SUN</div>
+          <div class="wide" style="font-size:78px;line-height:.9;margin-top:14px">7:12</div>
+          <div style="font-size:14px;color:var(--ink2);margin-top:8px">Asleep, of <b style="color:var(--lapis)">7h 50m</b> needed · 23:18 – 06:34</div></div>
+        <div style="margin:20px 0 0;position:relative"><svg id="c-sect" viewBox="0 0 360 230" style="width:100%;display:block"></svg></div>
+        <div class="h"><b>Layers</b><span class="mono">DEPTH ↓</span></div>
+        <div class="layers" style="margin-top:0">
+          <div class="layer" style="display:grid;grid-template-columns:1fr auto;gap:4px"><span class="k">Awake</span><span class="v" style="font-size:22px">0:38</span><span class="k">REM</span><span class="v" style="font-size:22px;color:#9DB0F5">2:03</span><span class="k">Light</span><span class="v" style="font-size:22px;color:var(--lapis)">3:41</span><span class="k">Deep</span><span class="v" style="font-size:22px;color:#8095F0">1:28</span></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 18l5-9 4 6 3-4 6 7z"/></svg>Home</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Health</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg>Food</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M13 4l-2 6h5l-6 10 2-7H7z"/></svg>Move</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10z"/></svg>Mind</div>
+        </div></div>
+      </div></div></div>
+
+      <div class="phone-col"><div class="cap"><b>Live workout</b> · heart rate as an elevation profile</div>
+      <div class="phone C live"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="padding:6px 20px;display:flex;justify-content:space-between"><span class="mono" style="color:var(--oxide)">● RECORDING · RUN</span><span class="mono">STRAIN +8.2</span></div>
+        <div style="padding:26px 20px 0"><div class="wide" style="font-size:100px;line-height:.85;color:var(--oxide)">156</div><div style="font-size:14px;color:var(--ink2);margin-top:10px">bpm · zone 4 of 5</div></div>
+        <svg id="c-live" viewBox="0 0 360 170" style="width:100%;margin-top:24px;display:block"></svg>
+        <div class="grid4" style="margin-top:18px">
+          <div class="g"><div class="mono">ELAPSED</div><div class="v">32:14</div></div>
+          <div class="g"><div class="mono">DISTANCE</div><div class="v">5.21<small>km</small></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin:18px 20px 0">
+          <div style="height:54px;border-radius:14px;border:1px solid var(--line);display:grid;place-items:center;font-weight:600">Pause</div>
+          <div style="height:54px;border-radius:14px;background:var(--oxide);color:#1E0A02;display:grid;place-items:center;font-weight:700">Finish</div></div>
+      </div></div></div>
+
+      <div class="phone-col"><div class="cap"><b>Health</b> · trends as rock layers</div>
+      <div class="phone C"><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div style="padding:4px 20px 0"><div class="wide" style="font-size:34px">Health</div>
+          <div style="display:flex;gap:6px;margin-top:12px"><span style="padding:7px 12px;border-radius:10px;background:#23292A;font-size:13px;font-weight:600">Overview</span><span style="padding:7px 12px;font-size:13px;color:var(--ink3)">Vitals</span><span style="padding:7px 12px;font-size:13px;color:var(--ink3)">Trends</span><span style="padding:7px 12px;font-size:13px;color:var(--ink3)">Labs</span></div></div>
+        <div class="h"><b>Sleep, 30 nights</b><span class="mono">STACKED BY STAGE</span></div>
+        <svg id="c-strata" viewBox="0 0 320 150" style="width:calc(100% - 40px);margin:0 20px;display:block"></svg>
+        <div class="h"><b>Vitals</b><span class="mono">VS YOUR USUAL</span></div>
+        <div class="grid4">
+          <div class="g"><div class="mono">HRV</div><div class="v">64<small>ms</small></div><svg id="c-sp3" viewBox="0 0 140 26"></svg></div>
+          <div class="g"><div class="mono">RESTING HR</div><div class="v" style="color:var(--rhodo)">51<small>bpm</small></div><svg id="c-sp4" viewBox="0 0 140 26"></svg></div>
+          <div class="g"><div class="mono">RESP RATE</div><div class="v">14.2<small>/min</small></div><svg id="c-sp5" viewBox="0 0 140 26"></svg></div>
+          <div class="g"><div class="mono">BLOOD OXYGEN</div><div class="v" style="color:var(--ink3)">—</div><div style="font-size:11px;color:var(--ink3);margin-top:10px">Not measured</div></div>
+        </div>
+        <div class="tabbar"><div class="tabs">
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 18l5-9 4 6 3-4 6 7z"/></svg>Home</div>
+          <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Health</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M7 3v8a3 3 0 0 0 3 3v7M13 3c3 0 4 3 4 6s-2 4-4 4v8"/></svg>Food</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M13 4l-2 6h5l-6 10 2-7H7z"/></svg>Move</div>
+          <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10z"/></svg>Mind</div>
+        </div></div>
+      </div></div></div>
+    </div>
+
+    <div class="variants"><h3>Strata · component variants</h3>
+      <div class="vgrid">
+        <div class="vcell C" style="border:1px solid var(--line)"><span class="vl">Not scored — unsurveyed</span>
+          <svg id="c-empty" viewBox="0 0 200 110" style="width:100%"></svg>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.45">Not scored. It needs 3 more nights to learn your usual.</div></div>
+        <div class="vcell C" style="border:1px solid var(--line)"><span class="vl">Buttons</span>
+          <div style="height:50px;border-radius:14px;background:var(--verd);color:#08201A;display:grid;place-items:center;font-weight:700">Start a workout</div>
+          <div style="height:50px;border-radius:14px;border:1px solid var(--line);display:grid;place-items:center;font-weight:600">Log food</div>
+          <div class="mono" style="text-align:center;color:var(--verd)">SYNC THE BAND →</div></div>
+        <div class="vcell C" style="border:1px solid var(--line)"><span class="vl">Food · energy balance</span>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="wide" style="font-size:28px;color:var(--sulfur)">1,840</span><span class="mono">OF 2,146 BURNED</span></div>
+          <div class="band" style="height:18px;background:var(--card2);border-radius:4px;overflow:hidden;position:relative;margin-top:4px"><i style="position:absolute;left:0;top:0;bottom:0;width:86%;background:repeating-linear-gradient(135deg,var(--sulfur) 0 4px,#C3A93B 4px 7px)"></i></div>
+          <div style="font-size:12px;color:var(--ink2)">306 kcal under what you burned</div></div>
+        <div class="vcell C" style="border:1px solid var(--line)"><span class="vl">Tab bar · alternative</span>
+          <div style="margin-top:auto;display:flex;justify-content:space-around;align-items:flex-end;height:60px;border-bottom:1px solid var(--line)">
+            <div style="width:30px;height:20px;background:#23292A;border-radius:4px 4px 0 0"></div><div style="width:30px;height:48px;background:var(--verd);border-radius:4px 4px 0 0"></div><div style="width:30px;height:14px;background:#23292A;border-radius:4px 4px 0 0"></div><div style="width:30px;height:28px;background:#23292A;border-radius:4px 4px 0 0"></div><div style="width:30px;height:18px;background:#23292A;border-radius:4px 4px 0 0"></div></div>
+          <div style="display:flex;justify-content:space-around;font-size:10px;color:var(--ink3);font-weight:600"><span style="color:var(--ink)">Home</span><span>Health</span><span>Food</span><span>Move</span><span>Mind</span></div>
+          <div style="font-size:11px;color:var(--ink3)">Each tab's bar height shows how much it has for you today</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="compare" id="compare">
+    <h2>How they compare</h2>
+    <table>
+      <thead><tr><th></th><th>A · Horologe</th><th>B · Darkroom</th><th>C · Strata</th></tr></thead>
+      <tbody>
+        <tr><th>Feels like</th><td>A luxury watch. Calm and precise, made to last.</td><td>A photo darkroom. Bold, gritty and full of personality.</td><td>A field survey. Analytical, like reading a map.</td></tr>
+        <tr><th>Signature element</th><td>A dial with gold markers and a hand, plus small dials for sleep and strain</td><td>A film-strip day picker and today's score as a print</td><td>A contour-map island and a cross-section of sleep</td></tr>
+        <tr><th>Ages well</th><td>Very well. Watch-dial design has lasted a century.</td><td>Well. It's a strong theme, so there's a small risk it feels like a costume.</td><td>Well. The palette looks the most scientific.</td></tr>
+        <tr><th>Crowded screens</th><td>Ledger rows handle long lists cleanly</td><td>Contact sheet grids fit a lot on screen</td><td>Layer cards and sparklines, dense but clear</td></tr>
+        <tr><th>Build effort in Flutter</th><td>Medium. Dial and small-dial painters, sunburst texture shader</td><td>Medium. Film strip, print card, dot-matrix font</td><td>Higher. Contour generation, cross-section painter</td></tr>
+        <tr><th>Risk</th><td>Serif numbers can read "fashion" if overused. Keep them for measured values only.</td><td>Red safelight and gritty textures can hurt readability. Needs care in dense screens.</td><td>An extra-wide font takes a lot of horizontal space when text is enlarged.</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>Recommendation: A · Horologe.</b> The band is worn on the wrist, so watch-dial design fits it best. Its structure (a main dial, small dials, a stopwatch for live workouts, a charge gauge for the band) maps directly onto what the app shows. It's the only direction where the metaphor helps you read the data instead of just decorating it. Parts can be mixed: B's contact sheet would work well as A's month view, for example.</p>
+  </section>
+</div>
+
+<style>@keyframes dev{0%{background-position:100% 0}100%{background-position:-100% 0}}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function polar(cx,cy,r,deg){const a=(deg-90)*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)]}
+function arc(cx,cy,r,a0,a1){const[x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(cx,cy,r,a1);return`M${x0} ${y0}A${r} ${r} 0 ${a1-a0>180?1:0} 1 ${x1} ${y1}`}
+const $=id=>document.getElementById(id);
+
+/* ── shared sample night: 0 awake 1 REM 2 light 3 deep, 15-min slots, 23:18→06:34 ── */
+const night=[0,2,2,3,3,3,2,2,1,2,3,3,2,2,1,1,2,2,3,2,2,1,1,0,2,2,1,1,0];
+const rhr=[54,53,55,54,53,52,54,55,53,52,52,53,54,53,52,51,53,52,52,51,52,53,52,51,50,52,51,52,51,51];
+
+/* ═══ A · HOROLOGE ═══ */
+(function(){
+  const s=$("a-dial"),cx=150,cy=150,A0=-150,SW=300;
+  for(let i=0;i<=100;i++){const a=A0+SW*i/100,maj=i%10==0,mid=i%5==0;
+    const[x0,y0]=polar(cx,cy,142,a),[x1,y1]=polar(cx,cy,maj?128:mid?134:138,a);
+    el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:maj?"#C9A96A":i<=72?"rgba(191,232,163,.75)":"rgba(237,228,207,.28)","stroke-width":maj?2.2:1,"stroke-linecap":"round"},s)}
+  for(let i=20;i<=80;i+=20){const[x,y]=polar(cx,cy,114,A0+SW*i/100);
+    const t=el("text",{x,y:y+4,"text-anchor":"middle",fill:"#ABA591","font-family":"Bodoni Moda","font-size":11,"font-style":"italic"},s);t.textContent=i}
+  // applied baton indices at 0/50/100
+  // hand
+  const a=A0+SW*.72,[hx,hy]=polar(cx,cy,104,a),[tx,ty]=polar(cx,cy,-22,a),[lx,ly]=polar(cx,cy,84,a);
+  el("line",{x1:tx,y1:ty,x2:hx,y2:hy,stroke:"#C9A96A","stroke-width":3,"stroke-linecap":"round"},s);
+  el("line",{x1:lx,y1:ly,x2:hx,y2:hy,stroke:"#BFE8A3","stroke-width":4.5,"stroke-linecap":"round",filter:"drop-shadow(0 0 4px rgba(191,232,163,.8))"},s);
+  el("circle",{cx,cy,r:7,fill:"#C9A96A"},s);el("circle",{cx,cy,r:2.4,fill:"#0B100E"},s);
+  // usual-range arc (baseline band)
+  el("path",{d:arc(cx,cy,148,A0+SW*.58,A0+SW*.8),stroke:"rgba(201,169,106,.55)","stroke-width":2,fill:"none"},s);
+
+  // sleep subdial
+  const sl=$("a-sleep");const c=60;
+  el("circle",{cx:c,cy:c,r:54,fill:"none",stroke:"#1E2A25"},sl);
+  for(let i=0;i<48;i++){const aa=i*7.5,[x0,y0]=polar(c,c,52,aa),[x1,y1]=polar(c,c,i%6==0?45:49,aa);el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:i%6==0?"#C9A96A":"rgba(237,228,207,.2)","stroke-width":i%6==0?1.5:.8},sl)}
+  el("path",{d:arc(c,c,40,0,360*.92),stroke:"#3F67C9","stroke-width":5,fill:"none","stroke-linecap":"round"},sl);
+  el("path",{d:arc(c,c,40,0,360*.92),stroke:"#8DAEF5","stroke-width":1.2,fill:"none","stroke-linecap":"round"},sl);
+  // moon
+  el("circle",{cx:c,cy:c-6,r:10,fill:"#8DAEF5",opacity:.9},sl);el("circle",{cx:c+5,cy:c-9,r:9,fill:"#101714"},sl);
+  let t=el("text",{x:c,y:c+20,"text-anchor":"middle",fill:"#EDE4CF","font-family":"Bodoni Moda","font-size":17,"font-weight":500},sl);t.textContent="7:12";
+
+  // strain subdial (0-21)
+  const st=$("a-strain");
+  for(let i=0;i<=21;i++){const aa=-135+270*i/21,[x0,y0]=polar(c,c,52,aa),[x1,y1]=polar(c,c,i%3==0?44:48,aa);el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:i%3==0?"#C9A96A":"rgba(237,228,207,.25)","stroke-width":i%3==0?1.5:.8},st)}
+  for(const n of [0,7,14,21]){const[x,y]=polar(c,c,36,-135+270*n/21);t=el("text",{x,y:y+3,"text-anchor":"middle",fill:"#737463","font-family":"Martian Mono","font-size":7},st);t.textContent=n}
+  el("path",{d:arc(c,c,52,-135+270*11/21,-135+270*14/21),stroke:"rgba(201,169,106,.7)","stroke-width":2.5,fill:"none"},st);
+  const sa=-135+270*11.4/21,[sx,sy]=polar(c,c,48,sa),[sx0,sy0]=polar(c,c,-12,sa);
+  el("line",{x1:sx0,y1:sy0,x2:sx,y2:sy,stroke:"#E8573F","stroke-width":1.8,"stroke-linecap":"round"},st);
+  el("circle",{cx:c,cy:c,r:4,fill:"#E8573F"},st);
+  t=el("text",{x:c,y:c+30,"text-anchor":"middle",fill:"#EDE4CF","font-family":"Bodoni Moda","font-size":17,"font-weight":500},st);t.textContent="11.4";
+
+  // hypnogram
+  const h=$("a-hyp"),W=300,H=150,top=12,rowH=30,lanes=["Awake","REM","Light","Deep"];
+  lanes.forEach((n,i)=>{const y=top+i*rowH+rowH/2;el("line",{x1:46,y1:y,x2:W,y2:y,stroke:"#1E2A25","stroke-dasharray":"1 4"},h);
+    const tt=el("text",{x:0,y:y+3,fill:"#737463","font-family":"Martian Mono","font-size":7,"letter-spacing":1},h);tt.textContent=n.toUpperCase()});
+  const x0=48,dx=(W-x0)/night.length;let d="";
+  night.forEach((v,i)=>{const y=top+v*rowH+rowH/2;d+=(i?`L${x0+i*dx} ${y}`:`M${x0} ${y}`)+`L${x0+(i+1)*dx} ${y}`});
+  el("path",{d,stroke:"#8DAEF5","stroke-width":2,fill:"none","stroke-linejoin":"round"},h);
+  night.forEach((v,i)=>{if(v==3)el("rect",{x:x0+i*dx,y:top+3*rowH+rowH/2,width:dx,height:10,fill:"rgba(63,103,201,.35)"},h)});
+  for(let k=0;k<=7;k++){const x=x0+(W-x0)*k/7;el("line",{x1:x,y1:H-8,x2:x,y2:H-3,stroke:"#C9A96A"},h)}
+
+  // chrono
+  const ch=$("a-chrono");
+  for(let i=0;i<60;i++){const aa=i*6,[x0,y0]=polar(150,150,142,aa),[x1,y1]=polar(150,150,i%5==0?126:136,aa);el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:i%5==0?"#C9A96A":"rgba(237,228,207,.3)","stroke-width":i%5==0?2:1},ch)}
+  // HR zone bezel arcs
+  const zc=["#4A4538","#6E6048","#A3814E","#E8573F","#FF8A6E"];
+  zc.forEach((col,i)=>el("path",{d:arc(150,150,112,-130+i*52+2,-130+(i+1)*52-2),stroke:col,"stroke-width":i==3?6:3,fill:"none","stroke-linecap":"round",opacity:i==3?1:.7},ch));
+  const za=-130+3*52+34,[zx,zy]=polar(150,150,112,za);el("circle",{cx:zx,cy:zy,r:6,fill:"#FFD9D0",stroke:"#E8573F","stroke-width":2},ch);
+  const secA=14*6,[qx,qy]=polar(150,150,138,secA),[qx0,qy0]=polar(150,150,-26,secA);
+  el("line",{x1:qx0,y1:qy0,x2:qx,y2:qy,stroke:"#E8573F","stroke-width":1.6,"stroke-linecap":"round"},ch);
+  el("circle",{cx:150,cy:150,r:6,fill:"#E8573F"},ch);
+  t=el("text",{x:150,y:92,"text-anchor":"middle",fill:"#737463","font-family":"Martian Mono","font-size":8,"letter-spacing":2},ch);t.textContent="HEART RATE ZONE";
+
+  // rhr trend
+  const r=$("a-rhr"),min=48,max=57,rx=i=>8+i*(264/29),ry=v=>100-(v-min)/(max-min)*90;
+  el("rect",{x:0,y:ry(55),width:280,height:ry(51)-ry(55),fill:"rgba(201,169,106,.07)"},r);
+  t=el("text",{x:276,y:ry(55)-3,"text-anchor":"end",fill:"#8E7646","font-family":"Martian Mono","font-size":6.5},r);t.textContent="YOUR USUAL";
+  el("path",{d:rhr.map((v,i)=>(i?"L":"M")+rx(i)+" "+ry(v)).join(""),stroke:"#E3A58E","stroke-width":1.6,fill:"none"},r);
+  rhr.forEach((v,i)=>{if(i%7==0)el("line",{x1:rx(i),y1:104,x2:rx(i),y2:110,stroke:"#C9A96A"},r)});
+  el("circle",{cx:rx(29),cy:ry(51),r:3.5,fill:"#E3A58E"},r);
+
+  // empty dial
+  const e=$("a-empty");
+  el("circle",{cx:60,cy:60,r:56,fill:"#0F1613",stroke:"rgba(201,169,106,.3)"},e);
+  for(let i=0;i<=20;i++){const aa=-150+300*i/20,[x0,y0]=polar(60,60,52,aa),[x1,y1]=polar(60,60,i%5==0?44:48,aa);el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:"rgba(237,228,207,.2)"},e)}
+  el("circle",{cx:60,cy:60,r:4,fill:"#3A3A30"},e);
+  t=el("text",{x:60,y:84,"text-anchor":"middle",fill:"#737463","font-family":"Martian Mono","font-size":6.5,"letter-spacing":1.5},e);t.textContent="NO HAND";
+
+  // power reserve
+  const p=$("a-power");
+  for(let i=0;i<=20;i++){const aa=-70+140*i/20,[x0,y0]=polar(100,100,90,aa),[x1,y1]=polar(100,100,i%5==0?76:82,aa);el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:i<=13?"#C9A96A":"rgba(237,228,207,.2)","stroke-width":i%5==0?2:1},p)}
+  const pa=-70+140*.64,[px,py]=polar(100,100,84,pa);el("line",{x1:100,y1:100,x2:px,y2:py,stroke:"#EDE4CF","stroke-width":2,"stroke-linecap":"round"},p);
+  el("circle",{cx:100,cy:100,r:5,fill:"#C9A96A"},p);
+  [["E",-70],["½",0],["F",70]].forEach(([s2,aa])=>{const[x,y]=polar(100,100,64,aa);const q=el("text",{x,y:y+3,"text-anchor":"middle",fill:"#737463","font-family":"Bodoni Moda","font-size":10,"font-style":"italic"},p);q.textContent=s2});
+})();
+
+/* ═══ B · DARKROOM ═══ */
+(function(){
+  const f=$("b-frames"),days=[["21","MO",.6],["22","TU",.8],["23","WE",.4],["24","TH",.7],["25","FR",.55],["26","SA",.85],["27","SU",.72]];
+  days.forEach(([d,w,v],i)=>{const x=document.createElement("div");x.className="fr"+(i==6?" on":"");
+    x.innerHTML=`<span class="w">${d}A · ${w}</span><span class="d">${i==6?72:Math.round(v*100)}</span><i class="glow" style="background:rgba(158,212,138,${.25+v*.6});width:${v*100}%;right:auto"></i>`;f.appendChild(x)});
+  const h=$("b-hyp"),W=328,H=210,dx=W/night.length,depth=[40,85,120,170];
+  let d=`M0 ${H}`;night.forEach((v,i)=>{d+=`L${i*dx} ${depth[v]}L${(i+1)*dx} ${depth[v]}`});d+=`L${W} ${H}Z`;
+  el("path",{d,fill:"rgba(241,247,255,.9)"},h);
+  let l="";night.forEach((v,i)=>{l+=(i?"L":"M")+(i*dx)+" "+depth[v]+"L"+((i+1)*dx)+" "+depth[v]});
+  el("path",{d:l,stroke:"#fff","stroke-width":1.5,fill:"none",opacity:.9},h);
+  ["AWAKE","REM","LIGHT","DEEP"].forEach((n,i)=>{const t=el("text",{x:6,y:depth[i]-5,"text-anchor":"start",fill:i<2?"rgba(220,232,255,.75)":"rgba(11,37,80,.6)","font-family":"Doto","font-weight":700,"font-size":9,"letter-spacing":1},h);t.textContent=n});
+  // live trace
+  const lv=$("b-live");let pts=[];for(let i=0;i<=80;i++){const v=130+i*.35+Math.sin(i/3)*6+Math.sin(i/1.3)*2;pts.push([i*4.1,90-(v-110)*1.3])}
+  el("path",{d:pts.map((p,i)=>(i?"L":"M")+p[0]+" "+p[1]).join(""),stroke:"#FF5A36","stroke-width":2,fill:"none",filter:"drop-shadow(0 0 6px rgba(255,90,54,.8))"},lv);
+  el("line",{x1:0,y1:90-(146-110)*1.3,x2:328,y2:90-(146-110)*1.3,stroke:"rgba(242,160,61,.4)","stroke-dasharray":"2 4"},lv);
+  // heatmap
+  const hm=$("b-heat"),vals=[.62,.7,.55,null,.8,.74,.66,.5,.44,.6,.72,.81,.77,.69,null,null,.58,.63,.7,.75,.83,.79,.6,.55,.68,.74,.61,.7,.85,.72];
+  vals.forEach((v,i)=>{const x=document.createElement("div");
+    if(v==null){x.style.cssText="background:#1A1512;outline:1px dashed #4A3F37;outline-offset:-1px"}
+    else{const a=Math.max(0,(v-.4)/.45);x.style.background=`color-mix(in oklab,#9ED48A ${Math.round(a*100)}%,#2A2622)`}
+    x.innerHTML=`<span>${String(i+1).padStart(2,"0")}</span>`;hm.appendChild(x)});
+})();
+
+/* ═══ C · STRATA ═══ */
+(function(){
+  function rnd(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646}}
+  function blob(cx,cy,r,seed,k){const R=rnd(seed),ph=[R()*6,R()*6,R()*6];let d="";
+    for(let i=0;i<=72;i++){const a=i/72*Math.PI*2,rr=r*(1+.10*Math.sin(3*a+ph[0])+.06*Math.sin(5*a+ph[1])+.04*Math.sin(2*a+ph[2])*k);
+      d+=(i?"L":"M")+(cx+rr*Math.cos(a)*1.18)+" "+(cy+rr*Math.sin(a)*.82)}return d+"Z"}
+  const s=$("c-topo");
+  for(let i=0;i<10;i++){const r=150-i*13.5,on=i<7;
+    el("path",{d:blob(205-i*2,150-i*3,r,41+i,1),fill:on&&i==6?"rgba(92,201,167,.12)":"none",stroke:on?`rgba(92,201,167,${.18+i*.1})`:"rgba(231,227,216,.1)","stroke-width":on?(i==6?2:1.2):1,"stroke-dasharray":on?"":"2 4"},s)}
+  el("circle",{cx:205-18,cy:150-27,r:3,fill:"#E7E3D8"},s);
+  // sparklines
+  function spark(id,arr,col){const sv=$(id),mn=Math.min(...arr),mx=Math.max(...arr);
+    el("path",{d:arr.map((v,i)=>(i?"L":"M")+(i*(140/(arr.length-1)))+" "+(23-(v-mn)/(mx-mn||1)*20)).join(""),stroke:col,"stroke-width":1.5,fill:"none"},sv)}
+  const hrv=[55,58,54,60,62,57,59,61,63,58,60,64];
+  spark("c-sp1",hrv,"#5CC9A7");spark("c-sp2",rhr.slice(-12),"#EA7F93");spark("c-sp3",hrv,"#5CC9A7");spark("c-sp4",rhr.slice(-12),"#EA7F93");spark("c-sp5",[14.6,14.4,14.8,14.3,14.1,14.5,14.4,14.2,14.3,14.0,14.4,14.2],"#A6A399");
+  // cross-section
+  const x=$("c-sect"),W=360,dx=W/night.length,depth=[18,70,120,190],cols=["#4A4F55","#9DB0F5","#6C89EE","#3A4FA8"];
+  for(let i=0;i<4;i++){el("rect",{x:0,y:i?depth[i-1]+ (depth[i]-depth[i-1])/2:0,width:W,height:230,fill:["#15181A","#171B22","#161B2A","#141A33"][i]},x)}
+  let d="M0 0";night.forEach((v,i)=>{d+=`L${i*dx} ${depth[v]}L${(i+1)*dx} ${depth[v]}`});d+=`L${W} 0Z`;
+  el("path",{d,fill:"#0E1011"},x);
+  let l="";night.forEach((v,i)=>{l+=(i?"L":"M")+(i*dx)+" "+depth[v]+"L"+((i+1)*dx)+" "+depth[v]});
+  el("path",{d:l,stroke:"#E7E3D8","stroke-width":1.5,fill:"none"},x);
+  night.forEach((v,i)=>{el("rect",{x:i*dx,y:depth[v],width:dx,height:4,fill:cols[v]},x)});
+  ["AWAKE","REM","LIGHT","DEEP"].forEach((n,i)=>{const t=el("text",{x:W-12,y:depth[i]+16,"text-anchor":"end",fill:"#6F6D66","font-family":"Azeret Mono","font-size":8.5},x);t.textContent=n});
+  // live elevation
+  const lv=$("c-live");let pts=[];for(let i=0;i<=90;i++){const v=110+i*.5+Math.sin(i/4)*8+Math.sin(i/1.7)*3;pts.push([i*4,160-(v-95)*1.9])}
+  [150,138,126].forEach((z,i)=>{const y=160-(z-95)*1.9;el("line",{x1:0,y1:y,x2:360,y2:y,stroke:"#252A2C","stroke-dasharray":"2 3"},lv);const t=el("text",{x:354,y:y-4,"text-anchor":"end",fill:"#6F6D66","font-family":"Azeret Mono","font-size":8},lv);t.textContent="Z"+(4-i)});
+  el("path",{d:"M0 170"+pts.map(p=>"L"+p[0]+" "+p[1]).join("")+"L360 170Z",fill:"rgba(224,102,46,.14)"},lv);
+  el("path",{d:pts.map((p,i)=>(i?"L":"M")+p[0]+" "+p[1]).join(""),stroke:"#E0662E","stroke-width":2,fill:"none"},lv);
+  // strata 30 nights
+  const sr=$("c-strata"),R=rnd(7),bw=320/30;
+  for(let i=0;i<30;i++){let y=150;const tot=6.4+R()*1.6,parts=[.1,.26,.46,.18].map(p=>p*(0.85+R()*.3)),sum=parts.reduce((a,b)=>a+b);
+    [3,2,1,0].forEach(k=>{const hgt=parts[k]/sum*tot/9*140;y-=hgt;el("rect",{x:i*bw+1,y,width:bw-2,height:hgt,fill:cols[k]},sr)})}
+  el("line",{x1:0,y1:150-7.8/9*140,x2:320,y2:150-7.8/9*140,stroke:"#E7E3D8","stroke-dasharray":"3 3"},sr);
+  const tt=el("text",{x:318,y:150-7.8/9*140-4,"text-anchor":"end",fill:"#A6A399","font-family":"Azeret Mono","font-size":8},sr);tt.textContent="NEED 7:50";
+  // empty
+  const e=$("c-empty");for(let i=0;i<5;i++)el("path",{d:blob(100,58,48-i*9,90+i,1).replace(/(\d+\.?\d*) (\d+\.?\d*)/g,(m,a,b)=>a+" "+b),fill:"none",stroke:"rgba(231,227,216,.14)","stroke-dasharray":"2 4"},e);
+  const t2=el("text",{x:100,y:62,"text-anchor":"middle",fill:"#6F6D66","font-family":"Anybody","font-stretch":"150%","font-weight":800,"font-size":22},e);t2.textContent="—";
+})();
+</script>
+</body>
+</html>
