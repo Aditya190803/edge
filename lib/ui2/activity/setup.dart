@@ -19,6 +19,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../grammar.dart';
+import '../page.dart';
 import '../theme.dart';
 import 'catalogue.dart';
 import 'live.dart';
@@ -121,18 +122,9 @@ class _ActivitySetupState extends State<ActivitySetup> {
     final a = widget.a;
     final est = a.kcal(widget.weightKg, _estimateMin);
 
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(a.name),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: a.name,
+children: [
                 Center(
                   child: Column(children: [
                     Container(
@@ -279,11 +271,7 @@ class _ActivitySetupState extends State<ActivitySetup> {
                     color: a.color,
                     onTap: _starting ? null : _start),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 
   /// What this session will actually produce. Distance and pace are promised

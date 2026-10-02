@@ -245,22 +245,12 @@ class _WorkoutSuggestionScreenState extends State<WorkoutSuggestionScreen> {
 
   @override
   Widget build(BuildContext c) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final items = _items;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.logWorkoutDetectedActivityTitle ?? 'Detected activity',
-                sub: l?.logWorkoutYoursToConfirmSub ?? 'YOURS TO CONFIRM'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.logWorkoutDetectedActivityTitle ?? 'Detected activity',
+sub: l?.logWorkoutYoursToConfirmSub ?? 'YOURS TO CONFIRM',
+children: [
                 if (_failed)
                   StatusCard(
                     l?.logWorkoutReadFailedTitle ??
@@ -304,11 +294,7 @@ class _WorkoutSuggestionScreenState extends State<WorkoutSuggestionScreen> {
                   icon: LucideIcons.scissors,
                 ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 
@@ -621,27 +607,17 @@ class _LogWorkoutState extends State<LogWorkout> {
 
   @override
   Widget build(BuildContext c) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final bad = _invalid;
     final mins = _end.difference(_start).inMinutes;
     final retime = widget.sessionId != null;
     final title = widget.title ?? (l?.logWorkoutDefaultTitle ?? 'Log a past workout');
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(title,
-                sub: retime
+    return HealthPage(
+title: title,
+sub: retime
                     ? (l?.logWorkoutWindowRescoredSub ?? 'THE WINDOW, RE-SCORED')
-                    : (l?.logWorkoutYourOwnTimesSub ?? 'YOUR OWN TIMES')),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+                    : (l?.logWorkoutYourOwnTimesSub ?? 'YOUR OWN TIMES'),
+children: [
                 settingsGroup(c, l?.logWorkoutWhenGroup ?? 'When', [
                   if (!retime)
                     SetRow(_activity.icon, _activity.color,
@@ -700,11 +676,7 @@ class _LogWorkoutState extends State<LogWorkout> {
                   onTap: bad == null && !_saving ? _save : null,
                 ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 

@@ -219,18 +219,9 @@ class _DataScreenState extends State<DataScreen> {
     final last = app.lastBackupAt;
     final o = _outcome;
     final rebuilt = dbRebuiltCard(app.dbRebuild);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.dataNavTitle ?? 'Your data'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.dataNavTitle ?? 'Your data',
+children: [
                 // Home shows this too, on the launch it happened. It belongs
                 // here as well because this is the screen someone opens when
                 // they notice their food log is empty, and it is the only
@@ -379,11 +370,7 @@ class _DataScreenState extends State<DataScreen> {
                   ImportReport(o),
                 ],
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 

@@ -400,18 +400,9 @@ class DevicePickerView extends StatelessWidget {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
     final busy = busyRemoteId != null;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(title),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: title,
+children: [
                 Text(subtitle, style: F.body.copyWith(color: p.ink3)),
                 const SizedBox(height: S.x4),
                 _SearchField(controller: query),
@@ -491,11 +482,7 @@ class DevicePickerView extends StatelessWidget {
                   ),
                 ],
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 

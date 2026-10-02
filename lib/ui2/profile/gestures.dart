@@ -72,18 +72,9 @@ class BandGesturesView extends StatelessWidget {
     ];
     final noPhoneActions = !offered.any((a) => a.isNative);
 
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.gesturesNavTitle ?? 'Double-tap'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.gesturesNavTitle ?? 'Double-tap',
+children: [
                 Section(
                   l?.gesturesSectionTitle ?? 'Tap the band twice',
                   Surface(
@@ -122,11 +113,7 @@ class BandGesturesView extends StatelessWidget {
                   ),
                 ],
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 

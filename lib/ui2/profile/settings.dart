@@ -588,22 +588,12 @@ class MoreSettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext c) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final on = l?.stateOn ?? 'On';
     final off = l?.stateOff ?? 'Off';
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.settingsNavTitle ?? 'Settings'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.settingsNavTitle ?? 'Settings',
+children: [
                 // No "Edit profile" here. It lives in one place — Quick access
                 // on the Profile screen — because two doors to one form is how
                 // a user ends up unsure which one is the real setting.
@@ -805,11 +795,7 @@ class MoreSettingsView extends StatelessWidget {
                       danger: true, chevron: false, onTap: onReset),
                 ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 
@@ -933,25 +919,15 @@ class NotificationSettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext c) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final on = l?.stateOn ?? 'On';
     final off = l?.stateOff ?? 'Off';
     void set(NotificationPrefs next) => onChanged?.call(next);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.settingsNotificationsNavTitle ?? 'Notifications',
-                sub: l?.settingsNotificationsNavSub ??
-                    'WHAT MAY INTERRUPT YOU'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.settingsNotificationsNavTitle ?? 'Notifications',
+sub: l?.settingsNotificationsNavSub ??
+                    'WHAT MAY INTERRUPT YOU',
+children: [
                 if (!granted)
                   StatusCard(
                     l?.settingsNotificationsOffSystemTitle ??
@@ -1225,11 +1201,7 @@ class NotificationSettingsView extends StatelessWidget {
                   icon: LucideIcons.alarmClock,
                 ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 
   /// The water intervals on offer, all inside
@@ -1519,25 +1491,16 @@ class _EditProfileViewState extends State<EditProfileView> {
   Widget build(BuildContext c) {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.settingsEditProfileNavTitle ?? 'Edit profile',
-                trailing: Pressable(
+    return HealthPage(
+title: l?.settingsEditProfileNavTitle ?? 'Edit profile',
+actions: [Pressable(
                   semanticLabel: l?.actionSave ?? 'Save',
                   onTap: _save,
                   child: Text(l?.actionSave ?? 'Save',
                       style: F.body.copyWith(
                           color: p.on(C.green), fontWeight: FontWeight.w600)),
-                )),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+                )],
+children: [
                 _text(c, _name, l?.settingsNameFieldLabel ?? 'NAME',
                     TextInputType.name),
                 const SizedBox(height: S.x4),
@@ -1589,11 +1552,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                   icon: LucideIcons.info,
                 ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 
   /// The health-store read, on the form it fills. Empty when the caller passed
@@ -1715,18 +1674,9 @@ class _AutomationSettingsState extends State<AutomationSettings> {
     final l = AppLocalizations.of(c);
     final android = defaultTargetPlatform == TargetPlatform.android;
     final token = _token;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.settingsAutomationNavTitle ?? 'Automation'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.settingsAutomationNavTitle ?? 'Automation',
+children: [
                 Section(
                   l?.settingsSyncFinishesSectionTitle ??
                       'When a sync finishes',
@@ -1831,10 +1781,6 @@ class _AutomationSettingsState extends State<AutomationSettings> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }

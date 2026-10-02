@@ -28,6 +28,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/units_controller.dart';
 import '../grammar.dart';
+import '../page.dart';
 import '../profile/profile.dart' show SetRow;
 import '../theme.dart';
 import 'poster.dart';
@@ -223,19 +224,9 @@ class _ShareSheetState extends State<ShareSheet> {
   Widget build(BuildContext c) {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: S.x4),
-              child: NavBar(l?.activityShareTitle ?? 'Share'),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x8),
-                children: [
+    return HealthPage(
+title: l?.activityShareTitle ?? 'Share',
+children: [
                   // One card. There is no style list any more, and no chip row
                   // deciding which of the session's own measurements to leave
                   // off it — the card prints everything the session has, and
@@ -381,12 +372,7 @@ class _ShareSheetState extends State<ShareSheet> {
                     ),
                   ],
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+);
   }
 }
 /// that list answers about the numbers, and it must stay in step with `_art`.

@@ -201,7 +201,7 @@ void _screen() {
       // WH-08 sits below the fold on a phone-sized viewport.
       await t.dragUntilVisible(
         find.text('Your cycle lengths against a published range'),
-        find.byType(ListView).last,
+        find.byType(Scrollable).last,
         const Offset(0, -200),
       );
       await t.pumpAndSettle();

@@ -121,21 +121,11 @@ class BandNotificationsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext c) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.bandNotifNavTitle ?? 'Band notifications',
-                sub: l?.bandNotifNavSub ?? 'WHAT MAKES THE STRAP BUZZ'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.bandNotifNavTitle ?? 'Band notifications',
+sub: l?.bandNotifNavSub ?? 'WHAT MAKES THE STRAP BUZZ',
+children: [
                 if (!supported)
                   StatusCard(
                     l?.bandNotifUnsupportedTitle ?? 'This phone cannot do it',
@@ -223,11 +213,7 @@ class BandNotificationsView extends StatelessWidget {
                   ),
                 ],
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 

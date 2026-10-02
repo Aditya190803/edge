@@ -22,7 +22,7 @@ import '../../coach/coach_engine.dart' show CoachException;
 import '../../l10n/app_localizations.dart';
 import '../ui2.dart';
 import 'coach.dart' show CoachSetup, kCoachAccent;
-import 'home_screen.dart' show go, pad, repoOf;
+import 'home_screen.dart' show go, repoOf;
 
 class AiBriefingScreen extends StatefulWidget {
   final BriefingPeriod period;
@@ -76,24 +76,12 @@ class _AiBriefingScreenState extends State<AiBriefingScreen> {
     final l = AppLocalizations.of(c);
     final cfg = c.watch<CoachConfig>();
     final b = _b;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: S.x4),
-              child: NavBar(
-                widget.period.title,
-                sub: b == null
+    return HealthPage(
+title: widget.period.title,
+sub: b == null
                     ? ''
                     : (l?.aiBriefingForDay(b.day) ?? 'FOR ${b.day}'),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: pad,
-                children: [
+children: [
                   const SizedBox(height: S.x2),
                   if (!cfg.configured)
                     StatusCard(
@@ -163,12 +151,7 @@ class _AiBriefingScreenState extends State<AiBriefingScreen> {
                       asked: b.calledModel,
                     ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+);
   }
 }
 

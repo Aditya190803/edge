@@ -968,20 +968,10 @@ class _CoachSetupState extends State<CoachSetup> {
             for (final m in _models)
               if (m.toLowerCase().contains(q)) m,
           ];
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: S.x4),
-              child: NavBar(l?.coachSetupNavTitle ?? 'AI settings',
-                  sub: l?.coachSetupNavSub ?? 'Bring your own model'),
-            ),
-            Expanded(
-              child: ListView(
-                padding: pad,
-                children: [
+    return HealthPage(
+title: l?.coachSetupNavTitle ?? 'AI settings',
+sub: l?.coachSetupNavSub ?? 'Bring your own model',
+children: [
                   Section(
                     l?.coachWhereModelRuns ?? 'Where the model runs',
                     Column(
@@ -1157,11 +1147,6 @@ class _CoachSetupState extends State<CoachSetup> {
                     onTap: _save,
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+);
   }
 }

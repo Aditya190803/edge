@@ -275,19 +275,10 @@ class PairSensorView extends StatelessWidget {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
     final busy = busyRemoteId != null;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.pairSensorAddASensor ?? 'Add a sensor',
-                sub: entryLabel),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.pairSensorAddASensor ?? 'Add a sensor',
+sub: entryLabel,
+children: [
                 if (paired != null) ..._pairedSection(c, paired!),
                 Section(
                   paired == null
@@ -370,11 +361,7 @@ class PairSensorView extends StatelessWidget {
                     ),
                   ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 
   List<Widget> _pairedSection(BuildContext c, PairedSensor s) {

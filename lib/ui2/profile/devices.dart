@@ -1526,18 +1526,9 @@ class MyDevicesView extends StatelessWidget {
     // whose phone was measuring nothing that "the phone counts steps".
     final phoneCounting = sources.any((s) => !s.isBand && s.connected);
     final l = AppLocalizations.of(c);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.devicesMySources ?? 'My sources'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.devicesMySources ?? 'My sources',
+children: [
                 // FIRST, in the tier-2 slot the missing band would occupy —
                 // not appended under the phone. Someone who has just forgotten
                 // a band is here to add one, and the row they can see is not
@@ -1626,11 +1617,7 @@ class MyDevicesView extends StatelessWidget {
                     const SizedBox(height: S.x3),
                   ],
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 
@@ -2564,18 +2551,9 @@ class DeviceDetailView extends StatelessWidget {
     final fault =
         localizedStatus?.isFault == true ? localizedStatus : null;
     final calibration = calibrationDisclosure(s);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(''),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: '',
+children: [
                 Center(
                   child: Container(
                     width: 120,
@@ -2782,11 +2760,7 @@ class DeviceDetailView extends StatelessWidget {
                         danger: true, chevron: false, onTap: onForget),
                   ),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 }
 

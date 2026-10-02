@@ -1849,32 +1849,21 @@ class _StepGoalGaugeState extends State<_StepGoalGauge> {
 
 // ═══════════════════ shared detail chrome ═══════════════════
 
-/// Every detail screen is the same frame: a back bar, then a scroll. Keeping it
-/// in one function is the reason the back affordance is in the same place on
-/// all of them.
+/// Every detail screen is the same frame — a [HealthPage]: a large title in
+/// the content that collapses into the pinned bar, with the back control on
+/// that bar. Keeping it in one function is the reason the back affordance is
+/// in the same place on all of them.
 Widget detailScaffold(BuildContext c, String title, List<Widget> body,
-    {String sub = '', Widget? trailing}) {
-  final p = P.of(c);
-  return Scaffold(
-    backgroundColor: p.bg,
-    body: SafeArea(
-      child: Column(children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: S.x4),
-          child: NavBar(title,
-              sub: sub,
-              trailing: trailing,
-              onBack: () => Navigator.of(c).maybePop()),
-        ),
-        Expanded(
-          child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x12),
-              children: body),
-        ),
-      ]),
-    ),
-  );
-}
+    {String sub = '', Widget? trailing, String eyebrow = '', Widget? accessory}) =>
+    HealthPage(
+      title: title,
+      sub: sub,
+      eyebrow: eyebrow,
+      accessory: accessory,
+      onBack: () => Navigator.of(c).maybePop(),
+      actions: [?trailing],
+      children: body,
+    );
 
 // ═══════════════════ which day a detail screen is showing ═══════════════════
 //

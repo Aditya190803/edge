@@ -191,19 +191,9 @@ class _PhoneImportState extends State<PhoneImport> {
     final labels = _kindLabels(c);
     final seed = _seed;
     final cmp = _compare;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: S.x4),
-              child: NavBar(l?.phoneImportNavTitle ?? 'From your phone'),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-                children: [
+    return HealthPage(
+title: l?.phoneImportNavTitle ?? 'From your phone',
+children: [
                   // ── seed-baselines ──────────────────────────────────────────
                   Section(
                     l?.phoneImportRhrSection ?? 'Resting heart rate',
@@ -385,12 +375,7 @@ class _PhoneImportState extends State<PhoneImport> {
                     ),
                   ],
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+);
   }
 }
 

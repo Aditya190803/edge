@@ -298,21 +298,11 @@ class ProfileHomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext c) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final s = stats;
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.profileTitle ?? 'Profile'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.profileTitle ?? 'Profile',
+children: [
                 const SizedBox(height: S.x4),
                 settingsGroup(c, l?.profileQuickAccessGroup ?? 'Quick access', [
                   SetRow(LucideIcons.watch, C.blue,
@@ -397,11 +387,7 @@ class ProfileHomeView extends StatelessWidget {
                       onTap: () => open3rdPartyLink(kSponsorUrl)),
                 ]),
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 
 }

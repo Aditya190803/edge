@@ -126,19 +126,10 @@ class AlarmScreenView extends StatelessWidget {
     final l = AppLocalizations.of(c);
     final at = armedAt;
     final anyDayEnabled = schedule.any((d) => d.enabled);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.alarmNavTitle ?? 'Alarm',
-                sub: l?.alarmNavSub ?? 'Wakes you on the band, not the phone'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-              children: [
+    return HealthPage(
+title: l?.alarmNavTitle ?? 'Alarm',
+sub: l?.alarmNavSub ?? 'Wakes you on the band, not the phone',
+children: [
                 if (at != null) ...[
                   Surface(
                     child: Column(
@@ -220,11 +211,7 @@ class AlarmScreenView extends StatelessWidget {
                             c, onCancel, l?.alarmCancelled ?? 'Alarm cancelled')),
                 ],
               ],
-            ),
-          ),
-        ]),
-      ),
-    );
+);
   }
 
   Future<void> _pickDayTime(BuildContext c, AlarmScheduleEntry day) async {
