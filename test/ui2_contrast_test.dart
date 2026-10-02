@@ -95,6 +95,32 @@ void main() {
     });
   });
 
+  group('P.tile() keeps a white glyph at the non-text floor', () {
+    // An icon tile is a graphical object: WCAG 1.4.11 asks 3:1 of it. It is
+    // deliberately NOT held to the 4.5:1 text floor — that would turn every
+    // yellow and orange tile brown — and it never carries a word, so this is
+    // the floor that applies to it.
+    themes.forEach((name, p) {
+      for (final accent in C.all) {
+        final hex = accent.toARGB32().toRadixString(16).padLeft(8, '0');
+        test('$name · inkOnFill on tile(#$hex)', () {
+          final r = P.contrast(p.inkOnFill, p.tile(accent));
+          expect(r, greaterThanOrEqualTo(3.0),
+              reason: 'a tile glyph measures ${r.toStringAsFixed(2)}:1 on its '
+                  'own tile in the $name theme.');
+        });
+      }
+    });
+
+    test('a tile is never darker than the fill of the same accent', () {
+      const p = P(false);
+      for (final accent in C.all) {
+        expect(p.tile(accent).computeLuminance(),
+            greaterThanOrEqualTo(p.fill(accent).computeLuminance() - 1e-9));
+      }
+    });
+  });
+
   group('P.on() is also safe on the TINTED surface it lands on', () {
     // `Pill` and the active `SubTabs` chip put `on(a)` on `wash(a)`, which is
     // not one of the three flat surfaces anything was solved against. Five of

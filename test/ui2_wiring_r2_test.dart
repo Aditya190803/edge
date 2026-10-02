@@ -657,9 +657,10 @@ void main() {
       await t.pumpWidget(frame(false));
       expect(find.byIcon(LucideIcons.sparkles), findsNothing);
       // The profile/settings button beside it is untouched — this is one
-      // button, not the row. (It's a gear, not an avatar — the profile photo
-      // was retired from this row; see home_screen's "Profile and settings".)
-      expect(find.byIcon(LucideIcons.settings), findsOneWidget);
+      // button, not the row. (A drawn avatar glyph, not a photo — the profile
+      // photo was retired from this row; see home_screen's "Profile and
+      // settings".)
+      expect(find.byIcon(LucideIcons.userRound), findsOneWidget);
     });
 
     testWidgets('a configured coach gets its button', (t) async {

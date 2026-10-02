@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_fonts.dart';
 
 /// The type the app ships. Without it the harness measures its fallback
 /// glyphs, and a width assertion against the wrong font is a width assertion
@@ -26,13 +27,14 @@ Future<void> _loadType() async {
       .listSync()
       .whereType<File>()
       .where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text']) {
+  for (final family in const ['Manrope']) {
     final loader = FontLoader(family);
     for (final f in files) {
       loader.addFont(f.readAsBytes().then((b) => b.buffer.asByteData()));
     }
     await loader.load();
   }
+  await loadShippedFonts();
 }
 
 /// One `SubTabs` chip: the label at its own weight, plus S.x4 of padding on

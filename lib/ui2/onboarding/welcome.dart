@@ -560,8 +560,27 @@ class WelcomeView extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(S.x4, S.x8, S.x4, S.x8),
           children: [
-            Icon(LucideIcons.activity, size: 40, color: p.on(C.green)),
-            const SizedBox(height: S.x5),
+            // The app's mark as the system would show it: a continuous-corner
+            // tile in Health's pink with the pulse glyph knocked out in white.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                width: 72,
+                height: 72,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  shape: R.shape(R.rLg),
+                  shadows: p.el(3),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [p.tile(C.pink), p.tile(C.red)],
+                  ),
+                ),
+                child: Icon(LucideIcons.activity, size: 38, color: p.inkOnFill),
+              ),
+            ),
+            const SizedBox(height: S.x6),
             Text(l?.welcomeHeadline ?? 'Your band, decoded here',
                 style: F.display.copyWith(color: p.ink)),
             const SizedBox(height: S.x3),
@@ -571,12 +590,15 @@ class WelcomeView extends StatelessWidget {
               style: F.body.copyWith(color: p.ink2),
             ),
             const SizedBox(height: S.x6),
-            Pill(l?.pillLocalNoCloud ?? 'Local · no cloud', C.green,
-                icon: LucideIcons.shieldCheck),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Pill(l?.pillLocalNoCloud ?? 'Local · no cloud', C.green,
+                  icon: LucideIcons.shieldCheck),
+            ),
             const SizedBox(height: S.x8),
             BigButton(l?.welcomeSetUpMyBand ?? 'Set up my band',
                 icon: LucideIcons.bluetooth,
-                color: C.green,
+                color: C.blue,
                 onTap: busy ? null : onNew),
             const SizedBox(height: S.x3),
             BigButton(

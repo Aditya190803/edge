@@ -104,10 +104,17 @@ class _PressableState extends State<Pressable> {
         onTapDown: (_) => setState(() => _down = true),
         onTapUp: (_) => setState(() => _down = false),
         onTapCancel: () => setState(() => _down = false),
-        child: AnimatedScale(
-          scale: _down ? .975 : 1,
+        // The platform's touch-down: the control settles a hair and dims,
+        // instead of a Material ripple spreading across it.
+        child: AnimatedOpacity(
+          opacity: _down ? .72 : 1,
           duration: motion(c, Motion.fast),
-          child: out,
+          child: AnimatedScale(
+            scale: _down ? .97 : 1,
+            duration: motion(c, Motion.fast),
+            curve: Curves.easeOutCubic,
+            child: out,
+          ),
         ),
       ),
     );
@@ -194,7 +201,10 @@ class Scrubber extends StatelessWidget {
   }
 }
 
-/// The base card surface. Elevation, not outline.
+/// The base card surface. Value, not outline and not shadow: a white
+/// continuous-corner card on the grouped grey page (charcoal on black in
+/// dark), the way Health lays out its summary. [elevation] above 1 lifts it
+/// with a soft wide shadow — for the one card on a screen that is the hero.
 class Surface extends StatelessWidget {
   final Widget child;
   final EdgeInsets pad;
@@ -222,10 +232,10 @@ class Surface extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: pad,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: color ?? p.card,
-          borderRadius: R.rLg,
-          boxShadow: p.el(elevation),
+          shape: R.shape(R.rLg),
+          shadows: p.el(elevation),
         ),
         child: child,
       ),
@@ -233,7 +243,49 @@ class Surface extends StatelessWidget {
   }
 }
 
-/// Full-width section. Whitespace separates concepts, not borders.
+/// The disclosure chevron that ends anything which opens something — a
+/// card, a row, a link. Small and grey, the way every list on the platform
+/// says "there is more behind this".
+class _Chevron extends StatelessWidget {
+  final Color? color;
+  final double size;
+  const _Chevron({this.color, this.size = 16});
+
+  @override
+  Widget build(BuildContext c) => Icon(
+        LucideIcons.chevronRight,
+        size: size,
+        color: color ?? P.of(c).ink3,
+      );
+}
+
+/// The rounded-square glyph tile that leads a row or a card: a white glyph on
+/// a filled accent, as the system's own Settings and Health lists draw it.
+class _Tile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+  const _Tile(this.icon, this.color, {this.size = 30});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: p.tile(color),
+        shape: R.shape(BorderRadius.all(Radius.circular(size * .28))),
+      ),
+      child: Icon(icon, size: size * .56, color: p.inkOnFill),
+    );
+  }
+}
+
+/// Full-width section. Whitespace separates concepts, not borders — and the
+/// header is a bold title with the action in the system tint, the way
+/// "Pinned" and "Show All" sit in Health.
 class Section extends StatelessWidget {
   final String title;
   final String? action;
@@ -255,8 +307,9 @@ class Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(S.x1, S.x5, S.x1, S.x2),
+          padding: const EdgeInsets.fromLTRB(S.x1, S.x6, 0, S.x2),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             // spaceBetween owns the gap, so the action sits on the right edge
             // however short the title is. Previously the title was Expanded
             // and the action Flexible — both default to flex: 1, so they split
@@ -269,7 +322,7 @@ class Section extends StatelessWidget {
               Flexible(
                 child: Text(
                   title,
-                  style: F.head.copyWith(color: p.ink),
+                  style: F.t2.copyWith(color: p.ink),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -279,13 +332,10 @@ class Section extends StatelessWidget {
                   child: Pressable(
                     onTap: onAction,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: S.x2),
+                      padding: const EdgeInsets.only(left: S.x2, right: S.x1),
                       child: Text(
                         action!,
-                        style: F.cap.copyWith(
-                          color: p.on(C.blue),
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: F.body.copyWith(color: p.on(C.blue)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -329,28 +379,37 @@ class SignalCard extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
+    final ink = p.on(color);
+    // Health's summary tile: the category names itself in its own colour at
+    // the top, the number sits large at the bottom, and the corner says
+    // whether there is more behind it.
     return Surface(
       onTap: onTap,
+      pad: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x3, S.x4),
       semanticLabel: '$label, $value $unit'.trim(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: p.on(color)),
-              const SizedBox(width: S.x2),
+              Icon(icon, size: 15, color: ink),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   label,
-                  style: F.cap.copyWith(color: p.ink2),
+                  style: F.cap.copyWith(color: ink, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              ?trailing,
+              if (trailing != null) ...[const SizedBox(width: S.x1), trailing!],
+              if (onTap != null) ...[
+                const SizedBox(width: 2),
+                const _Chevron(size: 15),
+              ],
             ],
           ),
-          const SizedBox(height: S.x3),
+          const SizedBox(height: S.x5),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
@@ -364,8 +423,12 @@ class SignalCard extends StatelessWidget {
                 ),
               ),
               if (unit.isNotEmpty) ...[
-                const SizedBox(width: S.x1),
-                Text(unit, style: F.cap.copyWith(color: p.ink3)),
+                const SizedBox(width: 3),
+                Text(
+                  unit,
+                  style: F.cap.copyWith(
+                      color: p.ink3, fontWeight: FontWeight.w600),
+                ),
               ],
             ],
           ),
@@ -373,7 +436,7 @@ class SignalCard extends StatelessWidget {
             const SizedBox(height: S.x1),
             Text(
               sub,
-              style: F.over.copyWith(color: p.ink3),
+              style: F.cap.copyWith(color: p.ink3),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -406,12 +469,10 @@ class ProgressCard extends StatelessWidget {
   Widget build(BuildContext c) {
     final p = P.of(c);
     final amount = Wrap(
-      spacing: S.x2,
+      spacing: S.x1,
+      crossAxisAlignment: WrapCrossAlignment.end,
       children: [
-        Text(
-          value,
-          style: F.cap.copyWith(color: p.ink, fontWeight: FontWeight.w600),
-        ),
+        Text(value, style: F.n17.copyWith(color: p.ink)),
         Text(target, style: F.cap.copyWith(color: p.ink3)),
       ],
     );
@@ -429,11 +490,11 @@ class ProgressCard extends StatelessWidget {
               Row(
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 15, color: p.on(color)),
+                    _Tile(icon!, color, size: 22),
                     const SizedBox(width: S.x2),
                   ],
                   Expanded(
-                    child: Text(label, style: F.cap.copyWith(color: p.ink2)),
+                    child: Text(label, style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),
@@ -445,11 +506,11 @@ class ProgressCard extends StatelessWidget {
           Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 15, color: p.on(color)),
+                _Tile(icon!, color, size: 22),
                 const SizedBox(width: S.x2),
               ],
               Expanded(
-                child: Text(label, style: F.cap.copyWith(color: p.ink2)),
+                child: Text(label, style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w500)),
               ),
               amount,
             ],
@@ -462,6 +523,12 @@ class ProgressCard extends StatelessWidget {
 }
 
 /// The one progress bar. Everything with a fraction uses it.
+///
+/// A capsule filling with its own colour, lighter at the start and full at
+/// the leading edge — the way an Activity ring brightens toward its head, so
+/// the eye lands on how far it got rather than on where it began. A fraction
+/// that is not a number fills nothing: an empty track is the honest drawing
+/// of "unknown", a full one would be a claim.
 class _Bar extends StatelessWidget {
   final double frac;
   final Color color;
@@ -470,13 +537,31 @@ class _Bar extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return ClipRRect(
-      borderRadius: R.rPill,
-      child: LinearProgressIndicator(
-        value: frac.clamp(0, 1),
-        minHeight: 8,
-        backgroundColor: p.track,
-        valueColor: AlwaysStoppedAnimation(p.on(color)),
+    final f = frac.isFinite ? frac.clamp(0.0, 1.0) : 0.0;
+    final ink = p.on(color);
+    return Semantics(
+      value: '${(f * 100).round()}%',
+      child: Container(
+        height: 10,
+        decoration: ShapeDecoration(
+          color: p.wash(color, strength: .9),
+          shape: const StadiumBorder(),
+        ),
+        alignment: AlignmentDirectional.centerStart,
+        child: f <= 0
+            ? null
+            : FractionallySizedBox(
+                widthFactor: f,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    gradient: LinearGradient(
+                      colors: [Color.lerp(ink, p.card, .3)!, ink],
+                    ),
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -524,24 +609,36 @@ class TrendCard extends StatelessWidget {
     // With no baseline there is no way and no news — an arrow and a hue would
     // both be inventions, so neither is drawn and the label says nothing about
     // better or worse.
-    final dir = j == null ? p.ink3 : p.on(j ? C.green : C.orange);
+    final hue = j == null ? null : (j ? C.green : C.orange);
+    final dir = hue == null ? p.ink3 : p.on(hue);
     final judgement = j == null ? '' : (j ? 'an improvement' : 'worse than usual');
-    final change = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (j != null) ...[
-          Icon(
-            up ? LucideIcons.arrowUpRight : LucideIcons.arrowDownRight,
-            size: 14,
-            color: dir,
+    // The change rides in a capsule tinted with its own verdict, so it reads
+    // as a badge on the number rather than a second number beside it. With
+    // no verdict there is no tint either — a grey capsule passes no judgement.
+    final change = Container(
+      padding: const EdgeInsets.symmetric(horizontal: S.x2, vertical: 3),
+      decoration: ShapeDecoration(
+        color: hue == null ? p.card2 : p.wash(hue),
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (j != null) ...[
+            Icon(
+              up ? LucideIcons.arrowUpRight : LucideIcons.arrowDownRight,
+              size: 13,
+              color: dir,
+            ),
+            const SizedBox(width: 2),
+          ],
+          Text(
+            delta,
+            style: F.cap.copyWith(color: dir, fontWeight: FontWeight.w600),
+            maxLines: 1,
           ),
-          const SizedBox(width: S.x1),
         ],
-        Text(
-          delta,
-          style: F.cap.copyWith(color: dir, fontWeight: FontWeight.w600),
-        ),
-      ],
+      ),
     );
     return Surface(
       onTap: onTap,
@@ -551,8 +648,19 @@ class TrendCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: F.cap.copyWith(color: p.ink2)),
-          const SizedBox(height: S.x2),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: F.cap.copyWith(
+                      color: p.on(color), fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (onTap != null) const _Chevron(size: 15),
+            ],
+          ),
+          const SizedBox(height: S.x3),
           // A realistic value — `7h 42m`, not the two characters the golden used
           // to pass on — pushed the delta and its arrow clean off the card: 202 px
           // at 2×, 458 at 3×. Above the restack point the change moves to its own
@@ -587,35 +695,24 @@ class TrendCard extends StatelessWidget {
                 // split the row 50/50 and a long reading ellipsised at half
                 // width with empty space beside it. A Spacer does the shoving
                 // and the unit goes back to its own size.
-                Text(unit, style: F.cap.copyWith(color: p.ink3)),
+                Text(unit,
+                    style: F.cap.copyWith(
+                        color: p.ink3, fontWeight: FontWeight.w600)),
                 const Spacer(),
-                if (j != null) ...[
-                  Icon(
-                    up ? LucideIcons.arrowUpRight : LucideIcons.arrowDownRight,
-                    size: 14,
-                    color: dir,
-                  ),
-                  const SizedBox(width: S.x1),
-                ],
-                Text(
-                  delta,
-                  style: F.cap.copyWith(
-                    color: dir,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const SizedBox(width: S.x2),
+                change,
               ],
             ),
           const SizedBox(height: S.x1),
-          Text(window, style: F.over.copyWith(color: p.ink3)),
+          Text(window, style: F.cap.copyWith(color: p.ink3)),
           const SizedBox(height: S.x4),
           SizedBox(
-            height: 64,
+            height: 72,
             child: CustomPaint(
               size: Size.infinite,
-              // No `dotInk`: `dots` is off here, and the knockout colour is
-              // only ever read inside the head-dot branch.
-              painter: LineChart(series, p.on(color)),
+              // The head dot knocks out the card it sits on, so the newest
+              // reading is marked the way Health marks "now" on a trend.
+              painter: LineChart(series, p.on(color), dots: true, dotInk: p.card),
             ),
           ),
         ],
@@ -646,10 +743,12 @@ class InsightCard extends StatelessWidget {
   Widget build(BuildContext c) {
     final p = P.of(c);
     final ink = p.on(color);
+    // A Highlight: the glyph leads in its own filled circle, the headline
+    // carries the weight, and the reason sits under it in body ink. The card
+    // is the same white every other card is — what marks it as something the
+    // system NOTICED is the glyph, not a tinted slab behind the words.
     return Surface(
       onTap: onTap,
-      color: p.wash(color, strength: .65),
-      elevation: 0,
       semanticLabel: '$headline. $reason',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,31 +757,32 @@ class InsightCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: p.wash(color),
-                  borderRadius: R.rSm,
+                decoration: ShapeDecoration(
+                  shape: const CircleBorder(),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color.lerp(p.tile(color), C.white, .18)!,
+                      p.tile(color),
+                    ],
+                  ),
                 ),
-                child: Icon(icon, size: 16, color: ink),
+                child: Icon(icon, size: 17, color: p.inkOnFill),
               ),
               const SizedBox(width: S.x3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      headline,
-                      style: F.body.copyWith(
-                        color: p.ink,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(headline, style: F.head.copyWith(color: p.ink)),
                     const SizedBox(height: S.x1),
                     Text(
                       reason,
-                      style: F.cap.copyWith(color: p.ink2, height: 1.5),
+                      style: F.body.copyWith(color: p.ink2, height: 1.45),
                     ),
                   ],
                 ),
@@ -690,11 +790,10 @@ class InsightCard extends StatelessWidget {
             ],
           ),
           if (action.isNotEmpty) ...[
-            const SizedBox(height: S.x2),
-            Padding(
-              padding: const EdgeInsets.only(left: S.x10 + S.x1),
-              child: _Cta(action, ink),
-            ),
+            const SizedBox(height: S.x3),
+            Divider(height: 1, thickness: .5, color: p.line),
+            const SizedBox(height: S.x3),
+            _Cta(action, ink),
           ],
         ],
       ),
@@ -721,14 +820,14 @@ class _Cta extends StatelessWidget {
       Flexible(
         child: Text(
           label,
-          style: F.cap.copyWith(color: color, fontWeight: FontWeight.w600),
+          style: F.body.copyWith(color: color, fontWeight: FontWeight.w500),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
       ),
       if (arrow) ...[
-        const SizedBox(width: S.x1),
-        Icon(LucideIcons.arrowRight, size: 13, color: color),
+        const SizedBox(width: 2),
+        _Chevron(color: color, size: 16),
       ],
     ],
   );
@@ -759,35 +858,29 @@ class ActionCard extends StatelessWidget {
     // The CTA is never Flexible: it is a button label, and a clipped one reads
     // as a different word. Below the restack point it wins the row against the
     // title, which is the right loser; above it, it takes its own line.
+    // The capsule the App Store puts "Get" in: tinted, not filled, so a card
+    // with an action reads as an offer rather than an alarm.
     final badge = Container(
-      padding: const EdgeInsets.symmetric(horizontal: S.x3, vertical: S.x2),
-      decoration: BoxDecoration(color: p.fill(color), borderRadius: R.rSm),
+      padding: const EdgeInsets.symmetric(horizontal: S.x4, vertical: 7),
+      decoration: ShapeDecoration(
+        color: p.wash(color),
+        shape: const StadiumBorder(),
+      ),
       child: Text(
         cta,
-        style: F.cap.copyWith(color: p.inkOnFill, fontWeight: FontWeight.w600),
+        style: F.cap.copyWith(color: p.on(color), fontWeight: FontWeight.w700),
       ),
     );
     final head = Row(
       children: [
-        Container(
-          width: S.tap,
-          height: S.tap,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: p.wash(color), borderRadius: R.rMd),
-          child: Icon(icon, size: 20, color: p.on(color)),
-        ),
+        _Tile(icon, color, size: 42),
         const SizedBox(width: S.x3),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: F.body.copyWith(
-                  color: p.ink,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(title, style: F.head.copyWith(color: p.ink)),
+              const SizedBox(height: 2),
               Text(meta, style: F.cap.copyWith(color: p.ink3)),
             ],
           ),
@@ -966,41 +1059,61 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
+    // Same white card as a reading — an absence is part of the record, not a
+    // hole in it — but the glyph sits in a grey well instead of a coloured
+    // tile, and the title is in body ink rather than a number's weight. The
+    // screen reads at a glance as "this one has no value", never as an error.
     return Surface(
-      elevation: 0,
-      color: p.card2,
       onTap: onFix,
       semanticLabel: '$what. $why. $fix'.trim(),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              leading ?? Icon(icon, size: 16, color: p.ink3),
-              const SizedBox(width: S.x2),
-              Expanded(
-                child: Text(
-                  what,
-                  style: F.body.copyWith(
-                    color: p.ink2,
-                    fontWeight: FontWeight.w600,
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: p.card2,
+              shape: const CircleBorder(),
+            ),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: Center(
+                  child: leading ?? Icon(icon, size: 16, color: p.ink3)),
+            ),
+          ),
+          const SizedBox(width: S.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    what,
+                    style: F.body.copyWith(
+                      color: p.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                // A card may be a title and an action with no body. That is
+                // the minimal-text ideal, not a broken card — what it must
+                // never be is a title alone, which is why `fix` and `why`
+                // cannot both be empty at the call sites that matter.
+                if (why.isNotEmpty) ...[
+                  const SizedBox(height: S.x1),
+                  Text(why, style: F.cap.copyWith(color: p.ink3, height: 1.45)),
+                ],
+                if (fix.isNotEmpty) ...[
+                  const SizedBox(height: S.x3),
+                  _Cta(fix, p.on(C.blue), arrow: onFix != null),
+                ],
+              ],
+            ),
           ),
-          // A card may be a title and an action with no body. That is the
-          // minimal-text ideal, not a broken card — what it must never be is a
-          // title alone, which is why `fix` and `why` cannot both be empty at
-          // the call sites that matter.
-          if (why.isNotEmpty) ...[
-            const SizedBox(height: S.x2),
-            Text(why, style: F.cap.copyWith(color: p.ink3, height: 1.5)),
-          ],
-          if (fix.isNotEmpty) ...[
-            const SizedBox(height: S.x3),
-            _Cta(fix, p.on(C.blue), arrow: onFix != null),
-          ],
         ],
       ),
     );
@@ -1029,63 +1142,66 @@ class DeepDiveCard extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
+    final ink = p.on(color);
+    final reading = Wrap(
+      crossAxisAlignment: WrapCrossAlignment.end,
+      spacing: 3,
+      children: [
+        Text(value, style: F.n34.copyWith(color: p.ink)),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: Text(unit,
+              style: F.cap.copyWith(color: p.ink3, fontWeight: FontWeight.w600)),
+        ),
+      ],
+    );
+    // The category names itself in colour, the number is the hero, the
+    // preview is the shape behind it, and the door is a list row along the
+    // card's foot — Health's "Show All Data" at the bottom of a metric.
     return Surface(
       onTap: onTap,
+      pad: EdgeInsets.zero,
       semanticLabel: '$label, $value $unit. $cta',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Same restack as TrendCard, for the same reason: `7h 42m` beside a
-          // full-width label overflowed by 184 px at 3×.
-          if (bigText(c))
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x4, 0),
+            child: Text(
+              label,
+              style: F.cap.copyWith(color: ink, fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(S.x4, S.x2, S.x4, 0),
+            child: reading,
+          ),
+          if (preview != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x4, 0),
+              child: preview!,
+            ),
+          const SizedBox(height: S.x3),
+          Divider(height: 1, thickness: .5, color: p.line, indent: S.x4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x3, S.x3),
+            child: Row(
               children: [
-                Text(label, style: F.cap.copyWith(color: p.ink2)),
-                const SizedBox(height: S.x1),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.end,
-                  spacing: S.x1,
-                  children: [
-                    Text(value, style: F.n24.copyWith(color: p.ink)),
-                    Text(unit, style: F.cap.copyWith(color: p.ink3)),
-                  ],
-                ),
-              ],
-            )
-          else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Same 50/50 split as above: Expanded and Flexible are both
-                // flex: 1, so the reading started at the midpoint. Both
-                // shrinkable with spaceBetween owning the gap anchors it.
-                Flexible(
+                Expanded(
                   child: Text(
-                    label,
-                    style: F.cap.copyWith(color: p.ink2),
+                    cta,
+                    style: F.body.copyWith(color: ink, fontWeight: FontWeight.w500),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: S.x2),
-                Flexible(
-                  child: Text(
-                    value,
-                    style: F.n24.copyWith(color: p.ink),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: S.x1),
-                Text(unit, style: F.cap.copyWith(color: p.ink3)),
+                const _Chevron(),
               ],
             ),
-          if (preview != null) ...[const SizedBox(height: S.x3), preview!],
-          const SizedBox(height: S.x3),
-          _Cta(cta, p.on(color)),
+          ),
         ],
       ),
     );
@@ -1223,7 +1339,7 @@ class MetricRow extends StatelessWidget {
         // supposed to never do. It is the name that gives way now.
         Text(
           value,
-          style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w600),
+          style: F.n17.copyWith(color: p.ink),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1273,7 +1389,7 @@ class MetricRow extends StatelessWidget {
           .replaceAll(RegExp(r'\s+'), ' ')
           .trim(),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: S.x2),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: bigText(c)
             // A dense row cannot stay one line at accessibility sizes without
             // truncating the measurement, and a truncated measurement is worse
@@ -1281,7 +1397,7 @@ class MetricRow extends StatelessWidget {
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 18, color: p.on(color)),
+                  _Tile(icon, color, size: 30),
                   const SizedBox(width: S.x3),
                   Expanded(
                     child: Column(
@@ -1308,13 +1424,17 @@ class MetricRow extends StatelessWidget {
             // readings that did not read as a column.
             : Row(
                 children: [
-                  Icon(icon, size: 18, color: p.on(color)),
+                  _Tile(icon, color, size: 30),
                   const SizedBox(width: S.x3),
                   Expanded(child: title),
                   const SizedBox(width: S.x2),
                   amount,
                   const SizedBox(width: S.x3),
                   trailing,
+                  if (onTap != null) ...[
+                    const SizedBox(width: S.x2),
+                    const _Chevron(),
+                  ],
                 ],
               ),
       ),
@@ -1337,8 +1457,31 @@ class InlineMetrics extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(e.$1, style: F.over.copyWith(color: p.ink3)),
-                const SizedBox(height: S.x1),
+                // The colour moves off the number and onto a marker beside its
+                // name: a row of three tinted figures reads as three alerts,
+                // a row of three ink figures keyed by colour reads as data.
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 12,
+                      decoration: ShapeDecoration(
+                        color: p.on(e.$3),
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        e.$1,
+                        style: F.over.copyWith(color: p.ink3),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 // scaleDown, NOT ellipsis. These are measurements sharing
                 // one row, so the slot is a third of a card and a two-digit
                 // fixture fits where a real one does not: at 2x text the
@@ -1351,7 +1494,7 @@ class InlineMetrics extends StatelessWidget {
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     e.$2,
-                    style: F.n17.copyWith(color: p.on(e.$3)),
+                    style: F.n24.copyWith(color: p.ink),
                     maxLines: 1,
                   ),
                 ),
@@ -1390,25 +1533,35 @@ class Recommendation extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(rec, style: F.t2.copyWith(color: p.ink)),
+          Text(rec, style: F.t1.copyWith(color: p.ink)),
           const SizedBox(height: S.x2),
-          Text(reason, style: F.body.copyWith(color: p.ink2, height: 1.5)),
-          const SizedBox(height: S.x3),
-          Row(
-            children: [
-              Flexible(
-                child: Text(
-                  action,
-                  style: F.body.copyWith(
-                    color: p.on(color),
-                    fontWeight: FontWeight.w600,
+          Text(reason, style: F.body.copyWith(color: p.ink2, height: 1.45)),
+          const SizedBox(height: S.x4),
+          // The action as a tinted capsule — the one control on the screen
+          // that is the answer to "so what do I do".
+          Container(
+            padding: const EdgeInsets.fromLTRB(S.x4, S.x2, S.x3, S.x2),
+            decoration: ShapeDecoration(
+              color: p.wash(color),
+              shape: const StadiumBorder(),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    action,
+                    style: F.body.copyWith(
+                      color: p.on(color),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
                   ),
-                  maxLines: 2,
                 ),
-              ),
-              const SizedBox(width: S.x1),
-              Icon(LucideIcons.arrowRight, size: 15, color: p.on(color)),
-            ],
+                const SizedBox(width: 2),
+                _Chevron(color: p.on(color)),
+              ],
+            ),
           ),
         ],
       ),
@@ -1446,18 +1599,36 @@ class GoalTrajectory extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: F.cap.copyWith(color: p.ink2)),
+          Text(label,
+              style: F.cap.copyWith(color: ink, fontWeight: FontWeight.w600)),
           const SizedBox(height: S.x3),
           // Wrap, not Row: at large text scales the goal label drops to its own
           // line rather than pushing the number off the card. A truncated
           // measurement is worse than a taller card.
           Wrap(
-            crossAxisAlignment: WrapCrossAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
             spacing: S.x3,
             runSpacing: S.x1,
             children: [
               Text(current, style: F.n34.copyWith(color: p.ink)),
-              Text('Goal $target', style: F.cap.copyWith(color: p.ink3)),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: S.x2, vertical: 3),
+                decoration: ShapeDecoration(
+                  color: p.card2,
+                  shape: const StadiumBorder(),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.flag, size: 12, color: p.ink3),
+                    const SizedBox(width: S.x1),
+                    Text('Goal $target',
+                        style: F.cap.copyWith(
+                            color: p.ink3, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: S.x3),
@@ -1503,51 +1674,58 @@ class Observation extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       semanticLabel: 'Health observation. $headline. $detail. $advice'.trim(),
+      // A card with a tinted header band, the way the system frames a notice
+      // it wants read before the rest of the screen: the band says what KIND
+      // of thing this is, the body says what was measured.
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(S.x4),
-        decoration: BoxDecoration(
-          color: p.card,
-          borderRadius: R.rLg,
-          border: Border(left: BorderSide(color: ink, width: 3)),
-          boxShadow: p.el(1),
-        ),
+        clipBehavior: Clip.antiAlias,
+        decoration: ShapeDecoration(color: p.card, shape: R.shape(R.rLg)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(LucideIcons.stethoscope, size: 15, color: ink),
-                const SizedBox(width: S.x2),
-                Flexible(
-                  child: Text(
-                    'HEALTH OBSERVATION',
-                    style: F.over.copyWith(color: ink),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            Container(
+              width: double.infinity,
+              color: p.wash(C.orange),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: S.x4, vertical: S.x2),
+              child: Row(
+                children: [
+                  _Tile(LucideIcons.stethoscope, C.orange, size: 22),
+                  const SizedBox(width: S.x2),
+                  Flexible(
+                    child: Text(
+                      'Health observation',
+                      style: F.cap.copyWith(
+                          color: ink, fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: S.x3),
-            Text(
-              headline,
-              style: F.body.copyWith(
-                color: p.ink,
-                fontWeight: FontWeight.w600,
-                height: 1.45,
+                ],
               ),
             ),
-            const SizedBox(height: S.x2),
-            Text(detail, style: F.cap.copyWith(color: p.ink2, height: 1.5)),
-            if (advice.isNotEmpty) ...[
-              const SizedBox(height: S.x2),
-              Text(advice, style: F.cap.copyWith(color: p.ink3, height: 1.5)),
-            ],
-            if (onTap != null) ...[
-              const SizedBox(height: S.x3),
-              _Cta('View data', ink),
-            ],
+            Padding(
+              padding: const EdgeInsets.all(S.x4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(headline, style: F.head.copyWith(color: p.ink)),
+                  const SizedBox(height: S.x2),
+                  Text(detail,
+                      style: F.body.copyWith(color: p.ink2, height: 1.45)),
+                  if (advice.isNotEmpty) ...[
+                    const SizedBox(height: S.x2),
+                    Text(advice,
+                        style: F.cap.copyWith(color: p.ink3, height: 1.45)),
+                  ],
+                  if (onTap != null) ...[
+                    const SizedBox(height: S.x3),
+                    _Cta('View data', ink),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -1587,22 +1765,34 @@ class Consistency extends StatelessWidget {
               Text('of $n $unit', style: F.cap.copyWith(color: p.ink3)),
             ],
           ),
-          const SizedBox(height: S.x2),
-          Row(
-            children: [
-              for (var i = 0; i < n; i++)
-                Expanded(
-                  child: Container(
-                    margin: EdgeInsets.only(right: i == n - 1 ? 0 : 2),
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: i < have ? p.on(color) : p.track,
-                      borderRadius: const BorderRadius.all(Radius.circular(2)),
+          const SizedBox(height: S.x3),
+          // One dot per day, filled for each one kept — the way the system
+          // draws a week of rings in miniature. Dots shrink to fit a long run
+          // rather than wrapping it: the row IS the window, and a second line
+          // would read as a second window.
+          if (n > 0)
+            LayoutBuilder(builder: (_, box) {
+              final w = box.maxWidth;
+              final d = ((w - (n - 1) * 3) / n).clamp(2.0, 12.0);
+              return Row(
+                mainAxisAlignment: d >= 12
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < n; i++)
+                    Container(
+                      width: d,
+                      height: d,
+                      margin: EdgeInsets.only(
+                          right: d >= 12 && i < n - 1 ? 3 : 0),
+                      decoration: ShapeDecoration(
+                        color: i < have ? p.on(color) : p.track,
+                        shape: const CircleBorder(),
+                      ),
                     ),
-                  ),
-                ),
-            ],
-          ),
+                ],
+              );
+            }),
           const SizedBox(height: S.x2),
           Text(label, style: F.cap.copyWith(color: p.ink3)),
         ],
@@ -1674,19 +1864,27 @@ Future<bool> confirmRemove(
     context: c,
     sheetAnimationStyle: sheetMotion(c),
     backgroundColor: P.of(c).card,
-    shape: const RoundedRectangleBorder(
+    shape: const RoundedSuperellipseBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(R.xxl)),
     ),
     builder: (s) => SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(S.x5),
+        padding: const EdgeInsets.fromLTRB(S.x5, S.x2, S.x5, S.x4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: F.head.copyWith(color: P.of(s).ink)),
+            const SheetGrabber(),
+            const SizedBox(height: S.x4),
+            Center(child: _Tile(LucideIcons.trash2, C.red, size: 44)),
+            const SizedBox(height: S.x3),
+            Text(title,
+                textAlign: TextAlign.center,
+                style: F.head.copyWith(color: P.of(s).ink)),
             const SizedBox(height: S.x2),
-            Text(body, style: F.cap.copyWith(color: P.of(s).ink2, height: 1.5)),
+            Text(body,
+                textAlign: TextAlign.center,
+                style: F.cap.copyWith(color: P.of(s).ink2, height: 1.45)),
             const SizedBox(height: S.x5),
             BigButton(remove,
                 icon: LucideIcons.trash2,
@@ -1723,15 +1921,21 @@ class SubTabs extends StatelessWidget {
     this.index,
     this.onTap, {
     super.key,
-    this.color = C.green,
+    this.color = C.blue,
     this.disabled = const {},
   });
 
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return SizedBox(
-      height: MediaQuery.textScalerOf(c).scale(S.tap),
+    final h = MediaQuery.textScalerOf(c).scale(S.tap);
+    // The segmented control: a grey track with the chosen segment lifted out
+    // of it as a white capsule. Every segment keeps the 44 pt height inside
+    // the track's 2 pt inset, so the track is drawn 4 pt taller than a tap.
+    return Container(
+      height: h + 4,
+      padding: const EdgeInsets.all(2),
+      decoration: ShapeDecoration(color: p.card2, shape: const StadiumBorder()),
       // The fifth tab is off the edge on every phone we ship to — at 360 pt
       // it is entirely off-screen in both tab sets, and above 1.0x text every
       // set overflows even a 430 pt screen. ScrollHint draws nothing at all
@@ -1740,7 +1944,7 @@ class SubTabs extends StatelessWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(width: S.x2),
+          separatorBuilder: (_, _) => const SizedBox(width: 2),
           itemBuilder: (_, i) {
             final off = disabled.contains(i);
             final on = i == index && !off;
@@ -1748,35 +1952,40 @@ class SubTabs extends StatelessWidget {
               onTap: off ? null : () => onTap(i),
               // `Pressable` drops `Semantics(button: true)` when `onTap` is
               // null, so without this a screen reader announced a disabled
-              // pill exactly like a working one.
+              // segment exactly like a working one.
               semanticLabel: off ? '${items[i]}, unavailable' : null,
               child: AnimatedContainer(
                 duration: motion(c, Motion.base),
-                constraints: const BoxConstraints(minWidth: S.tap),
+                curve: Curves.easeOutCubic,
+                height: h,
+                constraints: const BoxConstraints(minWidth: S.tap + S.x6),
                 padding: const EdgeInsets.symmetric(horizontal: S.x4),
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  // THREE STATES, THREE LOOKS. A disabled pill used to compute
-                  // `on == false` and render exactly like a selectable-but-
-                  // unselected one — transparent, same ink — so the user
-                  // tapped it and nothing happened. An inert `card2` slot
-                  // reads as filled-but-dead against both the accent wash of
-                  // the active pill and the empty ground of a live one, and
-                  // `ink3` is solved for 4.5:1 ON `card2` (see theme.dart), so
-                  // this cue costs no contrast the way dimming would.
-                  color: off
-                      ? p.card2
-                      : on
-                          ? p.wash(color)
-                          : const Color(0x00000000),
-                  borderRadius: R.rPill,
+                decoration: ShapeDecoration(
+                  color: on ? p.card : const Color(0x00000000),
+                  shape: const StadiumBorder(),
+                  shadows: on ? p.el(2) : const [],
                 ),
-                child: Text(
-                  items[i],
-                  style: F.cap.copyWith(
-                    color: on ? p.on(color) : p.ink3,
-                    fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-                  ),
+                // THREE STATES, THREE LOOKS. Selected is lifted and in the
+                // domain's colour; live is ink on the track; unavailable is
+                // muted AND carries a glyph, because a segment that only
+                // looks a little paler is one somebody taps and nothing
+                // happens.
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (off) ...[
+                      Icon(LucideIcons.ban, size: 12, color: p.ink3),
+                      const SizedBox(width: S.x1),
+                    ],
+                    Text(
+                      items[i],
+                      style: F.cap.copyWith(
+                        color: on ? p.on(color) : off ? p.ink3 : p.ink2,
+                        fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -1787,6 +1996,24 @@ class SubTabs extends StatelessWidget {
   }
 }
 
+/// The grabber at the top of a sheet: the short grey capsule that says this
+/// layer can be dragged away.
+class SheetGrabber extends StatelessWidget {
+  const SheetGrabber({super.key});
+
+  @override
+  Widget build(BuildContext c) => Center(
+        child: Container(
+          width: 36,
+          height: 5,
+          decoration: ShapeDecoration(
+            color: P.of(c).line,
+            shape: const StadiumBorder(),
+          ),
+        ),
+      );
+}
+
 class ScreenTitle extends StatelessWidget {
   final String title;
   final Widget? trailing;
@@ -1795,14 +2022,18 @@ class ScreenTitle extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
+    // The large title — the screen's name set big and flush left above its
+    // content, collapsing to nothing but itself. It is the first thing on
+    // every tab, so it is the first thing that says "this is a native app".
     return Padding(
-      padding: const EdgeInsets.fromLTRB(S.x1, S.x2, S.x1, S.x3),
+      padding: const EdgeInsets.fromLTRB(S.x1, S.x4, 0, S.x3),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Text(
               title,
-              style: F.t1.copyWith(color: p.ink),
+              style: F.display.copyWith(color: p.ink),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1825,16 +2056,24 @@ class Pill extends StatelessWidget {
   Widget build(BuildContext c) {
     final p = P.of(c);
     final ink = p.on(color);
+    // A capsule led by a dot of its own colour, or by its glyph when it has
+    // one — the dot is what lets a row of tags be told apart at a glance
+    // without leaning on the tint behind the words.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: S.x3, vertical: 5),
-      decoration: BoxDecoration(color: p.wash(color), borderRadius: R.rPill),
+      padding: const EdgeInsets.fromLTRB(S.x2, 4, S.x3, 4),
+      decoration: ShapeDecoration(color: p.wash(color), shape: const StadiumBorder()),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: ink),
-            const SizedBox(width: S.x1),
-          ],
+          if (icon != null)
+            Icon(icon, size: 12, color: ink)
+          else
+            Container(
+              width: 6,
+              height: 6,
+              decoration: ShapeDecoration(color: ink, shape: const CircleBorder()),
+            ),
+          const SizedBox(width: 6),
           Flexible(
             child: Text(
               text,
@@ -1861,7 +2100,7 @@ class BigButton extends StatelessWidget {
     this.label, {
     super.key,
     this.icon,
-    this.color = C.green,
+    this.color = C.blue,
     this.soft = false,
     this.onTap,
   });
@@ -1880,10 +2119,12 @@ class BigButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x3),
         alignment: Alignment.center,
-        decoration: BoxDecoration(
+        // A capsule, the platform's large-button shape. Filled for the one
+        // commitment on a screen; tinted for the way back out of it. No
+        // shadow on either — the fill is the emphasis.
+        decoration: ShapeDecoration(
           color: soft ? p.wash(color) : p.fill(color),
-          borderRadius: R.rMd,
-          boxShadow: soft ? null : p.el(2),
+          shape: const StadiumBorder(),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2055,11 +2296,18 @@ class ChartFrame extends StatelessWidget {
   Widget _header(P p, bool stacked) {
     final name = Text(
       title,
-      style: F.cap.copyWith(color: p.ink, fontWeight: FontWeight.w600),
+      style: F.head.copyWith(color: p.ink),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
-    final measure = Text(unit, style: F.over.copyWith(color: p.ink3));
+    // The unit in a grey capsule, so it reads as the chart's label rather
+    // than as a stray word at the end of the title.
+    final measure = Container(
+      padding: const EdgeInsets.symmetric(horizontal: S.x2, vertical: 2),
+      decoration: ShapeDecoration(color: p.card2, shape: const StadiumBorder()),
+      child: Text(unit,
+          style: F.over.copyWith(color: p.ink3, fontWeight: FontWeight.w600)),
+    );
     if (!stacked) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -2072,7 +2320,7 @@ class ChartFrame extends StatelessWidget {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [name, measure],
+      children: [name, const SizedBox(height: S.x1), measure],
     );
   }
 
@@ -2158,40 +2406,6 @@ class ChartFrame extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (a != null) ...[
-                    // Tick numbers, spoken already as part of the frame's sentence.
-                    ExcludeSemantics(
-                      child: SizedBox(
-                        width: gutter,
-                        child: Stack(
-                          children: [
-                            for (var i = 0; i < labels.length; i++)
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                // Centred on its gridline, then clamped inside the
-                                // plot so the top and bottom labels are not half cut.
-                                top:
-                                    (i / (labels.length - 1) * height -
-                                            lineH / 2)
-                                        .clamp(
-                                          0.0,
-                                          (height - lineH).clamp(0.0, height),
-                                        ),
-                                child: Text(
-                                  labels[i],
-                                  style: tick,
-                                  textAlign: TextAlign.right,
-                                  maxLines: 1,
-                                  softWrap: false,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: S.x2),
-                  ],
                   Expanded(
                     child: Stack(
                       children: [
@@ -2214,6 +2428,40 @@ class ChartFrame extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (a != null) ...[
+                    const SizedBox(width: S.x2),
+                    // Tick numbers, spoken already as part of the frame's sentence.
+                    ExcludeSemantics(
+                      child: SizedBox(
+                        width: gutter,
+                        child: Stack(
+                          children: [
+                            for (var i = 0; i < labels.length; i++)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                // Centred on its gridline, then clamped inside the
+                                // plot so the top and bottom labels are not half cut.
+                                top:
+                                    (i / (labels.length - 1) * height -
+                                            lineH / 2)
+                                        .clamp(
+                                          0.0,
+                                          (height - lineH).clamp(0.0, height),
+                                        ),
+                                child: Text(
+                                  labels[i],
+                                  style: tick,
+                                  textAlign: TextAlign.left,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -2222,7 +2470,7 @@ class ChartFrame extends StatelessWidget {
           if (empty == null && xLabels.isNotEmpty)
             ExcludeSemantics(
               child: Padding(
-                padding: EdgeInsets.only(top: S.x1, left: inset),
+                padding: EdgeInsets.only(top: S.x1, right: inset),
                 child: Row(
                   children: [
                     for (var i = 0; i < xLabels.length; i++)
@@ -2258,17 +2506,18 @@ class ChartFrame extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 9,
-                            height: 9,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                            width: 12,
+                            height: 8,
+                            decoration: ShapeDecoration(
                               color: colour,
                               // The swatch is the mark's real colour so the two match,
                               // and a pale mark still needs an edge to be findable.
-                              border: Border.all(color: p.line, width: .5),
+                              shape: StadiumBorder(
+                                side: BorderSide(color: p.line, width: .5),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: S.x1),
+                          const SizedBox(width: 6),
                           // Flexible, because `Wrap` hands each item the frame's full
                           // width and no more: a key like "Breathing (br/min)" is wider
                           // than a 390 pt card at 2× text and overflowed the item
@@ -2310,7 +2559,15 @@ class _Gridlines extends CustomPainter {
     for (var i = 0; i < n; i++) {
       // Inset half a stroke so the first and last rules are drawn, not clipped.
       final y = (i / (n - 1) * s.height).clamp(.5, s.height - .5);
-      cv.drawLine(Offset(0, y), Offset(s.width, y), paint);
+      // The floor is solid — it is the baseline the marks stand on. Every
+      // rule above it is dashed: a reference, not a boundary.
+      if (i == n - 1) {
+        cv.drawLine(Offset(0, y), Offset(s.width, y), paint);
+        continue;
+      }
+      for (var x = 0.0; x < s.width; x += 6) {
+        cv.drawLine(Offset(x, y), Offset(math.min(x + 3, s.width), y), paint);
+      }
     }
   }
 
@@ -2357,17 +2614,22 @@ class NoData extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Row(
+    return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(LucideIcons.chartLine, size: 15, color: p.ink3),
-        const SizedBox(width: S.x2),
-        Flexible(
-          child: Text(
-            message,
-            style: F.cap.copyWith(color: p.ink3),
-            textAlign: TextAlign.center,
-          ),
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration:
+              ShapeDecoration(color: p.card2, shape: const CircleBorder()),
+          child: Icon(LucideIcons.chartNoAxesColumn, size: 17, color: p.ink3),
+        ),
+        const SizedBox(height: S.x2),
+        Text(
+          message,
+          style: F.cap.copyWith(color: p.ink3, fontWeight: FontWeight.w500),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -2398,33 +2660,52 @@ class NavBar extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
+    // A floating round control on either side of a centred title — the
+    // platform's current navigation bar. The back button is a filled circle
+    // rather than a bare glyph so it reads as a control over any content.
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 52),
+      constraints: const BoxConstraints(minHeight: 56),
       child: Row(
         children: [
           Pressable(
             onTap: onBack ?? () => Navigator.maybePop(c),
             semanticLabel: 'Back',
-            child: Icon(LucideIcons.chevronLeft, size: 24, color: p.ink),
+            child: Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: p.card,
+                shape: const CircleBorder(),
+                shadows: p.el(2),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 2),
+                child: Icon(LucideIcons.chevronLeft, size: 22, color: p.ink),
+              ),
+            ),
           ),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: F.head.copyWith(color: p.ink),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (sub.isNotEmpty)
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: S.x2),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   Text(
-                    sub,
-                    style: F.over.copyWith(color: p.ink3),
+                    title,
+                    style: F.head.copyWith(color: p.ink),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  if (sub.isNotEmpty)
+                    Text(
+                      sub,
+                      style: F.over.copyWith(color: p.ink3),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
             ),
           ),
           SizedBox(

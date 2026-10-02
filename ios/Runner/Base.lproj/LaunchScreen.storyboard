@@ -9,7 +9,7 @@
     logo here is a second brand moment competing with the real one.
 
     Background only, in LaunchBackground, which carries the same two colours as
-    P.bg — light #F8FAFC and dark #0B1017. The handoff to Flutter is then a
+    P.bg — light #F2F2F7 and dark #000000. The handoff to Flutter is then a
     colour that does not change, and the only thing that appears is the
     OpenStrap mark, once, in BootSplash.
 -->

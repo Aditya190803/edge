@@ -188,7 +188,7 @@ class _ProfileSetupViewState extends State<ProfileSetupView> {
                     'Without it: calories and training load.'),
             const SizedBox(height: S.x5),
             BigButton(l?.actionContinue ?? 'Continue',
-                color: C.green, onTap: _sex == null ? null : _continue),
+                color: C.blue, onTap: _sex == null ? null : _continue),
             if (_sex == null) ...[
               const SizedBox(height: S.x2),
               Text(l?.profileSetupPickOneToContinue ??

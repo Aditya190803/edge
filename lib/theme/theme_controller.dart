@@ -4,14 +4,15 @@
 // before notifying) so the 546 `AppColors.x` call sites always resolve to the
 // mode being rendered, and it drives the system status-bar icon brightness.
 //
-// First launch follows the OS: if the phone is in dark mode, OpenStrap opens in
-// "Ember on Char" from the login/signup screen onward. The choice is persisted
-// and editable later from onboarding and Profile; UI updates live on change.
+// First launch opens in light mode — the primary form of the design. The choice
+// (Light / Dark / System) is persisted and editable from onboarding and
+// Profile; UI updates live on change.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ui2/theme.dart' as ui2;
 import '../widget/widget_service.dart';
 import 'tokens.dart';
 import 'theme.dart';
@@ -54,10 +55,13 @@ class ThemeController extends ChangeNotifier {
     return c;
   }
 
+  /// An install that has never chosen opens in LIGHT — the grouped white
+  /// cards are the design's primary form. Dark (and following the system)
+  /// are one tap away in Profile; an explicit choice is always kept.
   static AppThemeChoice _parse(String? s) => switch (s) {
-        'light' => AppThemeChoice.light,
         'dark' => AppThemeChoice.dark,
-        _ => AppThemeChoice.system,
+        'system' => AppThemeChoice.system,
+        _ => AppThemeChoice.light,
       };
 
   AppThemeChoice get choice => _choice;
@@ -109,11 +113,15 @@ class ThemeController extends ChangeNotifier {
 
   void _applySystemChrome() {
     // Status-bar (and Android nav-bar) icon brightness must oppose the surface.
+    // The nav bar takes lib/ui2's page colour, not the legacy palette's: the
+    // floating tab bar sits on that page, and a different strip under it on
+    // Android reads as a seam.
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-      systemNavigationBarColor: AppColors.bg,
+      systemNavigationBarColor: ui2.P(isDark).bg,
+      systemNavigationBarDividerColor: Colors.transparent,
       systemNavigationBarIconBrightness:
           isDark ? Brightness.light : Brightness.dark,
     ));

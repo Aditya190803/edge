@@ -35,6 +35,7 @@ import 'package:openstrap_edge/ui2/screens/workout_screen.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_fonts.dart';
 
 // ── deterministic fixtures ─────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ Future<void> _loadType() async {
       .listSync()
       .whereType<File>()
       .where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text']) {
+  for (final family in const ['Manrope']) {
     final loader = FontLoader(family);
     for (final f in files) {
       loader.addFont(f
@@ -131,6 +132,7 @@ Future<void> _loadType() async {
     }
     await loader.load();
   }
+  await loadShippedFonts();
 }
 
 /// Enough repo for [DayStrainData.load]: the persisted strain curve and the

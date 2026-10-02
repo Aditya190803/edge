@@ -830,8 +830,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                         color: p.wash(a.color), borderRadius: R.rMd),
-                    child: Text('${row * 5 + i + 1}',
-                        style: F.n17.copyWith(color: p.on(a.color))),
+                    // scaleDown, never clip: at 3.1x a two-digit choice is
+                    // wider than a fifth of the card, and "1" for "10" would
+                    // be a different answer.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('${row * 5 + i + 1}',
+                          style: F.n17.copyWith(color: p.on(a.color))),
+                    ),
                   ),
                 ),
               ),
@@ -1750,15 +1756,22 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                                     overflow: TextOverflow.ellipsis,
                                     style: F.over.copyWith(color: p.ink3))),
                           ]),
+                          // Past the restack point the measurement takes its
+                          // own line rather than pushing off the card.
+                          if (bigText(c))
+                            Text('${_kg(top.loadKg!)} × ${top.reps}',
+                                style: F.n17.copyWith(color: p.ink)),
                         ]),
                   ),
-                  const SizedBox(width: S.x2),
                   // The row rule: the name gives way, the measurement keeps
                   // its natural width and sits flush at the card edge.
-                  Text('${_kg(top.loadKg!)} × ${top.reps}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: F.n17.copyWith(color: p.ink)),
+                  if (!bigText(c)) ...[
+                    const SizedBox(width: S.x2),
+                    Text('${_kg(top.loadKg!)} × ${top.reps}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: F.n17.copyWith(color: p.ink)),
+                  ],
                 ]),
               ),
             ),

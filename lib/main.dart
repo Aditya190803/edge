@@ -139,14 +139,14 @@ Future<void> main() async {
 
   // Resolve appearance (persisted choice + OS brightness) BEFORE the first frame
   // so login/signup already paint in the right mode (Ember on Paper / Char).
-  // Fall back to a system-brightness controller if persistence fails.
+  // Fall back to the light default if persistence fails.
   ThemeController theme;
   try {
     theme = await ThemeController.bootstrap().timeout(_kStartupInitTimeout);
   } catch (e, st) {
     debugPrint('[main] ThemeController.bootstrap failed, using default: $e\n$st');
     theme = ThemeController.seed(
-      AppThemeChoice.system,
+      AppThemeChoice.light,
       WidgetsBinding.instance.platformDispatcher.platformBrightness,
     );
   }

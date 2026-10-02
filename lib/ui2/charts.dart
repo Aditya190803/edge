@@ -425,7 +425,7 @@ class LineChart extends CustomPainter {
     final smooth = d.length <= _kSmoothMax;
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
+      ..strokeWidth = 2.6
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..color = color;
@@ -466,21 +466,27 @@ class LineChart extends CustomPainter {
 
     final x = selectedX?.clamp(0.0, 1.0);
     if (x != null) {
+      // The scrub cursor: one rule through the plot with a rounded cap, in
+      // the series' own colour so it reads as a pointer into this data.
       cv.drawLine(
         Offset(s.width * x, 0),
         Offset(s.width * x, s.height),
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
-          ..color = color.withValues(alpha: .72),
+          ..strokeWidth = 2
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: .8),
       );
     }
 
     if (dots && head != null) {
-      cv.drawCircle(head, 4.5, Paint()..color = color);
+      // The newest reading: a soft halo, the dot, and the surface knocked out
+      // of its centre — the "you are here" mark at the end of a trend.
+      cv.drawCircle(head, 9, Paint()..color = color.withValues(alpha: .18));
+      cv.drawCircle(head, 5, Paint()..color = color);
       // The prototype knocked this out in hard white, which is a hole in a
       // dark card. It knocks out the surface it is drawn on.
-      if (dotInk != null) cv.drawCircle(head, 2, Paint()..color = dotInk!);
+      if (dotInk != null) cv.drawCircle(head, 2.2, Paint()..color = dotInk!);
     }
   }
 
@@ -559,14 +565,21 @@ class Bars extends CustomPainter {
       // own top, or the bar hangs below the canvas floor and a zero and a
       // tiny value draw identically.
       final bh = max(h, 2.0);
+      // Capsule-topped columns with a square foot on the baseline, the way
+      // Health draws a week: the round top is where the eye reads the value.
+      final w = bw * .62;
+      final r = Radius.circular(min(w / 2, bh / 2));
       cv.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(i * bw + bw * .2, s.height - bh, bw * .6, bh),
-          const Radius.circular(3),
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(i * bw + (bw - w) / 2, s.height - bh, w, bh),
+          topLeft: r,
+          topRight: r,
+          bottomLeft: const Radius.circular(1.5),
+          bottomRight: const Radius.circular(1.5),
         ),
         Paint()
           ..color =
-              (hl < 0 || i == hl) ? color : color.withValues(alpha: .35),
+              (hl < 0 || i == hl) ? color : color.withValues(alpha: .28),
       );
     }
   }
@@ -597,16 +610,33 @@ class Ring extends CustomPainter {
     final c = Offset(s.width / 2, s.height / 2);
     final r = min(s.width, s.height) / 2 - stroke / 2;
     if (r <= 0) return;
+    // A MEASURED ring sits on a dim track of its own hue, the way the
+    // Activity rings do — the ring is one object, half lit. Anything that is
+    // not a finished measurement keeps the caller's neutral track, so an
+    // empty or calibrating dial never borrows the look of a real one.
     cv.drawCircle(
       c,
       r,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..color = track,
+        ..color = solid ? color.withValues(alpha: .2) : track,
     );
     final sweep = 2 * pi * v.clamp(0, 1) * t.clamp(0, 1);
     if (sweep <= 0) return;
+    if (solid && sweep > .3) {
+      // The head of the arc casts a short shadow onto the track behind it,
+      // so a ring past 100 % (or near it) still shows where it ended.
+      final end = -pi / 2 + sweep;
+      final tip = c + Offset(cos(end), sin(end)) * r;
+      cv.drawCircle(
+        tip + Offset(cos(end + pi / 2), sin(end + pi / 2)) * 1.5,
+        stroke / 2,
+        Paint()
+          ..color = C.shade.withValues(alpha: .18)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+      );
+    }
     cv.drawArc(
       Rect.fromCircle(center: c, radius: r),
       -pi / 2,
@@ -622,7 +652,7 @@ class Ring extends CustomPainter {
             : SweepGradient(
                 startAngle: -pi / 2,
                 endAngle: 3 * pi / 2,
-                colors: [color.withValues(alpha: .55), color],
+                colors: [color.withValues(alpha: .5), color],
                 transform: const GradientRotation(-pi / 2),
               ).createShader(Rect.fromCircle(center: c, radius: r)),
     );
@@ -630,7 +660,12 @@ class Ring extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant Ring o) =>
-      o.v != v || o.t != t || o.solid != solid || o.color != color;
+      o.v != v ||
+      o.t != t ||
+      o.solid != solid ||
+      o.color != color ||
+      o.track != track ||
+      o.stroke != stroke;
 }
 
 /// A ring made of discrete dashes rather than a continuous arc — for a value

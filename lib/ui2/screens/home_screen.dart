@@ -807,28 +807,33 @@ class RingTrio extends StatelessWidget {
     // ([overnightMetric]), so a ring with no night behind it is a gap row with
     // the reason in it — same place every other absence on this screen goes.
 
+    final keys = [
+      for (var i = 0; i < rings.length; i++) ...[
+        if (i > 0) const SizedBox(height: S.x1),
+        _RingKey(rings[i], onTap: _open(rings[i].kind)),
+      ],
+    ];
     return Surface(
-      elevation: 2,
       child: Column(children: [
         if (bigText(c))
-          // Past ~1.3× a 100 pt column cannot hold the word "Recovery" on one
-          // line and there is nowhere for it to wrap to. The ring keeps its
-          // size and the type gets the width instead.
-          for (var i = 0; i < rings.length; i++) ...[
-            if (i > 0) const SizedBox(height: S.x2),
-            _RingRow(rings[i], onTap: _open(rings[i].kind)),
-          ]
+          // Past ~1.3× the keys need the card's whole width, so the nest
+          // sits above them rather than beside them; it keeps its size and the
+          // type gets the room.
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(child: _Nest(rings, size: 132)),
+            const SizedBox(height: S.x3),
+            ...keys,
+          ])
         else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < rings.length; i++) ...[
-                if (i > 0) const SizedBox(width: S.x3),
-                Expanded(
-                    child: _RingColumn(rings[i], onTap: _open(rings[i].kind))),
-              ],
-            ],
-          ),
+          Row(children: [
+            _Nest(rings, size: 132),
+            const SizedBox(width: S.x5),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: keys),
+            ),
+          ]),
         for (final r in gaps) ...[
           const SizedBox(height: S.x2),
           Divider(color: p.line, height: 1),
@@ -912,7 +917,11 @@ class _RingState {
   /// reading, so it is not one.
   bool get measured => why == null && !calibrating;
 
-  Color arc(P p) => calibrating ? p.ink3 : p.on(color);
+  /// The arc is a graphic, not text, so in light it is solved to the 3:1
+  /// non-text floor ([P.tile]) — the vivid ring Activity draws — rather than
+  /// darkened to a caption's 4.5:1. Dark already lifts it bright via [P.on].
+  Color arc(P p) =>
+      calibrating ? p.ink3 : (p.dark ? p.on(color) : p.tile(color));
   Color ink(P p) => measured ? p.on(color) : p.ink3;
 
   String get spoken => [
@@ -992,117 +1001,114 @@ _RingState _gap(HomeRingKind k, String label, IconData icon, Color color,
               : (l?.homeGapNoReason ?? 'Nothing recorded says why this is missing.')));
 }
 
-/// The dial itself. An empty [frac] draws the track and nothing else — which is
-/// exactly what [Ring] already does with a zero sweep.
-class _Dial extends StatelessWidget {
-  final _RingState r;
-  final double stroke, icon;
+/// The three rings nested inside each other — recovery outside, strain in
+/// the middle, sleep at the core — the way the Activity rings stack Move,
+/// Exercise and Stand. One object, three readings, read in a single glance.
+///
+/// Each ring is still exactly one of the three honest states: a measured
+/// ring is a solid arc on a dim track of its own colour, a calibrating one is
+/// beads filling night by night on a neutral track, and an absent one is the
+/// neutral track alone.
+class _Nest extends StatelessWidget {
+  final List<_RingState> rings;
+  final double size;
 
-  const _Dial(this.r, {required this.stroke, required this.icon});
+  const _Nest(this.rings, {required this.size});
 
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Stack(alignment: Alignment.center, children: [
-      CustomPaint(
-        size: Size.infinite,
-        // Calibrating draws as discrete dashes filling in night by night;
-        // a finished (or absent-but-not-calibrating) ring draws the
-        // continuous arc, solid only once it is an actual measurement.
-        painter: r.calibrating
-            // One dash per night the baseline needs, not a fixed count —
-            // "6 of 14" draws as 14 divisions with 6 filled.
-            ? DashedRing(r.frac ?? 0, r.arc(p), p.track,
-                stroke: stroke, segments: r.need ?? 24)
-            : Ring(r.frac ?? 0, r.arc(p), p.track,
-                stroke: stroke, t: animate(c, 1), solid: r.measured),
+    final stroke = size * .105;
+    const gap = 2.5;
+    return ExcludeSemantics(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(children: [
+          for (var i = 0; i < rings.length; i++)
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.all(i * (stroke + gap)),
+                child: CustomPaint(
+                  painter: rings[i].calibrating
+                      // One bead per night the baseline needs, not a fixed
+                      // count — "6 of 14" draws as 14 divisions with 6 filled.
+                      ? DashedRing(rings[i].frac ?? 0, rings[i].arc(p), p.track,
+                          stroke: stroke, segments: rings[i].need ?? 24)
+                      : Ring(rings[i].frac ?? 0, rings[i].arc(p), p.track,
+                          stroke: stroke,
+                          t: animate(c, 1),
+                          solid: rings[i].measured),
+                ),
+              ),
+            ),
+        ]),
       ),
-      Icon(r.icon, size: icon, color: r.ink(p)),
-    ]);
+    );
   }
 }
 
-/// The default: three across, the number under the ring rather than inside it.
-/// Inside is where a duration overflows its own circle at the first
-/// accessibility step, and nothing about "7h 45m" gets shorter.
-class _RingColumn extends StatelessWidget {
+/// One ring's key beside the nest: its name in its own colour, the reading
+/// large, and what the reading is measured against. The row is the door
+/// into that ring's screen.
+class _RingKey extends StatelessWidget {
   final _RingState r;
   final VoidCallback? onTap;
 
-  const _RingColumn(this.r, {this.onTap});
-
-  @override
-  Widget build(BuildContext c) => Pressable(
-        onTap: onTap,
-        semanticLabel: r.spoken,
-        child: Column(children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 96),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: _Dial(r, stroke: 7, icon: 20),
-            ),
-          ),
-          const SizedBox(height: S.x3),
-          _RingText(r, align: TextAlign.center),
-        ]),
-      );
-}
-
-/// The accessibility layout: ring left, type in the width it needs.
-class _RingRow extends StatelessWidget {
-  final _RingState r;
-  final VoidCallback? onTap;
-
-  const _RingRow(this.r, {this.onTap});
-
-  @override
-  Widget build(BuildContext c) => Pressable(
-        onTap: onTap,
-        semanticLabel: r.spoken,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: S.x2),
-          child: Row(children: [
-            SizedBox(
-              width: 56,
-              height: 56,
-              child: _Dial(r, stroke: 5, icon: 15),
-            ),
-            const SizedBox(width: S.x3),
-            Expanded(child: _RingText(r, align: TextAlign.start)),
-          ]),
-        ),
-      );
-}
-
-class _RingText extends StatelessWidget {
-  final _RingState r;
-  final TextAlign align;
-
-  const _RingText(this.r, {required this.align});
+  const _RingKey(this.r, {this.onTap});
 
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    final cross = align == TextAlign.center
-        ? CrossAxisAlignment.center
-        : CrossAxisAlignment.start;
-    return Column(crossAxisAlignment: cross, children: [
-      Text(r.label.toUpperCase(),
-          style: F.over.copyWith(color: p.ink3), textAlign: align),
-      const SizedBox(height: S.x1),
-      // Absent reads as words, never as a dash and never as a zero — so it
-      // takes the sentence weight rather than the numeral one.
-      Text(r.value,
-          style: r.measured
-              ? F.n24.copyWith(color: p.ink)
-              : F.body.copyWith(color: p.ink2),
-          textAlign: align),
-      if (r.sub.isNotEmpty) ...[
-        const SizedBox(height: 2),
-        Text(r.sub, style: F.cap.copyWith(color: p.ink3), textAlign: align),
-      ],
-    ]);
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: r.spoken,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(r.icon, size: 13, color: r.ink(p)),
+                const SizedBox(width: S.x1),
+                Flexible(
+                  child: Text(
+                    r.label,
+                    style: F.cap.copyWith(
+                        color: r.ink(p), fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 2),
+              // Absent reads as words, never as a dash and never as a zero —
+              // so it takes the sentence weight rather than the numeral one.
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.end,
+                spacing: S.x1,
+                children: [
+                  Text(r.value,
+                      style: r.measured
+                          ? F.n24.copyWith(color: p.ink)
+                          : F.body.copyWith(
+                              color: p.ink2, fontWeight: FontWeight.w600)),
+                  if (r.sub.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 1),
+                      child: Text(r.sub,
+                          style: F.cap.copyWith(
+                              color: p.ink3, fontWeight: FontWeight.w500)),
+                    ),
+                ],
+              ),
+            ]),
+          ),
+          if (onTap != null)
+            Icon(LucideIcons.chevronRight, size: 16, color: p.ink3),
+        ]),
+      ),
+    );
   }
 }
 
@@ -1653,26 +1659,35 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
       // exactly the morning you would most want to be told.
       ...?_bodyWatch(c, d),
       // ── greeting ──
+      // The Summary header: the day as a small eyebrow, the greeting as the
+      // large title, and the two round buttons in the top corner.
       Padding(
-        padding: const EdgeInsets.only(top: S.x3, bottom: S.x5),
-        child: Row(children: [
+        padding: const EdgeInsets.only(top: S.x4, bottom: S.x4),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
+                Icon(g.icon, size: 13, color: p.on(g.color)),
+                const SizedBox(width: S.x1),
                 Flexible(
                   child: Text(
-                    d.name == null || d.name!.isEmpty
-                        ? g.word
-                        : '${g.word}, ${d.name}',
-                    style: F.t2.copyWith(color: p.ink),
+                    prettyDay(d.dayId, l).toUpperCase(),
+                    style: F.over.copyWith(
+                        color: p.ink3,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .6),
                   ),
                 ),
-                const SizedBox(width: S.x2),
-                Icon(g.icon, size: 17, color: p.on(g.color)),
               ]),
-              const SizedBox(height: 2),
-              Text(prettyDay(d.dayId, l), style: F.cap.copyWith(color: p.ink3)),
+              const SizedBox(height: S.x1),
+              Text(
+                d.name == null || d.name!.isEmpty
+                    ? g.word
+                    : '${g.word}, ${d.name}',
+                style: F.display.copyWith(color: p.ink),
+              ),
+              const SizedBox(height: S.x1),
               // How far the band's data reaches, always — the question "am I
               // looking at today, or at last night?" used to be answerable
               // only by opening Profile > Devices.
@@ -1704,8 +1719,11 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
               child: Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle, color: p.wash(kCoachAccent)),
+                decoration: ShapeDecoration(
+                  shape: const CircleBorder(),
+                  color: p.card,
+                  shadows: p.el(2),
+                ),
                 child: Icon(LucideIcons.sparkles,
                     size: 18, color: p.on(kCoachAccent)),
               ),
@@ -1715,12 +1733,20 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
           Pressable(
             semanticLabel: l?.homeProfileSettings ?? 'Profile and settings',
             onTap: () => go(c, const ProfileHome()),
+            // The profile avatar: a gradient disc in the summary's own tint,
+            // where the system puts "you".
             child: Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle, color: p.fill(C.domHome)),
-              child: Icon(LucideIcons.settings, size: 18, color: p.inkOnFill),
+              decoration: ShapeDecoration(
+                shape: const CircleBorder(),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [p.tile(C.sky), p.fill(C.domHome)],
+                ),
+              ),
+              child: Icon(LucideIcons.userRound, size: 19, color: p.inkOnFill),
             ),
           ),
         ]),

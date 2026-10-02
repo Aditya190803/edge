@@ -18,6 +18,7 @@ import 'package:openstrap_edge/data/lab_catalogue.dart';
 import 'package:openstrap_edge/models/metric.dart';
 import 'package:openstrap_edge/ui2/screens/screens.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_fonts.dart';
 
 /// Deterministic — a golden that depends on a random number is a golden that
 /// records noise.
@@ -770,7 +771,7 @@ Future<void> _loadType() async {
   final files = Directory(
     'assets/fonts/Manrope',
   ).listSync().whereType<File>().where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text', 'Menlo']) {
+  for (final family in const ['Manrope', 'Menlo']) {
     final loader = FontLoader(family);
     for (final f in files) {
       loader.addFont(
@@ -781,6 +782,7 @@ Future<void> _loadType() async {
     }
     await loader.load();
   }
+  await loadShippedFonts();
 }
 
 /// The golden PNGs are NOT in the repo. They are machine-specific — two Flutter

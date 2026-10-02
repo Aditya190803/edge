@@ -30,30 +30,32 @@ import 'package:flutter/material.dart';
 
 /// ── COLOUR ────────────────────────────────────────────────────────────────
 ///
-/// Raw pigment. These are *not* safe to paint text with directly — most of
-/// them fail AA on white. Run them through [P.on] (accent as text) or
-/// [P.fill] (accent as a filled surface under [P.inkOnFill]) first.
+/// Raw pigment — Apple's system palette, so the app sits beside Health,
+/// Fitness and the platform's own controls without looking borrowed. These
+/// are *not* safe to paint text with directly — most of them fail AA on
+/// white. Run them through [P.on] (accent as text), [P.fill] (accent as a
+/// filled surface under [P.inkOnFill]) or [P.tile] (an icon tile) first.
 class C {
   // primary
-  static const green = Color(0xFF22C55E);
-  static const greenD = Color(0xFF16A34A);
-  static const blue = Color(0xFF3B82F6);
-  static const purple = Color(0xFF8B5CF6);
+  static const green = Color(0xFF34C759);
+  static const greenD = Color(0xFF248A3D);
+  static const blue = Color(0xFF007AFF);
+  static const purple = Color(0xFFAF52DE);
 
   // secondary
-  static const orange = Color(0xFFF97316);
-  static const red = Color(0xFFEF4444);
-  static const teal = Color(0xFF14B8A6);
-  static const yellow = Color(0xFFEAB308);
-  static const pink = Color(0xFFEC4899);
-  static const indigo = Color(0xFF6366F1);
+  static const orange = Color(0xFFFF9500);
+  static const red = Color(0xFFFF3B30);
+  static const teal = Color(0xFF30B0C7);
+  static const yellow = Color(0xFFFFCC00);
+  static const pink = Color(0xFFFF2D55);
+  static const indigo = Color(0xFF5856D6);
 
   /// Two light blues the ramps need and nothing else does: the light-sleep
   /// lane sits between REM and deep, and zone 1 sits below `blue`. They live
   /// here rather than inside the painters because a palette that is partly in
   /// theme.dart and partly in charts.dart is two palettes.
-  static const sky = Color(0xFF7DD3FC);
-  static const blueSoft = Color(0xFF93C5FD);
+  static const sky = Color(0xFF64D2FF);
+  static const blueSoft = Color(0xFF5AC8FA);
 
   /// The route ramp, and only the route ramp.
   ///
@@ -90,25 +92,33 @@ class C {
   static const mapFloor = Color(0xFF0A1018);
   static const mapCeil = Color(0xFF44536D);
 
-  // neutrals
-  static const n900 = Color(0xFF0F172A);
-  static const n800 = Color(0xFF1E293B);
-  static const n600 = Color(0xFF475569);
-  static const n500 = Color(0xFF64748B);
-  static const n400 = Color(0xFF94A3B8);
-  static const n300 = Color(0xFFCBD5E1);
-  static const n200 = Color(0xFFE2E8F0);
-  static const n100 = Color(0xFFF1F5F9);
-  static const n50 = Color(0xFFF8FAFC);
+  // neutrals — Apple's grey ladder (systemGray … systemGray6), not a blue-grey
+  // slate: a health app reads clinical in neutral greys and moody in tinted
+  // ones.
+  static const n900 = Color(0xFF1C1C1E);
+  static const n800 = Color(0xFF2C2C2E);
+  static const n600 = Color(0xFF636366);
+  static const n500 = Color(0xFF8E8E93);
+  static const n400 = Color(0xFFAEAEB2);
+  static const n300 = Color(0xFFC7C7CC);
+  static const n200 = Color(0xFFD1D1D6);
+  static const n100 = Color(0xFFE5E5EA);
+  static const n50 = Color(0xFFF2F2F7);
 
   static const white = Color(0xFFFFFFFF);
 
+  /// Shadow pigment — only ever drawn at a low alpha, under a mark, never as
+  /// ink or fill. Not in [all] for the same reason the route ramp is not.
+  static const shade = Color(0xFF000000);
+
   /// Each domain owns an accent — the mental map is colour-coded, and the map
-  /// is the point. These five are the five tabs, in order, forever.
-  static const domHome = green;
-  static const domHealth = blue;
-  static const domFood = orange;
-  static const domMove = purple;
+  /// is the point. These five are the five tabs, in order, forever. They
+  /// follow Health's own category colours: the summary in the system tint,
+  /// heart in pink, nutrition in green, activity in orange, mind in teal.
+  static const domHome = blue;
+  static const domHealth = pink;
+  static const domFood = green;
+  static const domMove = orange;
   static const domMind = teal;
 
   /// Every accent the contrast test sweeps. Adding a colour above without
@@ -123,26 +133,29 @@ class C {
 /// ── SURFACES + LEGIBLE INK ────────────────────────────────────────────────
 ///
 /// Brightness-resolved. `P.of(context)` in every build method.
+///
+/// The layout is Health's: a grouped grey page with white cards floating on
+/// it in light, and true black with raised charcoal cards in dark — so an
+/// OLED panel is genuinely off behind the content.
 class P {
   final bool dark;
   const P(this.dark);
 
   static P of(BuildContext c) => P(Theme.of(c).brightness == Brightness.dark);
 
-  Color get bg => dark ? const Color(0xFF0B1017) : C.n50;
-  Color get card => dark ? const Color(0xFF151C26) : C.white;
-  Color get card2 => dark ? const Color(0xFF1D2632) : C.n100;
-  Color get line => dark ? const Color(0xFF232D3B) : C.n200;
-  Color get track => dark ? const Color(0xFF232D3B) : C.n200;
+  Color get bg => dark ? const Color(0xFF000000) : C.n50;
+  Color get card => dark ? C.n900 : C.white;
+  Color get card2 => dark ? C.n800 : const Color(0xFFEDEDF2);
+  Color get line => dark ? const Color(0xFF38383A) : const Color(0xFFDCDCE0);
+  Color get track => dark ? const Color(0xFF3A3A3C) : C.n100;
 
-  Color get ink => dark ? const Color(0xFFF1F5F9) : C.n900;
-  Color get ink2 => dark ? const Color(0xFF94A3B8) : C.n600;
+  Color get ink => dark ? C.white : const Color(0xFF000000);
+  Color get ink2 => dark ? const Color(0xFFD1D1D6) : const Color(0xFF3C3C43);
 
   /// The muted caption ink. Hand-solved to clear 4.5:1 on [card2], the darkest
   /// (light theme) / lightest (dark theme) surface it can sit on — so it is
   /// legible on every surface, not just the one it was eyeballed against.
-  /// The values it replaces measured 4.34:1 and 3.21:1 respectively.
-  Color get ink3 => dark ? const Color(0xFF7F8DA0) : const Color(0xFF627188);
+  Color get ink3 => dark ? const Color(0xFF9D9DA3) : const Color(0xFF66666B);
 
   /// The ink that goes on top of a [fill]. White by construction — [fill]
   /// darkens the accent until white clears AA on it.
@@ -150,15 +163,13 @@ class P {
 
   /// [accent] rendered as TEXT on one of this brightness' surfaces, nudged
   /// toward the page ink until it clears [_aa] against the worst legal
-  /// surface ([card2]). `C.green` on white measures 2.28:1 raw; `on(C.green)`
-  /// measures 4.53:1 and still reads unmistakably green.
+  /// surface ([card2]).
   ///
   /// Solved TWICE, against the two worst surfaces it can land on. `card2` is
   /// the flat one; the other is `wash(accent)` over it — the Pill and the
-  /// active SubTabs chip put this ink on a tinted background nothing was
-  /// solving against, and five of six accents measured 4.30–4.49 there. The
-  /// solver only ever nudges toward the page ink, so clearing the second
-  /// surface cannot un-clear the first.
+  /// active chip put this ink on a tinted background. The solver only ever
+  /// nudges toward the page ink, so clearing the second surface cannot
+  /// un-clear the first.
   Color on(Color accent) {
     final toward = dark ? ink : C.n900;
     final flat = _solve(accent, toward, card2, dark);
@@ -169,56 +180,70 @@ class P {
   /// white text on it clears [_aa]. Buttons, chips, CTA badges.
   Color fill(Color accent) => _solve(accent, const Color(0xFF000000), C.white, false);
 
-  /// A tinted wash of [accent] — the InsightCard / Pill / active-tab
+  /// [accent] as an ICON TILE — the rounded square with a white glyph that
+  /// leads a settings row or a summary card, the way the system's own lists
+  /// do. A glyph is a graphical object, so WCAG 1.4.11 asks 3:1 of it, not the
+  /// 4.5:1 text floor: solving it as text would turn every yellow tile brown.
+  /// It never carries words — anything with a label is a [fill].
+  Color tile(Color accent) =>
+      _solve(accent, const Color(0xFF000000), C.white, false, floor: _ui);
+
+  /// A tinted wash of [accent] — the Pill / active-tab / tinted-button
   /// background. Never carries text of its own colour; pair it with [on].
   ///
   /// [strength] is capped at 1: full strength is the tint [on] and [ink3] were
-  /// solved against, and a caller asking for 1.6 was pushing muted ink to
-  /// 2.99:1 on its own card. A wash darker than a wash is a fill.
+  /// solved against. A wash darker than a wash is a fill.
   Color wash(Color accent, {double strength = 1}) =>
-      accent.withValues(alpha: (dark ? .18 : .11) * strength.clamp(0.0, 1.0));
+      accent.withValues(alpha: (dark ? .22 : .12) * strength.clamp(0.0, 1.0));
 
+  /// Elevation. Level 1 — every resting card — is FLAT: a white card on the
+  /// grouped grey page is separated by value alone, which is what makes the
+  /// screen read calm instead of busy. Only things that genuinely float (the
+  /// tab bar, a lifted button, a sheet) cast a shadow, and it is a wide soft
+  /// one rather than a tight drop.
   List<BoxShadow> el(int level) {
-    if (level <= 0) return const [];
+    if (level <= 1) return const [];
     if (dark) {
       return [
         BoxShadow(
-          color: const Color(0xFF000000).withValues(alpha: .32 + level * .06),
-          blurRadius: 6.0 * level,
-          offset: Offset(0, level.toDouble()),
+          color: const Color(0xFF000000).withValues(alpha: .5),
+          blurRadius: 10.0 * level,
+          offset: Offset(0, level * 2.0),
         ),
       ];
     }
     return [
       BoxShadow(
-        color: C.n900.withValues(alpha: .04 + level * .015),
-        blurRadius: 5.0 * level,
-        offset: Offset(0, level * 1.2),
+        color: const Color(0xFF000000).withValues(alpha: .05 + level * .01),
+        blurRadius: 12.0 * level,
+        offset: Offset(0, level * 2.0),
       ),
     ];
   }
 
   // ── the solver ──────────────────────────────────────────────────────────
-  // WCAG 2.1 AA for body text. Non-text UI is allowed 3:1, but a caption that
-  // is "technically an indicator" is how the 2.20:1 tokens got shipped, so
-  // there is one floor here and it is the strict one.
+  // WCAG 2.1 AA for body text — the floor for anything with words in it.
   static const _aa = 4.5;
+
+  // WCAG 2.1 1.4.11 for non-text UI: icon tiles and nothing else.
+  static const _ui = 3.0;
 
   static final _cache = <int, Color>{};
 
   /// Binary-search the lerp from [c] toward [toward] for the first colour that
-  /// clears [_aa] against [against]. 24 steps is well past 8-bit resolution.
-  static Color _solve(Color c, Color toward, Color against, bool dark) {
+  /// clears [floor] against [against]. 24 steps is well past 8-bit resolution.
+  static Color _solve(Color c, Color toward, Color against, bool dark,
+      {double floor = _aa}) {
     final key = Object.hash(c.toARGB32(), toward.toARGB32(),
-        against.toARGB32(), dark);
+        against.toARGB32(), dark, floor);
     final hit = _cache[key];
     if (hit != null) return hit;
     var out = c;
-    if (contrast(c, against) < _aa) {
+    if (contrast(c, against) < floor) {
       var lo = 0.0, hi = 1.0;
       for (var i = 0; i < 24; i++) {
         final mid = (lo + hi) / 2;
-        if (contrast(Color.lerp(c, toward, mid)!, against) >= _aa) {
+        if (contrast(Color.lerp(c, toward, mid)!, against) >= floor) {
           hi = mid;
         } else {
           lo = mid;
@@ -226,16 +251,14 @@ class P {
       }
       out = Color.lerp(c, toward, hi)!;
     }
-    // Bounded: one entry per (accent, brightness) pair actually used, and the
-    // accent set is a compile-time constant.
+    // Bounded: one entry per (accent, brightness, floor) actually used, and
+    // the accent set is a compile-time constant.
     _cache[key] = out;
     return out;
   }
 
   /// WCAG 2.1 contrast ratio, 1.0 … 21.0. Public so the contrast test and any
   /// future palette work measure with exactly the same function the tokens do.
-  /// Luminance is `Color.computeLuminance()` — same WCAG formula, no need to
-  /// carry our own copy of it.
   static double contrast(Color a, Color b) {
     final la = a.computeLuminance(), lb = b.computeLuminance();
     final hi = math.max(la, lb), lo = math.min(la, lb);
@@ -245,89 +268,97 @@ class P {
 
 /// ── TYPE ── 7 steps, 3 weights, tabular figures on anything that changes ──
 ///
-/// The family is the platform's own text face where it exists, falling back to
-/// the bundled Manrope (assets/fonts/Manrope) everywhere else — so Android and
-/// the golden tests render the same shapes the design was drawn in rather than
-/// silently landing on Roboto.
+/// The platform's own face where it exists — SF Pro on iOS — and Inter
+/// everywhere else. Inter was drawn for the same job SF was (dense UI text
+/// on screens) and shares its proportions, so Android renders the same
+/// hierarchy instead of landing on Roboto. Numerals take the DISPLAY cut of
+/// each: tighter, heavier digits that read as a measurement at a glance —
+/// Health's big numbers are what make its cards scannable.
 class F {
   static const _f = '.SF Pro Text';
-  static const _fb = ['Manrope'];
+  static const _fb = ['Inter'];
+  static const _n = '.SF Pro Display';
+  static const _nb = ['Inter Display', 'Inter'];
   static const _tab = [FontFeature.tabularFigures()];
 
-  // The 7 steps.
+  // The 7 steps. Large title → caption, on Apple's own ramp.
   static const display = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
       fontSize: 34,
-      height: 40 / 34,
+      height: 41 / 34,
       fontWeight: FontWeight.w700,
-      letterSpacing: -.8);
+      letterSpacing: -.9);
   static const t1 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
       fontSize: 28,
       height: 34 / 28,
       fontWeight: FontWeight.w700,
-      letterSpacing: -.5);
+      letterSpacing: -.6);
   static const t2 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
       fontSize: 22,
       height: 28 / 22,
-      fontWeight: FontWeight.w600,
-      letterSpacing: -.4);
+      fontWeight: FontWeight.w700,
+      letterSpacing: -.45);
   static const head = TextStyle(
       fontFamily: _f,
       fontFamilyFallback: _fb,
       fontSize: 17,
-      height: 24 / 17,
+      height: 22 / 17,
       fontWeight: FontWeight.w600,
-      letterSpacing: -.2);
+      letterSpacing: -.35);
   static const body = TextStyle(
       fontFamily: _f,
       fontFamilyFallback: _fb,
       fontSize: 15,
-      height: 22 / 15,
-      letterSpacing: -.1);
+      height: 21 / 15,
+      letterSpacing: -.2);
   static const cap = TextStyle(
-      fontFamily: _f, fontFamilyFallback: _fb, fontSize: 13, height: 18 / 13);
+      fontFamily: _f,
+      fontFamilyFallback: _fb,
+      fontSize: 13,
+      height: 18 / 13,
+      letterSpacing: -.08);
   static const over = TextStyle(
       fontFamily: _f,
       fontFamilyFallback: _fb,
       fontSize: 11,
       height: 14 / 11,
-      fontWeight: FontWeight.w600,
-      letterSpacing: .5);
+      fontWeight: FontWeight.w500,
+      letterSpacing: .1);
 
   // Numerals — a parallel display ramp. Tabular, so a live value never jitters
   // its own layout as digits change.
   static const n48 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
       fontSize: 48,
       height: 1,
       fontWeight: FontWeight.w700,
-      letterSpacing: -1.8,
+      letterSpacing: -1.6,
       fontFeatures: _tab);
   static const n34 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
       fontSize: 34,
       height: 1,
       fontWeight: FontWeight.w700,
-      letterSpacing: -1.2,
+      letterSpacing: -1.0,
       fontFeatures: _tab);
   static const n24 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
-      fontSize: 24,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
+      fontSize: 26,
       height: 1,
       fontWeight: FontWeight.w700,
       letterSpacing: -.7,
       fontFeatures: _tab);
   static const n17 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: _n,
+      fontFamilyFallback: _nb,
       fontSize: 17,
       height: 1,
       fontWeight: FontWeight.w600,
@@ -354,12 +385,18 @@ class S {
 }
 
 /// ── RADII ─────────────────────────────────────────────────────────────────
+///
+/// Larger than a Material card's, and meant to be drawn CONTINUOUS — the
+/// squircle corner the system uses — through [R.shape]. A circular arc of the
+/// same radius kinks where it meets the straight edge; a superellipse eases
+/// into it, which is most of why a native card looks expensive and a web
+/// card does not.
 class R {
-  static const sm = 8.0;
-  static const md = 12.0;
-  static const lg = 16.0;
-  static const xl = 24.0;
-  static const xxl = 32.0;
+  static const sm = 10.0;
+  static const md = 14.0;
+  static const lg = 20.0;
+  static const xl = 26.0;
+  static const xxl = 34.0;
   static const pill = 999.0;
 
   static const rSm = BorderRadius.all(Radius.circular(sm));
@@ -368,6 +405,11 @@ class R {
   static const rXl = BorderRadius.all(Radius.circular(xl));
   static const rXxl = BorderRadius.all(Radius.circular(xxl));
   static const rPill = BorderRadius.all(Radius.circular(pill));
+
+  /// The continuous-corner card shape at [r]. Every card surface in the
+  /// grammar is drawn with this, not with a `BoxDecoration` radius.
+  static RoundedSuperellipseBorder shape(BorderRadius r, {BorderSide side = BorderSide.none}) =>
+      RoundedSuperellipseBorder(borderRadius: r, side: side);
 }
 
 /// ── MOTION ── one gate, no exceptions ─────────────────────────────────────
@@ -457,15 +499,123 @@ class _Gated extends PageTransitionsBuilder {
 
 ThemeData buildTheme(Brightness b) {
   final p = P(b == Brightness.dark);
+  final tint = p.on(C.blue);
+  final base = ThemeData(brightness: b, useMaterial3: true);
   return ThemeData(
     brightness: b,
+    useMaterial3: true,
     scaffoldBackgroundColor: p.bg,
-    colorScheme:
-        ColorScheme.fromSeed(seedColor: C.green, brightness: b, surface: p.card),
+    canvasColor: p.bg,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: C.blue,
+      brightness: b,
+      surface: p.card,
+    ).copyWith(
+      primary: tint,
+      onPrimary: p.inkOnFill,
+      secondary: p.on(C.pink),
+      surface: p.card,
+      onSurface: p.ink,
+      onSurfaceVariant: p.ink3,
+      outline: p.line,
+      outlineVariant: p.line,
+      surfaceContainerHighest: p.card2,
+    ),
     fontFamily: '.SF Pro Text',
-    fontFamilyFallback: const ['Manrope'],
+    fontFamilyFallback: const ['Inter'],
+    textTheme: base.textTheme.apply(
+      fontFamily: '.SF Pro Text',
+      fontFamilyFallback: const ['Inter'],
+      bodyColor: p.ink,
+      displayColor: p.ink,
+    ),
     splashFactory: NoSplash.splashFactory,
     highlightColor: const Color(0x00000000),
+    dividerTheme: DividerThemeData(color: p.line, thickness: .5, space: 1),
+    iconTheme: IconThemeData(color: p.ink2),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: tint,
+      selectionColor: tint.withValues(alpha: .25),
+      selectionHandleColor: tint,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: tint,
+      linearTrackColor: p.track,
+      circularTrackColor: const Color(0x00000000),
+    ),
+    // The system's own switch is green-on, grey-off; Material's default is a
+    // violet thumb inside a tonal track. Same widget, platform's colours.
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.all(C.white),
+      trackColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected) ? C.green : p.track),
+      trackOutlineColor:
+          WidgetStateProperty.all(const Color(0x00000000)),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected) ? tint : const Color(0x00000000)),
+      shape: const CircleBorder(),
+      side: BorderSide(color: p.ink3, width: 1.5),
+    ),
+    radioTheme: RadioThemeData(fillColor: WidgetStateProperty.all(tint)),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: tint,
+      inactiveTrackColor: p.track,
+      thumbColor: C.white,
+      overlayColor: const Color(0x00000000),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: p.dark ? C.n800 : C.n900,
+      contentTextStyle: F.cap.copyWith(color: C.white),
+      actionTextColor: P(true).on(C.blue),
+      elevation: 0,
+      shape: R.shape(R.rMd),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: p.card,
+      modalBackgroundColor: p.card,
+      surfaceTintColor: const Color(0x00000000),
+      showDragHandle: false,
+      shape: const RoundedSuperellipseBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(R.xxl)),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: p.card,
+      surfaceTintColor: const Color(0x00000000),
+      shape: R.shape(R.rXl),
+      titleTextStyle: F.head.copyWith(color: p.ink),
+      contentTextStyle: F.cap.copyWith(color: p.ink2),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: tint,
+        textStyle: F.body.copyWith(fontWeight: FontWeight.w600),
+      ),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: p.bg,
+      surfaceTintColor: const Color(0x00000000),
+      foregroundColor: p.ink,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      titleTextStyle: F.head.copyWith(color: p.ink),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: p.card2,
+      hintStyle: F.body.copyWith(color: p.ink3),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x3),
+      border: const OutlineInputBorder(
+          borderRadius: R.rMd, borderSide: BorderSide.none),
+      enabledBorder: const OutlineInputBorder(
+          borderRadius: R.rMd, borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: R.rMd, borderSide: BorderSide(color: tint, width: 1.5)),
+    ),
     pageTransitionsTheme: PageTransitionsTheme(builders: {
       for (final e in const PageTransitionsTheme().builders.entries)
         e.key: _Gated(e.value),

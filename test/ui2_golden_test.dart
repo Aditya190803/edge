@@ -30,6 +30,7 @@ import 'package:flutter_test/flutter_test.dart';
 // design systems — and so a component added to one is added to both.
 import 'package:openstrap_edge/ui2/profile/gallery.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_fonts.dart';
 
 /// The golden is the component, not the page: capturing this boundary means a
 /// PNG the size of the thing under test, and a diff that points at the card
@@ -70,11 +71,13 @@ Future<void> _loadType() async {
       .listSync()
       .whereType<File>()
       .where((f) => f.path.endsWith('.ttf'));
-  // Registered under both names. `.SF Pro Text` does not exist off Apple
-  // hardware, so on Android and in the test harness the type IS Manrope —
-  // registering it under the primary name makes the goldens show what a
-  // non-Apple user actually sees, rather than the harness's fallback blocks.
-  for (final family in const ['Manrope', '.SF Pro Text']) {
+  // Manrope stays registered for the legacy lib/theme surfaces. The type
+  // lib/ui2 actually draws is Inter, registered under the platform names by
+  // [loadShippedFonts]: `.SF Pro Text` does not exist off Apple hardware, so
+  // on Android and in the test harness the type IS Inter — registering it
+  // under the primary name makes the goldens show what a non-Apple user
+  // actually sees, rather than the harness's fallback blocks.
+  for (final family in const ['Manrope']) {
     final loader = FontLoader(family);
     for (final f in files) {
       loader.addFont(f
@@ -83,6 +86,7 @@ Future<void> _loadType() async {
     }
     await loader.load();
   }
+  await loadShippedFonts();
 }
 
 /// The golden PNGs are NOT in the repo. They are machine-specific — two Flutter

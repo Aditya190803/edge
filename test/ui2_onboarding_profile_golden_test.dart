@@ -33,6 +33,7 @@ import 'package:openstrap_edge/ui2/profile/devices.dart';
 import 'package:openstrap_edge/ui2/profile/profile.dart';
 import 'package:openstrap_edge/ui2/profile/settings.dart';
 import 'package:openstrap_edge/ui2/ui2.dart';
+import 'support/app_fonts.dart';
 
 /// Fixed, so a golden is never a function of the calendar or of a real band.
 final _synced = DateTime(2026, 8, 22, 7, 12);
@@ -175,7 +176,7 @@ Future<void> _loadType() async {
       .listSync()
       .whereType<File>()
       .where((f) => f.path.endsWith('.ttf'));
-  for (final family in const ['Manrope', '.SF Pro Text']) {
+  for (final family in const ['Manrope']) {
     final loader = FontLoader(family);
     for (final f in files) {
       loader.addFont(f
@@ -184,6 +185,7 @@ Future<void> _loadType() async {
     }
     await loader.load();
   }
+  await loadShippedFonts();
 }
 
 /// The golden PNGs are NOT in the repo. They are machine-specific — two Flutter

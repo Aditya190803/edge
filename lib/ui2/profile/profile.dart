@@ -63,17 +63,21 @@ class SetRow extends StatelessWidget {
       onTap: onTap,
       semanticLabel: sub.isEmpty ? title : '$title. $sub',
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: S.x3),
+        padding: const EdgeInsets.symmetric(vertical: 11),
         child: Row(children: [
+          // The Settings tile: a white glyph on a filled continuous-corner
+          // square of the row's colour.
           Container(
-            width: 32,
-            height: 32,
+            width: 30,
+            height: 30,
             alignment: Alignment.center,
-            decoration:
-                BoxDecoration(color: p.wash(accent), borderRadius: R.rSm),
+            decoration: ShapeDecoration(
+              color: p.tile(accent),
+              shape: R.shape(const BorderRadius.all(Radius.circular(8))),
+            ),
             child: glyph != null
-                ? glyph!(p.on(accent))
-                : Icon(icon, size: 16, color: p.on(accent)),
+                ? glyph!(p.inkOnFill)
+                : Icon(icon, size: 17, color: p.inkOnFill),
           ),
           const SizedBox(width: S.x3),
           Expanded(
@@ -101,7 +105,7 @@ class SetRow extends StatelessWidget {
           ],
           if (chevron && !danger) ...[
             const SizedBox(width: S.x2),
-            Icon(LucideIcons.chevronRight, size: 17, color: p.ink3),
+            Icon(LucideIcons.chevronRight, size: 16, color: p.ink3),
           ],
         ]),
       ),
@@ -109,20 +113,36 @@ class SetRow extends StatelessWidget {
   }
 }
 
-/// A titled card of [SetRow]s, hairline-separated.
+/// A titled card of [SetRow]s, hairline-separated — the inset grouped list.
+/// The header is the small grey caption above the group, not a section
+/// title: in a settings list the rows are the content and the group name is
+/// only a label for them. Hairlines start at the text, not under the tile.
 Widget settingsGroup(BuildContext c, String title, List<Widget> rows) {
   final p = P.of(c);
-  return Section(
-    title,
-    Surface(
-      pad: const EdgeInsets.symmetric(horizontal: S.x4),
-      child: Column(children: [
-        for (var i = 0; i < rows.length; i++) ...[
-          rows[i],
-          if (i < rows.length - 1) Divider(color: p.line, height: 1),
-        ],
-      ]),
-    ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(S.x4, S.x6, S.x4, S.x2),
+        child: Text(
+          title,
+          style: F.cap.copyWith(color: p.ink3, fontWeight: FontWeight.w600),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      Surface(
+        pad: const EdgeInsets.symmetric(horizontal: S.x4),
+        child: Column(children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            rows[i],
+            if (i < rows.length - 1)
+              Divider(
+                  color: p.line, height: 1, thickness: .5, indent: 30 + S.x3),
+          ],
+        ]),
+      ),
+    ],
   );
 }
 

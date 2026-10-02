@@ -10,6 +10,8 @@
 // a screen can do on its own. Anything that feels like a sixth destination is
 // a `SubTabs` inside the domain that owns it.
 
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -111,6 +113,10 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
+/// The tab bar — a frosted capsule floating above the page rather than a
+/// strip welded to the bottom edge. The page colour shows around it, the
+/// selected tab is a tinted lozenge inside it, and the system gesture area
+/// stays below it untouched.
 class _TabBar extends StatelessWidget {
   final ShellDomain current;
   final ValueChanged<ShellDomain> onTap;
@@ -120,26 +126,45 @@ class _TabBar extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Container(
-      decoration: BoxDecoration(
-        color: p.card,
-        border: Border(top: BorderSide(color: p.line)),
-      ),
+    return ColoredBox(
+      color: p.bg,
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              for (final d in ShellDomain.values)
-                Expanded(
-                  child: _Tab(
-                    domain: d,
-                    on: d == current,
-                    onTap: () => onTap(d),
+        minimum: const EdgeInsets.only(bottom: S.x2),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(S.x3, S.x1, S.x3, S.x1),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: const StadiumBorder(),
+              shadows: p.el(3),
+            ),
+            child: ClipPath(
+              clipper: const ShapeBorderClipper(shape: StadiumBorder()),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Container(
+                  decoration: ShapeDecoration(
+                    color: p.card.withValues(alpha: p.dark ? .88 : .92),
+                    shape: StadiumBorder(
+                      side: BorderSide(color: p.line, width: .5),
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(S.x1),
+                  child: Row(
+                    children: [
+                      for (final d in ShellDomain.values)
+                        Expanded(
+                          child: _Tab(
+                            domain: d,
+                            on: d == current,
+                            onTap: () => onTap(d),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
         ),
       ),
@@ -163,30 +188,31 @@ class _Tab extends StatelessWidget {
       child: Pressable(
         onTap: onTap,
         semanticLabel: domain.label,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: motion(c, Motion.base),
-              padding: EdgeInsets.symmetric(
-                  horizontal: on ? S.x3 : 0, vertical: S.x1),
-              decoration: BoxDecoration(
-                color: on ? p.wash(domain.accent) : const Color(0x00000000),
-                borderRadius: R.rPill,
+        child: AnimatedContainer(
+          duration: motion(c, Motion.base),
+          curve: Curves.easeOutCubic,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: ShapeDecoration(
+            color: on ? p.wash(domain.accent) : const Color(0x00000000),
+            shape: const StadiumBorder(),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(domain.icon, size: 21, color: ink),
+              const SizedBox(height: 2),
+              Text(
+                domain.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: F.over.copyWith(
+                  color: ink,
+                  fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                ),
               ),
-              child: Icon(domain.icon, size: 20, color: ink),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              domain.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: F.over.copyWith(
-                color: ink,
-                fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
