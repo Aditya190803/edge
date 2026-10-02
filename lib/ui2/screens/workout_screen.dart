@@ -38,6 +38,7 @@ import '../activity/summary.dart';
 import '../charts.dart';
 import '../profile/profile.dart' show openProfile;
 import '../grammar.dart';
+import '../page.dart';
 import '../revision.dart';
 import '../theme.dart';
 import '../../data/day_label.dart' show calendarDaysBetween;
@@ -90,27 +91,22 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
         // (which takes an unbounded height inside a scroll view and blanked
         // this whole tab on device). Padding the siblings is ordinary layout
         // and cannot do either.
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(0, S.x2, 0, S.x16),
-          children: [
-            for (final w in <Widget>[
-              ScreenTitle(loc?.workoutScreenTitle ?? 'Workout'),
-              SubTabs(_tabs(loc), tab, (i) => setState(() => tab = i),
-                  color: C.domMove),
-              const SizedBox(height: S.x5),
-              ...switch (tab) {
-                0 => _forYou(c, d),
-                1 => _activities(c, d),
-                _ => _history(c, d),
-              },
-            ])
-              if (w is StartCard)
-                w
-              else
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: S.x4),
-                    child: w),
+        return HealthPage(
+          title: loc?.workoutScreenTitle ?? 'Workout',
+          back: false,
+          accessory: SubTabs(_tabs(loc), tab, (i) => setState(() => tab = i),
+              color: C.domMove),
+          actions: [
+            BarButton(LucideIcons.play,
+                loc?.workoutStartSessionLabel ?? 'START A SESSION',
+                accent: C.domMove, onTap: () => _openPicker(c, d)),
           ],
+          onRefresh: () async => reload(),
+          children: switch (tab) {
+            0 => _forYou(c, d),
+            1 => _activities(c, d),
+            _ => _history(c, d),
+          },
         );
       },
     );
@@ -172,20 +168,29 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
                 child: Column(children: [
                   Text(days[i], style: F.over.copyWith(color: p.ink3)),
                   const SizedBox(height: S.x2),
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: done
-                            ? p.wash(C.green, strength: 1.5)
-                            : (i == today ? p.fill(C.purple) : p.card2)),
-                    child: Icon(
-                        done
-                            ? LucideIcons.check
-                            : (i == today ? LucideIcons.play : null),
-                        size: 14,
-                        color: done ? p.on(C.green) : p.inkOnFill),
+                  // A day ring: closed and lit on a day with a session, an
+                  // open track on one without, and today ringed in the
+                  // tab's colour — the week reads as a row of rings.
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Stack(alignment: Alignment.center, children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: Ring(
+                            done ? 1 : 0,
+                            p.dark ? p.on(C.domMove) : p.tile(C.domMove),
+                            i == today ? p.wash(C.domMove) : p.track,
+                            stroke: 5,
+                            solid: done,
+                          ),
+                        ),
+                      ),
+                      if (done)
+                        Icon(LucideIcons.check, size: 13, color: p.on(C.domMove))
+                      else if (i == today)
+                        Icon(LucideIcons.play, size: 11, color: p.on(C.domMove)),
+                    ]),
                   ),
                 ]),
               );

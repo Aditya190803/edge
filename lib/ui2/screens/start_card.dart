@@ -96,7 +96,10 @@ class StartCard extends StatelessWidget {
     final card = Pressable(
       onTap: onTap,
       semanticLabel: label.toLowerCase(),
-      child: ClipRect(
+      // An inset hero with continuous corners, the card a fitness app leads
+      // with — no longer bleeding to the screen edge.
+      child: ClipRSuperellipse(
+        borderRadius: R.rXl,
         child: Container(
           // A FLOOR, not a fixed height, so the copy can grow.
           constraints: const BoxConstraints(minHeight: 190),
@@ -127,7 +130,11 @@ class StartCard extends StatelessWidget {
                         Text(label,
                             style: F.over.copyWith(
                                 color: C.white.withValues(alpha: .75))),
-                        const Spacer(),
+                        // A fixed gap, NOT a Spacer. The card sits in a scroll
+                        // view and its height is a floor, so the Column gets
+                        // an unbounded height — a Spacer there asserts in a
+                        // debug build and blanked the Workout tab.
+                        const SizedBox(height: S.x8),
                         Text('$count $noun',
                             style: F.t2.copyWith(color: C.white),
                             maxLines: 1,

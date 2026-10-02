@@ -186,23 +186,17 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
   @override
   Widget build(BuildContext c) {
     final l = AppLocalizations.of(c);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(S.x4, S.x4, S.x4, S.x16),
+    return HealthPage(
+      title: l?.nutritionTitle ?? 'Nutrition',
+      back: false,
+      actions: [
+        BarButton(LucideIcons.plus, l?.nutritionLogFood ?? 'Log food',
+            accent: C.domFood, onTap: _logFood),
+      ],
+      accessory: SubTabs(_tabs(c), _tab, (i) => setState(() => _tab = i),
+          color: C.domFood),
+      onRefresh: _load,
       children: [
-        ScreenTitle(
-          l?.nutritionTitle ?? 'Nutrition',
-          trailing: Pressable(
-            semanticLabel: l?.nutritionLogFood ?? 'Log food',
-            onTap: _logFood,
-            child: Icon(
-              LucideIcons.circlePlus,
-              size: 22,
-              color: P.of(c).on(C.domFood),
-            ),
-          ),
-        ),
-        SubTabs(_tabs(c), _tab, (i) => setState(() => _tab = i), color: C.domFood),
-        const SizedBox(height: S.x5),
         if (_loading)
           const Center(child: CircularProgressIndicator())
         else
@@ -696,7 +690,41 @@ class DayEnergyCard extends StatelessWidget {
     final l = AppLocalizations.of(c);
     final p = P.of(c);
     final k = day.kcal;
-    return Surface(
+    final eaten = k.value?.toDouble();
+    final burn = burned?.value?.toDouble();
+    final top = [?eaten, ?burn].fold<double>(0, (a, b) => b > a ? b : a);
+    Widget bar(String label, double v, Color col) => Row(children: [
+          SizedBox(
+            width: 64,
+            child: Text(label,
+                style: F.over.copyWith(
+                    color: p.ink3, fontWeight: FontWeight.w600)),
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: top <= 0 ? 0 : (v / top).clamp(0.0, 1.0),
+                child: Container(
+                  height: 10,
+                  decoration: ShapeDecoration(
+                      color: p.tile(col), shape: const StadiumBorder()),
+                ),
+              ),
+            ),
+          ),
+        ]);
+    // The day's energy on a card washed in the tab's own green.
+    return Container(
+      padding: const EdgeInsets.all(S.x4),
+      decoration: ShapeDecoration(
+        shape: R.shape(R.rXl),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.alphaBlend(p.wash(C.domFood), p.card), p.card],
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -748,6 +776,18 @@ class DayEnergyCard extends StatelessWidget {
                 ),
             ],
           ),
+          // Eaten against burned as two bars on one scale — only when BOTH
+          // were measured; one bar alone would be a comparison with nothing.
+          if (eaten != null && burn != null && top > 0) ...[
+            const SizedBox(height: S.x4),
+            ExcludeSemantics(
+              child: Column(children: [
+                bar(l?.nutritionEatenToday ?? 'EATEN TODAY', eaten, C.domFood),
+                const SizedBox(height: S.x2),
+                bar(l?.nutritionLabelBurned ?? 'BURNED', burn, C.purple),
+              ]),
+            ),
+          ],
           if (burned?.value != null) ...[
             const SizedBox(height: S.x4),
             InlineMetrics([
@@ -794,6 +834,15 @@ class MealRow extends StatelessWidget {
     'snack': LucideIcons.apple,
   };
 
+  /// Each occasion's own colour, morning to evening — so the four read as a
+  /// day at a glance rather than as four identical rows.
+  static const _colors = {
+    'breakfast': C.orange,
+    'lunch': C.green,
+    'dinner': C.indigo,
+    'snack': C.pink,
+  };
+
   @override
   Widget build(BuildContext c) {
     final l = AppLocalizations.of(c);
@@ -812,13 +861,17 @@ class MealRow extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(color: p.card2, borderRadius: R.rSm),
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: p.tile(_colors[meal] ?? C.domFood),
+                shape: R.shape(R.rMd),
+              ),
               child: Icon(
                 _icons[meal] ?? LucideIcons.utensils,
-                size: 17,
-                color: p.ink2,
+                size: 20,
+                color: p.inkOnFill,
               ),
             ),
             const SizedBox(width: S.x3),
@@ -828,7 +881,8 @@ class MealRow extends StatelessWidget {
                 children: [
                   Text(
                     _mealLabel(c, meal),
-                    style: F.body.copyWith(color: p.ink),
+                    style: F.body.copyWith(
+                        color: p.ink, fontWeight: FontWeight.w600),
                   ),
                   Text(
                     entries.isEmpty
@@ -838,17 +892,32 @@ class MealRow extends StatelessWidget {
                             '${entries.length} logged · energy not recorded')
                         : '${anyUnknown ? (l?.nutritionAtLeastPrefix ?? 'at least ') : ''}'
                               '${total.round()} kcal',
-                    style: F.over.copyWith(color: p.ink3),
+                    style: entries.isEmpty || total == null
+                        ? F.cap.copyWith(color: p.ink3)
+                        : F.cap.copyWith(
+                            color: p.on(_colors[meal] ?? C.domFood),
+                            fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
             ),
-            Icon(
-              entries.isEmpty
-                  ? LucideIcons.circlePlus
-                  : LucideIcons.circleCheck,
-              size: 20,
-              color: entries.isEmpty ? p.ink3 : p.on(C.green),
+            // Logged: a filled tick. Not yet: a tinted add button — an empty
+            // slot is an invitation, never a failure.
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: entries.isEmpty
+                    ? p.wash(C.domFood)
+                    : p.tile(C.green),
+                shape: const CircleBorder(),
+              ),
+              child: Icon(
+                entries.isEmpty ? LucideIcons.plus : LucideIcons.check,
+                size: 16,
+                color: entries.isEmpty ? p.on(C.domFood) : p.inkOnFill,
+              ),
             ),
           ],
         ),
@@ -932,9 +1001,21 @@ class _WaterRow extends StatelessWidget {
   Widget build(BuildContext c) {
     final l = AppLocalizations.of(c);
     final p = P.of(c);
+    // The logged amount as glasses of 250 ml — a picture of what was logged,
+    // not of a goal: no goal is set here, so none is drawn.
+    final glasses = ml == null ? 0 : (ml! / 250).floor();
+    const shown = 8;
     return Surface(
-      child: Row(children: [
-        Icon(LucideIcons.glassWater, size: 18, color: p.on(C.blue)),
+      child: Column(children: [
+      Row(children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: ShapeDecoration(
+              color: p.tile(C.blue), shape: R.shape(R.rSm)),
+          child: Icon(LucideIcons.glassWater, size: 18, color: p.inkOnFill),
+        ),
         const SizedBox(width: S.x3),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -968,6 +1049,26 @@ class _WaterRow extends StatelessWidget {
           ),
         ),
         _WaterStep(LucideIcons.plus, onUp),
+      ]),
+      if (ml != null) ...[
+        const SizedBox(height: S.x3),
+        ExcludeSemantics(
+          child: Row(children: [
+            for (var i = 0; i < shown; i++)
+              Expanded(
+                child: Icon(
+                  LucideIcons.glassWater,
+                  size: 20,
+                  color: i < glasses ? p.on(C.blue) : p.track,
+                ),
+              ),
+            if (glasses > shown)
+              Text('+${glasses - shown}',
+                  style: F.cap.copyWith(
+                      color: p.on(C.blue), fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ],
       ]),
     );
   }

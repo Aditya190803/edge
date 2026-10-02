@@ -234,19 +234,13 @@ class _WellnessScreenState extends State<WellnessScreen> with RevisionReload {
     // Clamped rather than reset: switching Cycle off while standing on it
     // lands on Medication, not back at Mind.
     final tab = _tab.clamp(0, tabs.length - 1);
-    // Same rule as Workout: the LIST drops its side padding and hands it to
-    // every child except the hero, which is how that one runs edge to edge.
-    // The card cannot escape its own parent — a negative margin asserts and an
-    // OverflowBox takes an unbounded height in a scroll view and blanks the
-    // whole tab. Padding the siblings is ordinary layout and does neither.
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(0, S.x4, 0, S.x16),
+    return HealthPage(
+      title: l?.wellnessTitle ?? 'Wellness',
+      back: false,
+      accessory:
+          SubTabs(tabs, tab, (i) => setState(() => _tab = i), color: C.domMind),
+      onRefresh: _load,
       children: [
-        for (final w in <Widget>[
-          ScreenTitle(l?.wellnessTitle ?? 'Wellness'),
-          SubTabs(tabs, tab, (i) => setState(() => _tab = i),
-              color: C.domMind),
-          const SizedBox(height: S.x5),
           if (_loading)
             const Center(child: CircularProgressIndicator())
           else ...[
@@ -297,13 +291,6 @@ class _WellnessScreenState extends State<WellnessScreen> with RevisionReload {
             ],
             [_mind, _recovery, _habitsTab, _medication, _cycle][tab](c),
           ],
-        ])
-          if (w is StartCard)
-            w
-          else
-            Padding(
-                padding: const EdgeInsets.symmetric(horizontal: S.x4),
-                child: w),
       ],
     );
   }
