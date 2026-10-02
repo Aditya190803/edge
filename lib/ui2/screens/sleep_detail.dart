@@ -545,12 +545,44 @@ class _SleepDetailState extends State<SleepDetail> {
     final watched = (inBed == null || unobserved == null || unobserved <= 0)
         ? null
         : math.max(0, inBed - unobserved);
-    return Surface(
+    // A night card: washed in the night's indigo from the top, the moon in its
+    // tile, what the number is in small capitals and the number large.
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(S.x4),
+      decoration: ShapeDecoration(
+        shape: R.shape(R.rXl),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.alphaBlend(p.wash(C.indigo), p.card), p.card],
+        ),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: p.tile(C.indigo),
+              shape: const CircleBorder(),
+            ),
+            child: Icon(LucideIcons.moon, size: 14, color: p.inkOnFill),
+          ),
+          const SizedBox(width: S.x2),
+          Flexible(
+            child: Text(
+              (l?.sleepDetailTotalSleep ?? 'Total sleep').toUpperCase(),
+              style: F.over.copyWith(
+                  color: p.on(C.indigo),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .5),
+            ),
+          ),
+        ]),
+        const SizedBox(height: S.x2),
         Text(hm(tst), style: F.n48.copyWith(color: p.ink)),
-        const SizedBox(height: S.x1),
-        Text(l?.sleepDetailTotalSleep ?? 'Total sleep',
-            style: F.cap.copyWith(color: p.ink3)),
         if (from.isNotEmpty && to.isNotEmpty) ...[
           const SizedBox(height: S.x4),
           Row(children: [
@@ -1120,11 +1152,20 @@ class _SleepDetailState extends State<SleepDetail> {
     final r = _ranges(n);
     final awake = n['awake_min'] as num?;
     final rows = <(String, String, Color)>[
-      if (r != null) (l?.sleepDetailDeep ?? 'Deep', _rangeText(r.deep), C.blue),
-      if (r != null) (l?.sleepDetailStageRem ?? 'REM', _rangeText(r.rem), C.teal),
-      if (r != null) (l?.sleepDetailLight ?? 'Light', _rangeText(r.light), C.sky),
+      // The hypnogram's own pigments, so a stage's dot here and its lane in
+      // the chart above can never be two different colours.
+      if (r != null)
+        (l?.sleepDetailDeep ?? 'Deep', _rangeText(r.deep),
+            Hypnogram.pigment[SleepStage.deep]!),
+      if (r != null)
+        (l?.sleepDetailStageRem ?? 'REM', _rangeText(r.rem),
+            Hypnogram.pigment[SleepStage.rem]!),
+      if (r != null)
+        (l?.sleepDetailLight ?? 'Light', _rangeText(r.light),
+            Hypnogram.pigment[SleepStage.light]!),
       if (awake != null)
-        (l?.sleepDetailStageAwake ?? 'Awake', hm(awake), C.orange),
+        (l?.sleepDetailStageAwake ?? 'Awake', hm(awake),
+            Hypnogram.pigment[SleepStage.awake]!),
     ];
     if (rows.isEmpty) {
       return StatusCard(

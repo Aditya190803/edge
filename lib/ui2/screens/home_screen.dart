@@ -1292,13 +1292,19 @@ class _WeekCard extends StatelessWidget {
                           : LayoutBuilder(builder: (_, box) {
                               final h = (v[i]! / top).clamp(0.0, 1.0) *
                                   box.maxHeight;
-                              final fill = colorOf?.call(v[i]!) ?? col;
+                              final band = colorOf?.call(v[i]!);
+                              // A band colour carries information, so it is
+                              // held to the label floor; a series' own single
+                              // colour is decoration and may be vivid.
+                              final ink = band != null
+                                  ? p.on(band)
+                                  : (p.dark ? p.on(col) : p.tile(col));
                               return Align(
                                 alignment: Alignment.bottomCenter,
                                 child: Container(
                                   height: h < 4 ? 4 : h,
                                   decoration: ShapeDecoration(
-                                    color: p.dark ? p.on(fill) : p.tile(fill),
+                                    color: ink,
                                     shape: const RoundedRectangleBorder(
                                       borderRadius: BorderRadius.vertical(
                                           top: Radius.circular(R.sm / 2),

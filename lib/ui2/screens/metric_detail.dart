@@ -868,7 +868,7 @@ class _MetricDetailState extends State<MetricDetail> {
     final series = denseDays(all, win);
     final vals = [for (final v in series) ?v];
 
-    return detailScaffold(c, spec.title, [
+    return detailScaffold(c, spec.title, accessory: spec.suppress == null ? _ranges(c, d, spec.color) : null, [
       // Resting heart rate is the NIGHT's number; this is what the chest is
       // doing this second. Two different quantities, so the live one gets its
       // own card above the trend rather than a second figure on the same card,
@@ -892,8 +892,6 @@ class _MetricDetailState extends State<MetricDetail> {
         const SizedBox(height: S.x5),
         investigateRow(c, () => go(c, Investigate(widget.metricKey))),
       ] else if (vals.isEmpty) ...[
-        _ranges(c, d, spec.color),
-        const SizedBox(height: S.x5),
         if (_loading)
           const Center(child: CircularProgressIndicator())
         else
@@ -941,8 +939,6 @@ class _MetricDetailState extends State<MetricDetail> {
         const SizedBox(height: S.x5),
         investigateRow(c, () => go(c, Investigate(widget.metricKey))),
       ] else ...[
-        _ranges(c, d, spec.color),
-        const SizedBox(height: S.x5),
         _hero(c, spec, all, series, vals, win, d.wear, d.algoBreaks, d),
         // Today's count against the goal set on this screen's own edit
         // affordance — a trend average has no goal to be measured against, so
@@ -1205,32 +1201,53 @@ class _MetricDetailState extends State<MetricDetail> {
 
     return Surface(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          // The chart header, the way a health record sets one: what the
+          // number IS in small coloured capitals, the number large under it.
+          Row(children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: p.tile(spec.color),
+                shape: R.shape(const BorderRadius.all(Radius.circular(6))),
+              ),
+              child: Icon(spec.icon, size: 13, color: p.inkOnFill),
+            ),
+            const SizedBox(width: S.x2),
+            Flexible(
+              child: Text(
+                (win == 1
+                        ? (l?.metricDetailToday ?? 'Today')
+                        : (l?.metricDetailDailyAverage(vals.length, win) ??
+                              'Daily average · ${vals.length} of $win days')),
+                style: F.cap.copyWith(
+                  color: p.on(spec.color),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ]),
+          const SizedBox(height: S.x2),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: S.x2,
             children: [
               Text(_fmt(spec, mean), style: F.n48.copyWith(color: p.ink)),
-              const SizedBox(width: S.x2),
               // NOT `spec.unit`. `metricValue('min', 443)` is already "7h 23m",
               // so every min-unit metric — Time asleep, Deep, REM, Wear time —
               // rendered its headline as "7h 23m min".
-              Text(
-                unitBeside(spec.unit),
-                style: F.body.copyWith(color: p.ink3),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  unitBeside(spec.unit),
+                  style: F.body.copyWith(
+                      color: p.ink3, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: S.x1),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              win == 1
-                  ? (l?.metricDetailToday ?? 'Today')
-                  : (l?.metricDetailDailyAverage(vals.length, win) ??
-                        'Daily average · ${vals.length} of $win days'),
-              style: F.cap.copyWith(color: p.ink3),
-            ),
           ),
           // On a multi-day window the average is the headline, so the newest
           // reading needs its own line. On Today they are the same number, and
@@ -1296,10 +1313,11 @@ class _MetricDetailState extends State<MetricDetail> {
               style: F.over.copyWith(color: p.ink3),
             ),
           ],
-          // No chart on Today. These series carry one value per day, so a
-          // one-day window is a single point — and a single point drawn on an
-          // axis is a shape pretending to be a trend. "Your normal range" below
-          // is the context that actually helps here.
+          // No TREND on Today — one value per day makes a one-day window a
+          // single point. What Today gets instead is the week it sits at the
+          // end of, today's bar lit and the six before it dim: context, not a
+          // trend line.
+          if (win == 1) _weekStrip(c, spec, all),
           if (win > 1) const SizedBox(height: S.x5),
           if (win > 1)
             Builder(
@@ -1528,6 +1546,55 @@ class _MetricDetailState extends State<MetricDetail> {
     );
   }
 
+  /// The last seven calendar days, today's lit. Bars from zero for the
+  /// quantities that are counted or summed; a dotted line on its own scale for
+  /// a rate, where a bar from zero would flatten the week into seven equal
+  /// columns. Under two stored days there is nothing to put today against,
+  /// and nothing is drawn.
+  Widget _weekStrip(BuildContext c, MetricSpec spec, List<ChartPoint> all) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    final week = denseDays(all, 7);
+    final have = [for (final v in week) ?v];
+    if (have.length < 2) return const SizedBox.shrink();
+    final counted =
+        spec.unit == 'steps' || spec.unit == 'kcal' || spec.unit == 'min';
+    final axis = AxisSpec.of(
+      have,
+      ticks: 2,
+      floor: counted ? 0 : null,
+      format: spec.unit == 'min'
+          ? axisHm
+          : (counted ? (v) => thousands(v) : axisFixedOrInt),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: S.x5),
+      child: ChartFrame(
+        title: l?.homeLast7Days ?? 'Last 7 days',
+        unit: spec.unit.isEmpty ? 'score' : spec.unit,
+        height: 96,
+        yAxis: axis,
+        series: week,
+        xLabels: [
+          l?.metricDetailDaysAgoLabel(6) ?? '6 days ago',
+          l?.metricDetailToday ?? 'Today',
+        ],
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: counted
+              ? Bars(week, p.dark ? p.on(spec.color) : p.tile(spec.color),
+                  highlight: 6, axis: axis, t: animate(c, 1))
+              : LineChart(week, p.on(spec.color),
+                  fill: false,
+                  dots: true,
+                  dotInk: p.card,
+                  axis: axis,
+                  t: animate(c, 1)),
+        ),
+      ),
+    );
+  }
+
   // ── a point on the chart is a day you can open ──────────────────────────
 
   /// A 0…1 position along the plot as a slot index into the dense window, and
@@ -1745,6 +1812,19 @@ class _MetricDetailState extends State<MetricDetail> {
               ),
             ],
           ),
+          // The middle half of your own history as a band, and where the
+          // newest reading sits on it — the picture of the sentence below.
+          // Not a verdict: outside the band is unusual for you, not wrong.
+          if (sorted.length >= 4 && hi > lo) ...[
+            const SizedBox(height: S.x4),
+            RangeBar(
+              sorted[(sorted.length * .25).floor()],
+              sorted[(sorted.length * .75).floor().clamp(0, sorted.length - 1)],
+              win.last,
+              color: spec.color,
+              flagOutside: false,
+            ),
+          ],
           const SizedBox(height: S.x4),
           Text(
             rank == null

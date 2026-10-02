@@ -589,6 +589,45 @@ class Bars extends CustomPainter {
       o.d != d || o.t != t || o.highlight != highlight || o.axis != axis;
 }
 
+/// Columns that each carry their own colour — a score drawn day by day in the
+/// colour of the band each day landed in. Same contract as [Bars]: [d] is
+/// dense, a `null` day is a hole and draws nothing, and the [axis] is the
+/// scale the frame labels. [colors] is read per index and must be as long as
+/// [d].
+class ColorBars extends CustomPainter {
+  final List<double?> d;
+  final List<Color> colors;
+  final AxisSpec axis;
+  final double t;
+
+  ColorBars(this.d, this.colors, this.axis, {this.t = 1});
+
+  @override
+  void paint(Canvas cv, Size s) {
+    if (d.isEmpty || s.width <= 0 || colors.length != d.length) return;
+    final bw = s.width / d.length;
+    final w = max(1.5, bw * .64);
+    for (var i = 0; i < d.length; i++) {
+      final v = d[i];
+      if (v == null || !v.isFinite) continue;
+      final h = max(2.0, axis.t(v) * s.height * t.clamp(0, 1));
+      final r = Radius.circular(min(w / 2, 3));
+      cv.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(i * bw + (bw - w) / 2, s.height - h, w, h),
+          topLeft: r,
+          topRight: r,
+        ),
+        Paint()..color = colors[i],
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ColorBars o) =>
+      o.d != d || o.colors != colors || o.axis != axis || o.t != t;
+}
+
 /// The score dial. One value, one arc.
 class Ring extends CustomPainter {
   final double v;
@@ -868,23 +907,31 @@ class Hypnogram extends CustomPainter {
 
   Hypnogram(this.stages, this.p, {this.t = 1});
 
+  /// The stages in the colours a sleep chart is read in: warm for awake,
+  /// cool and deepening for REM, light and deep.
   static const pigment = <SleepStage, Color>{
     SleepStage.awake: C.orange,
-    SleepStage.rem: C.teal,
-    SleepStage.light: C.sky,
-    SleepStage.deep: C.blue,
+    SleepStage.rem: C.sky,
+    SleepStage.light: C.blue,
+    SleepStage.deep: C.indigo,
   };
 
   /// The lane colours as drawn. Four lanes at four different heights, so hue is
   /// never the only channel here — y position already carries the stage.
+  ///
+  /// Solved like a label ([P.on]), not like a decoration: a lane's colour IS
+  /// the information, so it is held to the same floor as the words that name
+  /// it — see the contrast test's "a mark is measured like a label".
   static Map<SleepStage, Color> cols(P p) =>
       {for (final e in pigment.entries) e.key: p.on(e.value)};
 
   /// Hand straight to `ChartFrame.legend`. Derived from [cols] rather than
   /// retyped, so a lane can never be recoloured without its key following, and
   /// the swatch is the mark's real colour rather than the pigment behind it.
-  static List<(String, Color)> legend(P p) =>
-      [for (final s in SleepStage.values) (s.label, p.on(pigment[s]!))];
+  static List<(String, Color)> legend(P p) {
+    final c = cols(p);
+    return [for (final s in SleepStage.values) (s.label, c[s]!)];
+  }
 
   /// One column per drawable slot, with a STATED precedence: awake wins.
   ///
@@ -933,9 +980,6 @@ class Hypnogram extends CustomPainter {
     // A run is one rect however long it is, and a step joins it to the next —
     // which is what a hypnogram is: a line that moves between four levels, not
     // a scatter of blocks.
-    final step = Paint()
-      ..color = p.line
-      ..strokeWidth = 1;
     var i = 0;
     while (i < n) {
       final st = v[i];
@@ -948,16 +992,31 @@ class Hypnogram extends CustomPainter {
       cv.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(x0, y, max(x1 - x0 - .8, 2), h),
-          const Radius.circular(2),
+          Radius.circular(min(4, h / 2)),
         ),
         Paint()..color = ink[st]!,
       );
-      // The riser to the next level. Faint on purpose: it carries continuity,
-      // and the lanes already carry the stage.
+      // The riser to the next level, graded from one stage's colour into the
+      // next. Thin and translucent: it carries continuity, and the lanes
+      // already carry the stage.
       if (j + 1 < n) {
         final next = v[j + 1];
         final a = y + h / 2, b = next.index * lane + 2 + h / 2;
-        cv.drawLine(Offset(x1, min(a, b)), Offset(x1, max(a, b)), step);
+        final top = Offset(x1, min(a, b)), bot = Offset(x1, max(a, b));
+        cv.drawLine(
+          top,
+          bot,
+          Paint()
+            ..strokeWidth = 1.5
+            ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                (a < b ? ink[st]! : ink[next]!).withValues(alpha: .55),
+                (a < b ? ink[next]! : ink[st]!).withValues(alpha: .55),
+              ],
+            ).createShader(Rect.fromPoints(top, bot + const Offset(1, 0))),
+        );
       }
       i = j + 1;
     }

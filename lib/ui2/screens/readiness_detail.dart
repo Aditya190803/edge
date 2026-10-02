@@ -191,24 +191,50 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
             Section(l?.readinessDetailWhatWasMissing ?? 'What was missing',
                 _absence(c, p, d.absentDiag!)),
         ] else
-          Surface(
+          // The hero: one large gauge on a card washed with the band's own
+          // colour — the verdict first, and the mood of it before the number.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(S.x4, S.x6, S.x4, S.x5),
+            decoration: ShapeDecoration(
+              shape: R.shape(R.rXl),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color.alphaBlend(p.wash(band.color), p.card), p.card],
+              ),
+            ),
             child: Column(children: [
               SizedBox(
-                width: 150,
-                height: 150,
+                width: 210,
+                height: 210,
                 child: Stack(alignment: Alignment.center, children: [
-                  CustomPaint(
-                    size: const Size(150, 150),
-                    painter: Ring(d.readiness.normalized(100), p.on(band.color),
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: Gauge(
+                        d.readiness.normalized(100),
+                        p.dark ? p.on(band.color) : p.tile(band.color),
                         p.track,
-                        stroke: 14, t: animate(c, 1)),
+                        stroke: 16,
+                        t: animate(c, 1),
+                        knob: p.card,
+                      ),
+                    ),
                   ),
                   Column(mainAxisSize: MainAxisSize.min, children: [
                     Text('${v.round()}', style: F.n48.copyWith(color: p.ink)),
-                    Text(band.label, style: F.cap.copyWith(color: p.ink3)),
+                    const SizedBox(height: S.x1),
+                    Text(band.label,
+                        style: F.head.copyWith(color: p.on(band.color))),
                   ]),
                 ]),
               ),
+              const SizedBox(height: S.x2),
+              // The scale, so a 61 reads as "just into the top band" and not
+              // as a mediocre percentage.
+              Text('0 – 100',
+                  style: F.over.copyWith(
+                      color: p.ink3, fontWeight: FontWeight.w600)),
             ]),
           ),
 
@@ -301,10 +327,34 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
         l?.readinessDetailToday ?? 'Today',
       ],
       series: win,
+      // Each day's column in the colour of the band it landed in — a run of
+      // hard mornings reads as a run of colour before a number is read.
+      // One key per COLOUR: Good to go and Steady share green, so they share
+      // a swatch rather than showing two identical ones.
+      legend: [
+        for (final (label, b) in [
+          ('${readinessBand(70, l).label} · ${readinessBand(45, l).label}', 70),
+          (readinessBand(30, l).label, 30),
+          (readinessBand(10, l).label, 10),
+        ])
+          (label,
+              p.on(readinessBand(b, l).color)),
+      ],
       child: CustomPaint(
         size: Size.infinite,
-        painter: LineChart(win, p.on(C.green), dots: false, t: animate(c, 1),
-            axis: axis),
+        painter: ColorBars(
+          win,
+          [
+            for (final v in win)
+              v == null
+                  ? p.track
+                  // The band IS the information here, so the colour is held
+                  // to the label floor, like the hypnogram's lanes.
+                  : p.on(readinessBand(v, l).color),
+          ],
+          axis,
+          t: animate(c, 1),
+        ),
       ),
     );
   }
@@ -376,18 +426,26 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
     final wsum = rows
         .where((r) => r['used'] == true)
         .fold<double>(0, (a, r) => a + ((r['weight'] as num?)?.toDouble() ?? 0));
+    // The bars share one scale — the largest contribution on the card — so
+    // two inputs can be compared by length, left for what pulled the score
+    // down and right for what lifted it.
+    final top = rows.fold<double>(0, (a, r) {
+      final v = (r['weighted_contribution'] as num?)?.toDouble().abs() ?? 0;
+      return r['used'] == true && v > a ? v : a;
+    });
     return Surface(
       pad: const EdgeInsets.symmetric(horizontal: S.x4),
       child: Column(children: [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) Divider(color: p.line, height: 1),
-          _row(c, p, rows[i], wsum),
+          if (i > 0) Divider(color: p.line, height: 1, thickness: .5),
+          _row(c, p, rows[i], wsum, top),
         ],
       ]),
     );
   }
 
-  Widget _row(BuildContext c, P p, Map<String, dynamic> r, double wsum) {
+  Widget _row(BuildContext c, P p, Map<String, dynamic> r, double wsum,
+      double top) {
     final l = AppLocalizations.of(c);
     final key = r['label']?.toString() ?? '';
     final raw = (r['weight'] as num?)?.toDouble();
@@ -415,12 +473,18 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
         l?.readinessDetailWithinSpread ?? 'within your usual spread',
     ];
 
+    final frac = contribution == null || top <= 0
+        ? null
+        : (contribution.abs() / top).clamp(0.0, 1.0);
+    final hue = (contribution ?? 0) >= 0 ? C.green : C.orange;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: S.x3),
-      child: Row(children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(driverLabel(key), style: F.body.copyWith(color: p.ink)),
+            Text(driverLabel(key),
+                style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w500)),
             Text(parts.join(' · '),
                 style: F.over.copyWith(color: p.ink3)),
           ]),
@@ -436,6 +500,45 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
                 color: p.on(contribution >= 0 ? C.green : C.orange)),
           ),
         ],
+      ]),
+      // The diverging bar: a centre line, and the contribution growing away
+      // from it. No contribution, no bar — never a zero-length one that would
+      // read as "measured, no effect".
+      if (used && frac != null) ...[
+        const SizedBox(height: S.x2),
+        ExcludeSemantics(
+          child: SizedBox(
+            height: 8,
+            child: Row(children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FractionallySizedBox(
+                    widthFactor: contribution! < 0 ? frac : 0,
+                    child: Container(
+                      decoration: ShapeDecoration(
+                          color: p.tile(hue), shape: const StadiumBorder()),
+                    ),
+                  ),
+                ),
+              ),
+              Container(width: 2, height: 12, color: p.line),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: contribution >= 0 ? frac : 0,
+                    child: Container(
+                      decoration: ShapeDecoration(
+                          color: p.tile(hue), shape: const StadiumBorder()),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ],
       ]),
     );
   }
