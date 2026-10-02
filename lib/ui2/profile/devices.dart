@@ -370,21 +370,15 @@ class _SignalPriorityScreenState extends State<SignalPriorityScreen> {
   Widget build(BuildContext c) {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: S.x4),
-            child: NavBar(l?.devicesWhichSourceWins ?? 'Which source wins'),
-          ),
+    return HealthPage(
+      title: l?.devicesWhichSourceWins ?? 'Which source wins',
+      children: [
           if (_loading)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
-          else
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(S.x4, 0, S.x4, S.x10),
-                children: [
+            const Padding(
+              padding: EdgeInsets.only(top: S.x8),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else ...[
                   for (final sig in _signals) ...[
                     Section(
                       signalDisplayName(c, sig),
@@ -452,11 +446,8 @@ class _SignalPriorityScreenState extends State<SignalPriorityScreen> {
                             'calculated with.',
                     style: F.over.copyWith(color: p.ink3),
                   ),
-                ],
-              ),
-            ),
-        ]),
-      ),
+          ],
+      ],
     );
   }
 }
