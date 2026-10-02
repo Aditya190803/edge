@@ -228,7 +228,7 @@ const _specs = <String, MetricSpec>{
   'strain': MetricSpec(
     chartKey: 'strain',
     title: 'Strain',
-    color: C.purple,
+    color: C.domMove,
     icon: LucideIcons.zap,
     method: 'Cardiovascular load over the day, compressed onto a 0–21 scale.',
     citation: 'Banister TRIMP family · log-compressed',
@@ -237,7 +237,7 @@ const _specs = <String, MetricSpec>{
   'trimp': MetricSpec(
     chartKey: 'trimp',
     title: 'Training load',
-    color: C.purple,
+    color: C.domMove,
     icon: LucideIcons.dumbbell,
     method: 'Training impulse: time in each heart-rate zone, weighted by the '
         'physiological cost of that zone.',
@@ -247,7 +247,7 @@ const _specs = <String, MetricSpec>{
   'stress': MetricSpec(
     chartKey: 'stress',
     title: 'Stress',
-    color: C.purple,
+    color: C.domMove,
     icon: LucideIcons.brain,
     higherBetter: false,
     method: 'Baevsky stress index over a resting window: a histogram measure of '
@@ -2106,7 +2106,7 @@ class MonoTable extends StatelessWidget {
                   Expanded(
                     child: Text(r.$1,
                         style: F.cap
-                            .copyWith(color: p.ink3, fontFamily: 'Menlo')),
+                            .copyWith(color: p.ink3, fontFamily: F.mono)),
                   ),
                   const SizedBox(width: S.x3),
                   Flexible(
@@ -2114,7 +2114,7 @@ class MonoTable extends StatelessWidget {
                         textAlign: TextAlign.right,
                         style: F.cap.copyWith(
                             color: p.ink,
-                            fontFamily: 'Menlo',
+                            fontFamily: F.mono,
                             fontWeight: FontWeight.w600)),
                   ),
                 ]),

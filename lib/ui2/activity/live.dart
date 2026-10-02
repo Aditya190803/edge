@@ -816,14 +816,22 @@ class LiveHeart extends StatelessWidget {
         spacing: S.x2,
         runSpacing: S.x1,
         children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(LucideIcons.heart, size: 18, color: p.on(C.red)),
-            const SizedBox(width: S.x2),
-            Text('${feed.hr}', style: F.n24.copyWith(color: p.ink)),
-            const SizedBox(width: S.x1),
-            Text(l?.activityLiveBpmUnit ?? 'bpm',
-                style: F.cap.copyWith(color: p.ink3)),
-          ]),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: S.x2,
+            children: [
+              Icon(LucideIcons.heart, size: 18, color: p.on(C.red)),
+              // The one number a runner glances at: large, and allowed to
+              // shrink rather than push the row off the screen at 3x text.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('${feed.hr}',
+                    style: F.n48.copyWith(color: p.ink), maxLines: 1),
+              ),
+              Text(l?.activityLiveBpmUnit ?? 'bpm',
+                  style: F.cap.copyWith(color: p.ink3)),
+            ],
+          ),
           if (z != null)
             // The zone's OWN colour, the one the bar underneath paints it in. A
             // fixed green said "zone 5" and "zone 1" in the same breath.
@@ -831,6 +839,24 @@ class LiveHeart extends StatelessWidget {
                 ZoneBar.pigment[(z - 1).clamp(0, 4)]),
         ],
       ),
+      // THE CLIMB SO FAR: the session's per-minute heart rate as a ridge
+      // line over filled ground. Drawn only once two minutes are real; a
+      // dropped minute breaks the ridge rather than being joined across.
+      if (_profile(feed.hrCurve) case (final lo, final hi)) ...[
+        const SizedBox(height: S.x4),
+        ChartFrame(
+          title: l?.activityLiveHeartRateTitle ?? 'Heart rate, this session',
+          unit: 'bpm',
+          height: 96,
+          series: feed.hrCurve,
+          yAxis: AxisSpec(min: lo, max: hi, ticks: 3, format: axisInt),
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: ElevationProfile(feed.hrCurve, p.on(C.red), p.line,
+                lo: lo, hi: hi),
+          ),
+        ),
+      ],
       if (feed.zoneMinutes.length == 5) ...[
         const SizedBox(height: S.x4),
         ChartFrame(
@@ -847,6 +873,18 @@ class LiveHeart extends StatelessWidget {
         ),
       ],
     ]);
+  }
+
+  /// The axis for the session curve, padded and rounded to tens — or null
+  /// when fewer than two minutes carry a reading.
+  static (double, double)? _profile(List<double?> curve) {
+    final v = [for (final x in curve) if (x != null && x.isFinite) x];
+    if (v.length < 2) return null;
+    var lo = v.reduce((a, b) => a < b ? a : b);
+    var hi = v.reduce((a, b) => a > b ? a : b);
+    lo = ((lo - 5) / 10).floorToDouble() * 10;
+    hi = ((hi + 5) / 10).ceilToDouble() * 10;
+    return hi > lo ? (lo, hi) : null;
   }
 
   static List<double> _fractions(List<double> mins) {
@@ -1411,7 +1449,7 @@ class _LiveStrengthState extends State<LiveStrength> {
               ),
             ])
           : BigButton(AppLocalizations.of(ctx)?.activityLiveLogSet ?? 'Log set',
-              icon: LucideIcons.plus, color: C.purple, onTap: logSet),
+              icon: LucideIcons.plus, color: C.domMove, onTap: logSet),
       // Nothing here is measured: the sets, reps and load are typed, and the
       // one live thing on the screen is the heart-rate block, which asks for
       // the tick itself.
@@ -1493,7 +1531,7 @@ class _LiveStrengthState extends State<LiveStrength> {
             height: filled ? 11 : 9,
             decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: filled ? p.on(C.purple) : null,
+                color: filled ? p.on(C.domMove) : null,
                 border:
                     filled ? null : Border.all(color: p.line, width: 1.6)),
           );
@@ -1536,9 +1574,9 @@ class _LiveStrengthState extends State<LiveStrength> {
                     height: 24,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                        color: p.wash(C.purple), borderRadius: R.rSm),
+                        color: p.wash(C.domMove), borderRadius: R.rSm),
                     child: Text('${i + 1}',
-                        style: F.over.copyWith(color: p.on(C.purple))),
+                        style: F.over.copyWith(color: p.on(C.domMove))),
                   ),
                   const SizedBox(width: S.x3),
                   Expanded(
@@ -1609,7 +1647,7 @@ class _LiveStrengthState extends State<LiveStrength> {
                   ? (l?.activityLiveBodyweightExcludedNote ??
                       'Bodyweight — left out of volume')
                   : (l?.activityLiveLogAsBodyweight ?? 'Log as bodyweight'),
-              style: F.cap.copyWith(color: p.on(C.purple))),
+              style: F.cap.copyWith(color: p.on(C.domMove))),
         ),
         const SizedBox(height: S.x5),
         _stepper(c, p, l?.activityLiveRepsLabel ?? 'REPS', '$reps', '',

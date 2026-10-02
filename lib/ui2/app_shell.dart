@@ -18,11 +18,11 @@ import 'theme.dart';
 
 /// The five primary destinations, in bar order.
 enum ShellDomain {
-  home('Home', LucideIcons.house, C.domHome),
-  health('Health', LucideIcons.heartPulse, C.domHealth),
-  nutrition('Nutrition', LucideIcons.utensils, C.domFood),
-  workout('Workout', LucideIcons.dumbbell, C.domMove),
-  wellness('Wellness', LucideIcons.leaf, C.domMind);
+  home('Home', LucideIcons.mountain, C.domHome),
+  health('Health', LucideIcons.activity, C.domHealth),
+  nutrition('Nutrition', LucideIcons.wheat, C.domFood),
+  workout('Workout', LucideIcons.zap, C.domMove),
+  wellness('Wellness', LucideIcons.droplet, C.domMind);
 
   const ShellDomain(this.label, this.icon, this.accent);
 
@@ -120,26 +120,43 @@ class _TabBar extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Container(
+    // A tray of five, floating on the basalt: the page scrolls under a fade
+    // rather than ending at a hard rule, and the active domain is the one
+    // raised layer in it.
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: p.card,
-        border: Border(top: BorderSide(color: p.line)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [p.bg.withValues(alpha: 0), p.bg, p.bg],
+          stops: const [0, .35, 1],
+        ),
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              for (final d in ShellDomain.values)
-                Expanded(
-                  child: _Tab(
-                    domain: d,
-                    on: d == current,
-                    onTap: () => onTap(d),
+        minimum: const EdgeInsets.only(bottom: S.x2),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(S.x3, S.x4, S.x3, S.x1),
+          child: Container(
+            padding: const EdgeInsets.all(S.x1 + 1),
+            decoration: BoxDecoration(
+              color: p.card,
+              borderRadius: R.rXl,
+              border: Border.all(color: p.line),
+              boxShadow: p.el(2),
+            ),
+            child: Row(
+              children: [
+                for (final d in ShellDomain.values)
+                  Expanded(
+                    child: _Tab(
+                      domain: d,
+                      on: d == current,
+                      onTap: () => onTap(d),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -157,36 +174,36 @@ class _Tab extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    final ink = on ? p.on(domain.accent) : p.ink3;
     return Semantics(
       selected: on,
       child: Pressable(
         onTap: onTap,
         semanticLabel: domain.label,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: motion(c, Motion.base),
-              padding: EdgeInsets.symmetric(
-                  horizontal: on ? S.x3 : 0, vertical: S.x1),
-              decoration: BoxDecoration(
-                color: on ? p.wash(domain.accent) : const Color(0x00000000),
-                borderRadius: R.rPill,
+        child: AnimatedContainer(
+          duration: motion(c, Motion.base),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: S.x2),
+          decoration: BoxDecoration(
+            color: on ? p.card2 : const Color(0x00000000),
+            borderRadius: R.rLg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(domain.icon,
+                  size: 19, color: on ? p.on(domain.accent) : p.ink3),
+              const SizedBox(height: 3),
+              Text(
+                domain.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: F.over.copyWith(
+                  color: on ? p.ink : p.ink3,
+                  fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                ),
               ),
-              child: Icon(domain.icon, size: 20, color: ink),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              domain.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: F.over.copyWith(
-                color: ink,
-                fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

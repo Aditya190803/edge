@@ -10948,6 +10948,7 @@
   "@activityLiveThisExerciseLabel": {
     "description": "Live strength screen: header above the current exercise's logged sets."
   },
+  "activityLiveHeartRateTitle": "Heart rate, this session",
   "activityLiveTimeInZonesTitle": "TIME IN ZONES",
   "@activityLiveTimeInZonesTitle": {
     "description": "Live heart-rate block: chart title for time spent in each heart-rate zone."

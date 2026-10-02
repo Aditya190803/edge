@@ -286,7 +286,7 @@ class _DayStrainDetailState extends State<DayStrainDetail> {
                     'Built from $drawn recorded waking minutes.',
             child: CustomPaint(
               size: Size.infinite,
-              painter: LineChart(d.curve, p.on(C.purple),
+              painter: LineChart(d.curve, p.on(C.domMove),
                   axis: axis, t: animate(context, 1)),
             ),
           ),
@@ -295,7 +295,7 @@ class _DayStrainDetailState extends State<DayStrainDetail> {
             InlineMetrics([
               if (d.strain != null)
                 (l?.dayStrainTitle ?? 'Day strain', d.strain!.toStringAsFixed(1),
-                    C.purple),
+                    C.domMove),
               if (d.peakHr != null)
                 (l?.dayStrainPeakHr ?? 'Peak HR', '${d.peakHr} bpm', C.red),
               if (d.wornMin != null)

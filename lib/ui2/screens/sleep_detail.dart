@@ -1638,8 +1638,13 @@ class _SleepDetailState extends State<SleepDetail> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Flexible(
-                child: Text(bed != null ? clock(bed) : hm(need),
-                    style: F.n34.copyWith(color: p.ink)),
+                flex: 3,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(bed != null ? clock(bed) : hm(need),
+                      style: F.n34.copyWith(color: p.ink), maxLines: 1),
+                ),
               ),
               const SizedBox(width: S.x2),
               Flexible(

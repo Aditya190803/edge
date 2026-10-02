@@ -828,6 +828,18 @@ Map<String, Widget> extraCases() => {
       // an actual first run starts from, since an unset dismissed/last-shown
       // key reads as "eligible, never shown yet".
       'community_nudge': const CommunityNudge(),
+      // Strata primitives: the survey label, the mineral vein, and the
+      // first-run landscape (unsurveyed and lit).
+      'survey_label': const SurveyLabel('Resting heart rate'),
+      'vein': const Row(children: [
+        Vein(C.green),
+        SizedBox(width: S.x2),
+        SurveyLabel('Recovery'),
+      ]),
+      'survey_hero': const SurveyHero(
+          icon: LucideIcons.bluetooth, accent: C.blue, height: 160),
+      'survey_hero_lit': const SurveyHero(
+          icon: LucideIcons.activity, accent: C.green, lit: 1, height: 160),
       'surface': Builder(
         builder: (c) => Surface(
           child: Text(
@@ -1414,6 +1426,10 @@ Map<String, Widget> _liveCases() => {
           hr: 148,
           zone: 4,
           zoneMinutes: [6, 14, 22, 16, 4],
+          // A warm-up, the work, and one minute the band dropped (the null).
+          hrCurve: [96, 104, 112, 121, 128, 133, 138, 141, 139, 144, 147, 150,
+            null, 152, 149, 153, 156, 151, 148, 150, 154, 158, 155, 149, 146,
+            150, 152, 148],
           bandConnected: true)),
       // The two absences say different things, and one card used to cover
       // both — it told a user whose band had dropped to adjust the fit of a

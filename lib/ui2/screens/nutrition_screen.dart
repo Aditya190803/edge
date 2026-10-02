@@ -153,8 +153,8 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
       // clears the day and re-inserts what it is handed, so leaving `water_ml`
       // out is what "no answer today" looks like on disk — and spreading the
       // old map back in is exactly what made this un-clearable.
-      final fields =
-          {...await repo.getJournalMetrics(_date)}..remove('water_ml');
+      final fields = {...await repo.getJournalMetrics(_date)}
+        ..remove('water_ml');
       if (next != null) fields['water_ml'] = JournalMetricValue(next);
       await repo.postJournalMetrics(_date, fields);
       await _load();
@@ -174,7 +174,8 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
     final ok = await confirmRemove(
       context,
       title: l?.nutritionRemoveTitle(e.label) ?? 'Remove ${e.label}?',
-      body: l?.nutritionRemoveBody ??
+      body:
+          l?.nutritionRemoveBody ??
           'It leaves the day and every average that counted it. There is no '
               'undo.',
     );
@@ -201,7 +202,12 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
             ),
           ),
         ),
-        SubTabs(_tabs(c), _tab, (i) => setState(() => _tab = i), color: C.domFood),
+        SubTabs(
+          _tabs(c),
+          _tab,
+          (i) => setState(() => _tab = i),
+          color: C.domFood,
+        ),
         const SizedBox(height: S.x5),
         if (_loading)
           const Center(child: CircularProgressIndicator())
@@ -266,17 +272,20 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
         // Gated on the repository too: with no repo `_stepWater` returns at
         // its first line, so an enabled + button was a control that did
         // nothing — worse than a disabled one, which at least says so.
-        Builder(builder: (bc) {
-          final live = bc.select<AppState, bool>((a) => a.repo != null) &&
-              !_writingWater;
-          return _WaterRow(
-            ml: _waterMl,
-            onDown: (!live || _waterMl == null) ? null : () => _stepWater(-1),
-            onUp: (!live || (_waterMl ?? 0) >= _waterSpec.max)
-                ? null
-                : () => _stepWater(1),
-          );
-        }),
+        Builder(
+          builder: (bc) {
+            final live =
+                bc.select<AppState, bool>((a) => a.repo != null) &&
+                !_writingWater;
+            return _WaterRow(
+              ml: _waterMl,
+              onDown: (!live || _waterMl == null) ? null : () => _stepWater(-1),
+              onUp: (!live || (_waterMl ?? 0) >= _waterSpec.max)
+                  ? null
+                  : () => _stepWater(1),
+            );
+          },
+        ),
         if (day != null && day.logged && day.kcal.isFloor) ...[
           const SizedBox(height: S.x4),
           StatusCard(
@@ -325,33 +334,57 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
             partial == 0
                 ? (l?.nutritionDaysLoggedLabel ?? 'Days with something logged')
                 : (l?.nutritionPartialExcluded(partial) ??
-                    '$partial logged but partial, so excluded from '
-                        'every average below'),
+                      '$partial logged but partial, so excluded from '
+                          'every average below'),
             C.domFood,
           ),
         ),
-        Section(l?.nutritionEnergyByDay ?? 'Energy, day by day', _weekChart(c, w)),
+        Section(
+          l?.nutritionEnergyByDay ?? 'Energy, day by day',
+          _weekChart(c, w),
+        ),
         Section(
           l?.nutritionSevenDayAvg ?? 'Seven-day average',
           counted == 0
               ? StatusCard(
-                  l?.nutritionNoCompleteDayTitle ?? 'No complete day to average yet',
+                  l?.nutritionNoCompleteDayTitle ??
+                      'No complete day to average yet',
                   l?.nutritionNoCompleteDayBody ?? 'You have none.',
                   icon: LucideIcons.chartNoAxesColumn,
                 )
               : Surface(
                   child: Column(
                     children: [
-                      _Mean(l?.nutritionLabelEnergy ?? 'Energy', w.meanKcal,
-                          'kcal', C.domFood),
-                      _Mean(l?.nutritionLabelProtein ?? 'Protein',
-                          w.meanProtein, 'g', C.red),
-                      _Mean(l?.nutritionLabelCarbs ?? 'Carbs', w.meanCarbs,
-                          'g', C.orange),
-                      _Mean(l?.nutritionLabelFat ?? 'Fat', w.meanFat, 'g',
-                          C.yellow),
-                      _Mean(l?.nutritionLabelFibre ?? 'Fibre', w.meanFibre,
-                          'g', C.green),
+                      _Mean(
+                        l?.nutritionLabelEnergy ?? 'Energy',
+                        w.meanKcal,
+                        'kcal',
+                        C.domFood,
+                      ),
+                      _Mean(
+                        l?.nutritionLabelProtein ?? 'Protein',
+                        w.meanProtein,
+                        'g',
+                        C.red,
+                      ),
+                      _Mean(
+                        l?.nutritionLabelCarbs ?? 'Carbs',
+                        w.meanCarbs,
+                        'g',
+                        C.orange,
+                      ),
+                      _Mean(
+                        l?.nutritionLabelFat ?? 'Fat',
+                        w.meanFat,
+                        'g',
+                        C.yellow,
+                      ),
+                      _Mean(
+                        l?.nutritionLabelFibre ?? 'Fibre',
+                        w.meanFibre,
+                        'g',
+                        C.green,
+                      ),
                     ],
                   ),
                 ),
@@ -364,10 +397,16 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   InlineMetrics([
-                    (l?.nutritionLabelEaten ?? 'EATEN',
-                        '${w.meanKcal.value!.round()} kcal', C.domFood),
-                    (l?.nutritionLabelBurned ?? 'BURNED',
-                        '${_burned!.value!.round()} kcal', C.purple),
+                    (
+                      l?.nutritionLabelEaten ?? 'EATEN',
+                      '${w.meanKcal.value!.round()} kcal',
+                      C.domFood,
+                    ),
+                    (
+                      l?.nutritionLabelBurned ?? 'BURNED',
+                      '${_burned!.value!.round()} kcal',
+                      C.domMove,
+                    ),
                     (
                       l?.nutritionLabelBalance ?? 'BALANCE',
                       '${(w.meanKcal.value! - _burned!.value!).round()} kcal',
@@ -424,7 +463,7 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
         footnote: _partialDays(w) == 0
             ? null
             : l?.nutritionPartialFootnote(_partialDays(w)) ??
-                '${_partialDays(w)} partial, left out of the averages below.',
+                  '${_partialDays(w)} partial, left out of the averages below.',
         // The bars are ENERGY. A week of one-tap occasions is a fully logged
         // week with no energy in it, and "Nothing logged yet" called the user
         // a liar directly under a card counting those same days.
@@ -432,15 +471,22 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
             ? NoData(
                 message: w.daysLogged == 0
                     ? (l?.nutritionNothingLoggedYet ?? 'Nothing logged yet')
-                    : (l?.nutritionNoEnergyFiguresYet ?? 'No energy figures yet'))
+                    : (l?.nutritionNoEnergyFiguresYet ??
+                          'No energy figures yet'),
+              )
             : null,
         series: vals,
         child: axis == null
             ? const SizedBox.shrink()
             : CustomPaint(
                 size: Size.infinite,
-                painter: Bars(vals, C.domFood,
-                    highlight: vals.length - 1, t: animate(c, 1), axis: axis),
+                painter: Bars(
+                  vals,
+                  C.domFood,
+                  highlight: vals.length - 1,
+                  t: animate(c, 1),
+                  axis: axis,
+                ),
               ),
       ),
     );
@@ -454,8 +500,18 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
   static List<(String, String, String, Color)> _goalSpecs(BuildContext c) {
     final l = AppLocalizations.of(c);
     return [
-      ('kcal_target', l?.nutritionDailyEnergy ?? 'Daily energy', 'kcal', C.domFood),
-      ('protein_target', l?.nutritionDailyProtein ?? 'Daily protein', 'g', C.red),
+      (
+        'kcal_target',
+        l?.nutritionDailyEnergy ?? 'Daily energy',
+        'kcal',
+        C.domFood,
+      ),
+      (
+        'protein_target',
+        l?.nutritionDailyProtein ?? 'Daily protein',
+        'g',
+        C.red,
+      ),
     ];
   }
 
@@ -470,7 +526,9 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
     final specs = _goalSpecs(context);
     final ctrls = {
       for (final g in specs)
-        g.$1: TextEditingController(text: _target(g.$1)?.round().toString() ?? ''),
+        g.$1: TextEditingController(
+          text: _target(g.$1)?.round().toString() ?? '',
+        ),
     };
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -484,29 +542,37 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
         final l = AppLocalizations.of(s);
         return Padding(
           padding: EdgeInsets.only(
-              left: S.x5,
-              right: S.x5,
-              top: S.x5,
-              bottom: MediaQuery.of(s).viewInsets.bottom + S.x5),
+            left: S.x5,
+            right: S.x5,
+            top: S.x5,
+            bottom: MediaQuery.of(s).viewInsets.bottom + S.x5,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l?.nutritionYourTargetsSection ?? 'Your targets',
-                  style: F.head.copyWith(color: P.of(s).ink)),
+              Text(
+                l?.nutritionYourTargetsSection ?? 'Your targets',
+                style: F.head.copyWith(color: P.of(s).ink),
+              ),
               const SizedBox(height: S.x4),
               for (final g in specs) ...[
                 OsTextField(
                   controller: ctrls[g.$1]!,
                   label: '${g.$2} (${g.$3})',
                   hint: l?.nutritionHintNone ?? 'none',
-                  keyboard: const TextInputType.numberWithOptions(decimal: true),
+                  keyboard: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                 ),
                 const SizedBox(height: S.x3),
               ],
               const SizedBox(height: S.x2),
-              BigButton(l?.actionSave ?? 'Save',
-                  color: C.domFood, onTap: () => Navigator.of(s).pop(true)),
+              BigButton(
+                l?.actionSave ?? 'Save',
+                color: C.domFood,
+                onTap: () => Navigator.of(s).pop(true),
+              ),
             ],
           ),
         );
@@ -514,17 +580,16 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
     );
     // Blank clears the target; a typo does NOT. "2,000" used to clear it and
     // the sheet closed as if it had saved.
-    final typed = {
-      for (final g in specs) g.$1: Typed.of(ctrls[g.$1]!.text),
-    };
-    final fields = {
-      for (final g in specs) g.$1: typed[g.$1]!.value,
-    };
+    final typed = {for (final g in specs) g.$1: Typed.of(ctrls[g.$1]!.text)};
+    final fields = {for (final g in specs) g.$1: typed[g.$1]!.value};
     for (final ctrl in ctrls.values) {
       ctrl.dispose();
     }
     if (saved != true || !mounted) return;
-    final bad = [for (final g in specs) if (typed[g.$1]!.bad) g.$2];
+    final bad = [
+      for (final g in specs)
+        if (typed[g.$1]!.bad) g.$2,
+    ];
     if (bad.isNotEmpty) {
       sayUnreadable(context, bad);
       return;
@@ -537,7 +602,10 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
     final l = AppLocalizations.of(c);
     final p = P.of(c);
     final specs = _goalSpecs(c);
-    final set = [for (final g in specs) if (_target(g.$1) != null) g];
+    final set = [
+      for (final g in specs)
+        if (_target(g.$1) != null) g,
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -576,7 +644,8 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
                   const SizedBox(width: S.x2),
                   Expanded(
                     child: Text(
-                      l?.nutritionBodySpentToday ?? 'What your body spent today',
+                      l?.nutritionBodySpentToday ??
+                          'What your body spent today',
                       style: F.body.copyWith(
                         color: p.ink,
                         fontWeight: FontWeight.w600,
@@ -588,13 +657,15 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
               const SizedBox(height: S.x4),
               MetricRow(
                 LucideIcons.flame,
-                C.purple,
+                C.domMove,
                 l?.nutritionEstimatedExpenditure ?? 'Estimated expenditure',
                 _burned?.value == null
                     ? (l?.nutritionNotMeasured ?? 'Not measured')
                     : '${_burned!.value!.round()}',
                 unit: _burned?.value == null ? '' : 'kcal',
-                sub: l?.nutritionExpenditureSub ?? 'TODAY, FROM HEART RATE AND YOUR PROFILE',
+                sub:
+                    l?.nutritionExpenditureSub ??
+                    'TODAY, FROM HEART RATE AND YOUR PROFILE',
               ),
             ],
           ),
@@ -629,19 +700,22 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
         // completeness is a sentence the user can see is false.
         (m?.floorDays ?? 0) > 0
             ? (l?.nutritionFloorAverageBody(nutrient) ??
-                'Every complete day had an occasion logged without a '
-                    '$nutrient figure, so the average would only be a lower '
-                    'bound.')
+                  'Every complete day had an occasion logged without a '
+                      '$nutrient figure, so the average would only be a lower '
+                      'bound.')
             : (_week?.counted.length ?? 0) > 0
-                ? (l?.nutritionCountedNoFigureBody(
-                        _week!.counted.length, _week!.span, nutrient) ??
-                    '${_week!.counted.length} of the last ${_week!.span} days '
-                        'counted, but none of them carried a $nutrient '
-                        'figure.')
-                : (l?.nutritionDayCountsRuleFull(_week?.span ?? 7) ??
-                    'A day counts once every occasion carries a figure and '
-                        'the log reaches the evening. None of the last '
-                        '${_week?.span ?? 7} days has.'),
+            ? (l?.nutritionCountedNoFigureBody(
+                    _week!.counted.length,
+                    _week!.span,
+                    nutrient,
+                  ) ??
+                  '${_week!.counted.length} of the last ${_week!.span} days '
+                      'counted, but none of them carried a $nutrient '
+                      'figure.')
+            : (l?.nutritionDayCountsRuleFull(_week?.span ?? 7) ??
+                  'A day counts once every occasion carries a figure and '
+                      'the log reaches the evening. None of the last '
+                      '${_week?.span ?? 7} days has.'),
         fix: (m?.floorDays ?? 0) > 0 || (_week?.counted.length ?? 0) > 0
             ? (l?.nutritionAddNumbersFix ?? 'Add the numbers to an occasion')
             : (l?.nutritionLogOccasionFix ?? 'Log an eating occasion'),
@@ -656,11 +730,12 @@ class _NutritionScreenState extends State<NutritionScreen> with RevisionReload {
     final rate = diff.abs() < 1
         ? (l?.nutritionOnTarget ?? 'On target')
         : (diff > 0
-            ? (l?.nutritionRateAbove(diff.abs().round(), g.$3) ??
-                '${diff.abs().round()} ${g.$3}/day above')
-            : (l?.nutritionRateBelow(diff.abs().round(), g.$3) ??
-                '${diff.abs().round()} ${g.$3}/day below'));
-    final meanNote = l?.nutritionMeanOfDays(days) ??
+              ? (l?.nutritionRateAbove(diff.abs().round(), g.$3) ??
+                    '${diff.abs().round()} ${g.$3}/day above')
+              : (l?.nutritionRateBelow(diff.abs().round(), g.$3) ??
+                    '${diff.abs().round()} ${g.$3}/day below'));
+    final meanNote =
+        l?.nutritionMeanOfDays(days) ??
         'mean of $days complete day${days == 1 ? '' : 's'}';
     return GoalTrajectory(
       g.$2,
@@ -696,6 +771,26 @@ class DayEnergyCard extends StatelessWidget {
     final l = AppLocalizations.of(c);
     final p = P.of(c);
     final k = day.kcal;
+    final eaten = k.value?.toDouble();
+    final spent = burned?.value?.toDouble();
+    // Both layers share a scale, and only appear when both readings exist.
+    // An occasion without energy is still an occasion, never a zero-kcal bar.
+    final ceiling = eaten != null && spent != null
+        ? (eaten > spent ? eaten : spent)
+        : null;
+    Widget band(double value, Color color) => ExcludeSemantics(
+      child: SizedBox(
+        width: double.infinity,
+        height: 12,
+        child: CustomPaint(
+          painter: StrataBand(
+            ceiling! > 0 ? value / ceiling : 0,
+            p.on(color),
+            p.track,
+          ),
+        ),
+      ),
+    );
     return Surface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,11 +802,13 @@ class DayEnergyCard extends StatelessWidget {
                   k.value == null
                       ? (l?.nutritionLoggedToday ?? 'LOGGED TODAY')
                       : (l?.nutritionEatenToday ?? 'EATEN TODAY'),
-                  style: F.over.copyWith(color: p.ink3),
+                  style: F.label.copyWith(color: p.on(C.domFood)),
                 ),
               ),
               if (k.isFloor)
-                Flexible(child: Pill(l?.nutritionAtLeast ?? 'At least', C.yellow)),
+                Flexible(
+                  child: Pill(l?.nutritionAtLeast ?? 'At least', C.yellow),
+                ),
             ],
           ),
           const SizedBox(height: S.x2),
@@ -726,34 +823,52 @@ class DayEnergyCard extends StatelessWidget {
             spacing: S.x1,
             runSpacing: S.x1,
             children: [
-              Text(
-                k.value == null
-                    ? day.entries.length.toString()
-                    : k.value!.round().toString(),
-                style: F.n34.copyWith(color: p.ink),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  k.value == null
+                      ? day.entries.length.toString()
+                      : k.value!.round().toString(),
+                  style: F.n34.copyWith(color: p.ink),
+                ),
               ),
               Text(
                 k.value == null
                     ? (l?.nutritionOccasionsUnit(day.entries.length) ??
-                        'occasion${day.entries.length == 1 ? '' : 's'}')
+                          'occasion${day.entries.length == 1 ? '' : 's'}')
                     : 'kcal',
                 style: F.cap.copyWith(color: p.ink3),
               ),
               if (k.value != null)
                 Text(
-                  '· ${l?.nutritionOccasionsCount(day.entries.length) ??
-                      '${day.entries.length} occasion'
+                  '· ${l?.nutritionOccasionsCount(day.entries.length) ?? '${day.entries.length} occasion'
                           '${day.entries.length == 1 ? '' : 's'}'}',
                   style: F.cap.copyWith(color: p.ink2),
                 ),
             ],
           ),
+          if (ceiling != null) ...[
+            const SizedBox(height: S.x3),
+            band(eaten!, C.domFood),
+          ],
           if (burned?.value != null) ...[
             const SizedBox(height: S.x4),
             InlineMetrics([
-              (l?.nutritionLabelBurned ?? 'BURNED',
-                  '${burned!.value!.round()} kcal', C.purple),
-              if (k.value != null)
+              (
+                l?.nutritionLabelBurned ?? 'BURNED',
+                '${burned!.value!.round()} kcal',
+                C.domMove,
+              ),
+            ]),
+            if (ceiling != null) ...[
+              const SizedBox(height: S.x3),
+              band(spent!, C.domMove),
+            ],
+            if (k.value != null) ...[
+              const SizedBox(height: S.x4),
+              Divider(color: p.line, height: 1),
+              const SizedBox(height: S.x4),
+              InlineMetrics([
                 (
                   // Eaten is a FLOOR when occasions were logged without an
                   // energy figure, so eaten minus burned is a floor too: the
@@ -765,7 +880,8 @@ class DayEnergyCard extends StatelessWidget {
                   '${(k.value! - burned!.value!).round()} kcal',
                   C.teal,
                 ),
-            ]),
+              ]),
+            ],
           ],
         ],
       ),
@@ -835,7 +951,7 @@ class MealRow extends StatelessWidget {
                         ? (l?.nutritionNotLogged ?? 'Not logged')
                         : total == null
                         ? (l?.nutritionLoggedNoEnergy(entries.length) ??
-                            '${entries.length} logged · energy not recorded')
+                              '${entries.length} logged · energy not recorded')
                         : '${anyUnknown ? (l?.nutritionAtLeastPrefix ?? 'at least ') : ''}'
                               '${total.round()} kcal',
                     style: F.over.copyWith(color: p.ink3),
@@ -894,23 +1010,23 @@ class _Mean extends StatelessWidget {
       label,
       mean.value == null
           ? (floors > 0
-              ? (l?.nutritionNotCounted ?? 'Not counted')
-              : (l?.nutritionNotRecorded ?? 'Not recorded'))
+                ? (l?.nutritionNotCounted ?? 'Not counted')
+                : (l?.nutritionNotRecorded ?? 'Not recorded'))
           : mean.value!.round().toString(),
       unit: mean.value == null ? '' : unit,
       sub: mean.value == null
           ? (floors > 0
                 ? (l?.nutritionEveryDayNoFigure(label.toUpperCase()) ??
-                    'EVERY COMPLETE DAY HAD AN OCCASION WITH NO '
-                        '${label.toUpperCase()} FIGURE')
+                      'EVERY COMPLETE DAY HAD AN OCCASION WITH NO '
+                          '${label.toUpperCase()} FIGURE')
                 : (l?.nutritionNoDayRecorded(label.toUpperCase()) ??
-                    'NO COMPLETE DAY RECORDED ${label.toUpperCase()}'))
+                      'NO COMPLETE DAY RECORDED ${label.toUpperCase()}'))
           : (l?.nutritionMeanOfCompleteDaysCaps(n) ??
-                  'MEAN OF $n COMPLETE DAY${n == 1 ? '' : 'S'}') +
-              (floors == 0
-                  ? ''
-                  : (l?.nutritionLeftOutAsFloor(floors) ??
-                      ' · $floors LEFT OUT AS A FLOOR')),
+                    'MEAN OF $n COMPLETE DAY${n == 1 ? '' : 'S'}') +
+                (floors == 0
+                    ? ''
+                    : (l?.nutritionLeftOutAsFloor(floors) ??
+                          ' · $floors LEFT OUT AS A FLOOR')),
     );
   }
 }
@@ -933,42 +1049,50 @@ class _WaterRow extends StatelessWidget {
     final l = AppLocalizations.of(c);
     final p = P.of(c);
     return Surface(
-      child: Row(children: [
-        Icon(LucideIcons.glassWater, size: 18, color: p.on(C.blue)),
-        const SizedBox(width: S.x3),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l?.nutritionWaterLabel ?? 'Water', style: F.body.copyWith(color: p.ink)),
-            Text(
-              ml == null
-                  ? (l?.nutritionNotLogged ?? 'Not logged')
-                  : (l?.nutritionTapToChange ?? 'Tap − or + to change'),
-              style: F.over.copyWith(color: p.ink3),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      child: Row(
+        children: [
+          Icon(LucideIcons.glassWater, size: 18, color: p.on(C.blue)),
+          const SizedBox(width: S.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l?.nutritionWaterLabel ?? 'Water',
+                  style: F.body.copyWith(color: p.ink),
+                ),
+                Text(
+                  ml == null
+                      ? (l?.nutritionNotLogged ?? 'Not logged')
+                      : (l?.nutritionTapToChange ?? 'Tap − or + to change'),
+                  style: F.over.copyWith(color: p.ink3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ]),
-        ),
-        _WaterStep(LucideIcons.minus, onDown),
-        // Fixed width so the number does not shove the buttons sideways as it
-        // steps through 0.8 → 1.0 → 1.2.
-        SizedBox(
-          width: 78,
-          child: Text(
-            // NEVER a bare em-dash. An absent value says the word; a dash is a
-            // shrug the reader has to interpret, and the suite pins this.
-            ml == null
-                ? (l?.nutritionNoneYet ?? 'None yet')
-                : '${(ml! / 1000).toStringAsFixed(1)} L',
-            textAlign: TextAlign.center,
-            style: ml == null
-                ? F.cap.copyWith(color: p.ink3)
-                : F.n24.copyWith(color: p.ink),
-            maxLines: 1,
           ),
-        ),
-        _WaterStep(LucideIcons.plus, onUp),
-      ]),
+          _WaterStep(LucideIcons.minus, onDown),
+          // Fixed width so the number does not shove the buttons sideways as it
+          // steps through 0.8 → 1.0 → 1.2.
+          SizedBox(
+            width: 78,
+            child: Text(
+              // NEVER a bare em-dash. An absent value says the word; a dash is a
+              // shrug the reader has to interpret, and the suite pins this.
+              ml == null
+                  ? (l?.nutritionNoneYet ?? 'None yet')
+                  : '${(ml! / 1000).toStringAsFixed(1)} L',
+              textAlign: TextAlign.center,
+              style: ml == null
+                  ? F.cap.copyWith(color: p.ink3)
+                  : F.n24.copyWith(color: p.ink),
+              maxLines: 1,
+            ),
+          ),
+          _WaterStep(LucideIcons.plus, onUp),
+        ],
+      ),
     );
   }
 }

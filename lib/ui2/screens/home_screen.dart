@@ -807,8 +807,39 @@ class RingTrio extends StatelessWidget {
     // ([overnightMetric]), so a ring with no night behind it is a gap row with
     // the reason in it — same place every other absence on this screen goes.
 
+    // THE STRATA HERO. Recovery is the island — higher ground for a higher
+    // score — and strain and sleep are the two layers under it. Past the
+    // restack point the island cannot give the type the width it needs, so the
+    // accessible layout below keeps the compact dials instead.
+    if (!bigText(c)) {
+      final notes = [
+        for (final r in gaps) _GapRow(r, onTap: _open(r.kind)),
+        if (d.readiness.value != null && d.drivers.isNotEmpty)
+          _WhyRow(d: d, onTap: _open(HomeRingKind.recovery)),
+      ];
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _Island(rings[0], onTap: _open(rings[0].kind)),
+        const SizedBox(height: S.x3),
+        _Layer(rings[1], onTap: _open(rings[1].kind)),
+        const SizedBox(height: S.x2),
+        _Layer(rings[2], onTap: _open(rings[2].kind)),
+        if (notes.isNotEmpty) ...[
+          const SizedBox(height: S.x2),
+          Surface(
+            pad: const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x1),
+            child: Column(children: [
+              for (var i = 0; i < notes.length; i++) ...[
+                if (i > 0) Divider(color: p.line, height: 1),
+                notes[i],
+              ],
+            ]),
+          ),
+        ],
+      ]);
+    }
+
     return Surface(
-      elevation: 2,
+      elevation: 1,
       child: Column(children: [
         if (bigText(c))
           // Past ~1.3× a 100 pt column cannot hold the word "Recovery" on one
@@ -871,6 +902,196 @@ class RingTrio extends StatelessWidget {
 /// Which ring. The three the app can stand behind on a home screen: what the
 /// night gave back, what the day has cost, and what the night was made of.
 enum HomeRingKind { recovery, strain, sleep }
+
+/// Recovery as elevation: the contour island, with the score in the clear
+/// ground at its foot. Every state of [_RingState] keeps its own look —
+/// measured contours lit in the band's mineral, calibration dashed and muted,
+/// absence as unlit survey lines under the word for what is missing.
+class _Island extends StatelessWidget {
+  final _RingState r;
+  final VoidCallback? onTap;
+  const _Island(this.r, {this.onTap});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final ink = p.on(r.color);
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: r.spoken,
+      child: SizedBox(
+        height: 300,
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: motion(c, Motion.reveal),
+          curve: Curves.easeOutCubic,
+          builder: (c, t, _) => Stack(children: [
+            Positioned.fill(
+              child: ExcludeSemantics(
+                child: CustomPaint(
+                  painter: ContourIsland(
+                    frac: r.why == null ? r.frac : null,
+                    calibrating: r.calibrating,
+                    ink: ink,
+                    muted: p.ink3,
+                    line: p.line,
+                    t: animate(c, t),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: S.x1,
+              top: S.x1,
+              child: ExcludeSemantics(child: SurveyLabel(r.label, color: p.ink2)),
+            ),
+            Positioned(
+              left: S.x1,
+              right: S.x4,
+              bottom: S.x1,
+              child: ExcludeSemantics(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (r.measured)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(r.value, style: F.hero.copyWith(color: p.ink)),
+                          const SizedBox(width: S.x2),
+                          const SurveyLabel('/ 100'),
+                        ],
+                      )
+                    else
+                      Text(r.value, style: F.t1.copyWith(color: p.ink2)),
+                    if (r.sub.isNotEmpty) ...[
+                      const SizedBox(height: S.x2),
+                      Text(
+                        r.sub,
+                        style: F.head.copyWith(color: r.measured ? ink : p.ink3),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Strain or sleep as one stratum: the reading on the right, the band under
+/// it. Calibration draws its nights as beads; a reading with no denominator
+/// draws the empty band rather than a fraction nobody computed.
+class _Layer extends StatelessWidget {
+  final _RingState r;
+  final VoidCallback? onTap;
+  const _Layer(this.r, {this.onTap});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final need = r.need, have = r.have;
+    return Surface(
+      onTap: onTap,
+      semanticLabel: r.spoken,
+      child: ExcludeSemantics(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Vein(r.measured ? r.color : C.n500),
+            const SizedBox(width: S.x2),
+            SurveyLabel(r.label, color: p.ink2),
+            const SizedBox(width: S.x3),
+            Expanded(
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                    text: r.value,
+                    style: r.measured
+                        ? F.n24.copyWith(color: p.on(r.color))
+                        : F.body.copyWith(
+                            color: p.ink2, fontWeight: FontWeight.w600),
+                  ),
+                  if (r.sub.isNotEmpty)
+                    TextSpan(
+                        text: '  ${r.sub}',
+                        style: F.cap.copyWith(color: p.ink3)),
+                ]),
+                textAlign: TextAlign.end,
+                maxLines: 2,
+              ),
+            ),
+          ]),
+          const SizedBox(height: S.x3),
+          if (r.calibrating && need != null && need > 0)
+            Row(children: [
+              for (var i = 0; i < need; i++)
+                Expanded(
+                  child: Container(
+                    height: 12,
+                    margin: EdgeInsets.only(right: i == need - 1 ? 0 : 2),
+                    decoration: BoxDecoration(
+                      color: i < (have ?? 0) ? p.ink3 : p.track,
+                      borderRadius: const BorderRadius.all(Radius.circular(1.5)),
+                    ),
+                  ),
+                ),
+            ])
+          else
+            SizedBox(
+              height: 12,
+              child: CustomPaint(
+                painter: StrataBand(
+                  r.measured ? (r.frac ?? 0) : 0,
+                  p.on(r.color),
+                  p.track,
+                ),
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// The readiness drivers, one tap from the screen that explains them.
+class _WhyRow extends StatelessWidget {
+  final HomeData d;
+  final VoidCallback? onTap;
+  const _WhyRow({required this.d, this.onTap});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: S.x2),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l?.homeWhyLabel ?? 'Why?',
+              style: F.cap.copyWith(color: p.ink3)),
+          const SizedBox(width: S.x2),
+          Expanded(
+            child: Text(
+              d.drivers
+                  .take(3)
+                  .map((e) => driverLabel(e['label'], l))
+                  .join(' · '),
+              style: F.cap.copyWith(color: p.ink2),
+            ),
+          ),
+          Icon(LucideIcons.chevronRight, size: 15, color: p.ink3),
+        ]),
+      ),
+    );
+  }
+}
 
 /// One ring's resolved state — the only place a metric becomes a shape.
 class _RingState {
@@ -938,9 +1159,9 @@ _RingState _ringOf(HomeRingKind k, HomeData d, AppLocalizations? l) {
       final v = d.strain.value;
       // 0–21 is the scale's own ceiling, not a target invented here.
       return v == null
-          ? _gap(k, l?.homeRingStrain ?? 'Strain', LucideIcons.zap, C.purple,
+          ? _gap(k, l?.homeRingStrain ?? 'Strain', LucideIcons.zap, C.domMove,
               d.strain, l?.homeRingNoStrain ?? 'No strain', l, unit: 'days')
-          : _RingState(k, l?.homeRingStrain ?? 'Strain', LucideIcons.zap, C.purple,
+          : _RingState(k, l?.homeRingStrain ?? 'Strain', LucideIcons.zap, C.domMove,
               value: v.toStringAsFixed(1), sub: l?.homeStrainOf21 ?? 'of 21', frac: v / 21);
     case HomeRingKind.sleep:
       final v = d.sleepMin.value;
@@ -1568,7 +1789,20 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
 
     if (d == null) {
       return _refreshable(ListView(padding: pad, children: [
-        const SizedBox(height: S.x8),
+        const SizedBox(height: S.x4),
+        SizedBox(
+          height: 220,
+          child: ExcludeSemantics(
+            child: CustomPaint(
+              painter: ContourIsland(
+                frac: null,
+                ink: p.on(C.domHome),
+                muted: p.ink3,
+                line: p.line,
+              ),
+            ),
+          ),
+        ),
         // No day on screen ⇒ no `todayId`, so this renders the dated form.
         // Shown here TOO: a first run, a failed read and a sync in flight are
         // exactly when "how far are we?" is worth answering, and the header
@@ -1705,7 +1939,10 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                    shape: BoxShape.circle, color: p.wash(kCoachAccent)),
+                  color: p.card,
+                  borderRadius: R.rMd,
+                  border: Border.all(color: p.line),
+                ),
                 child: Icon(LucideIcons.sparkles,
                     size: 18, color: p.on(kCoachAccent)),
               ),
@@ -1719,8 +1956,11 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                  shape: BoxShape.circle, color: p.fill(C.domHome)),
-              child: Icon(LucideIcons.settings, size: 18, color: p.inkOnFill),
+                color: p.card,
+                borderRadius: R.rMd,
+                border: Border.all(color: p.line),
+              ),
+              child: Icon(LucideIcons.settings, size: 18, color: p.ink2),
             ),
           ),
         ]),
@@ -2025,7 +2265,7 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
       rows.add(_row(
           p,
           LucideIcons.zap,
-          C.purple,
+          C.domMove,
           met
               ? (l?.homeStrainTargetMet ?? 'Strain target met')
               : (l?.homeAimForStrain(aim.toStringAsFixed(1)) ??

@@ -1698,7 +1698,9 @@ class SourceRow extends StatelessWidget {
           width: 52,
           height: 52,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: p.card2, borderRadius: R.rMd),
+          decoration: BoxDecoration(
+              color: p.card2, borderRadius: R.rMd,
+              border: Border.all(color: s.connected ? p.on(C.green) : p.line)),
           child: Icon(s.icon, size: 24, color: p.ink2),
         ),
         const SizedBox(width: S.x3),
@@ -1706,8 +1708,7 @@ class SourceRow extends StatelessWidget {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(s.name,
-                style: F.body
-                    .copyWith(color: p.ink, fontWeight: FontWeight.w600)),
+                style: F.head.copyWith(color: p.ink)),
             Text(s.kind, style: F.over.copyWith(color: p.ink3)),
             const SizedBox(height: 5),
             // Wrap, not Row: at 2x text "Not connected · 78%" is wider than

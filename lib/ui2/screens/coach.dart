@@ -207,7 +207,7 @@ class _CoachScreenState extends State<CoachScreen> {
               e is CoachException
                   ? e.message
                   : (AppLocalizations.of(context)?.coachSomethingWrong('$e') ??
-                      'Something went wrong: $e'),
+                        'Something went wrong: $e'),
             ),
           );
         });
@@ -249,8 +249,9 @@ class _CoachScreenState extends State<CoachScreen> {
             Text(
               destructive
                   ? (l?.coachDestructiveWarning ??
-                      'This removes data from this device and cannot be undone.')
-                  : (l?.coachSafeWarning ?? 'Nothing is written until you tap below.'),
+                        'This removes data from this device and cannot be undone.')
+                  : (l?.coachSafeWarning ??
+                        'Nothing is written until you tap below.'),
               style: F.cap.copyWith(color: p.ink3),
             ),
           ],
@@ -258,12 +259,17 @@ class _CoachScreenState extends State<CoachScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(d).pop(false),
-            child: Text(l?.actionCancel ?? 'Cancel', style: F.body.copyWith(color: p.ink2)),
+            child: Text(
+              l?.actionCancel ?? 'Cancel',
+              style: F.body.copyWith(color: p.ink2),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(d).pop(true),
             child: Text(
-              destructive ? (l?.coachDeleteIt ?? 'Delete it') : (l?.coachSaveIt ?? 'Save it'),
+              destructive
+                  ? (l?.coachDeleteIt ?? 'Delete it')
+                  : (l?.coachSaveIt ?? 'Save it'),
               style: F.body.copyWith(
                 color: p.on(destructive ? C.red : kCoachAccent),
                 fontWeight: FontWeight.w600,
@@ -338,7 +344,9 @@ class _CoachScreenState extends State<CoachScreen> {
               _MenuRow(
                 LucideIcons.fileText,
                 l?.coachBriefingMenuTitle ?? 'Briefing, and what was sent',
-                sub: l?.coachBriefingMenuSub ?? 'The exact snapshot that left this device',
+                sub:
+                    l?.coachBriefingMenuSub ??
+                    'The exact snapshot that left this device',
                 onTap: () {
                   Navigator.of(sheet).pop();
                   go(
@@ -372,7 +380,9 @@ class _CoachScreenState extends State<CoachScreen> {
                         for (final s in list.take(20))
                           _MenuRow(
                             LucideIcons.messageSquare,
-                            s.title.isEmpty ? (l?.coachUntitledChat ?? 'Untitled chat') : s.title,
+                            s.title.isEmpty
+                                ? (l?.coachUntitledChat ?? 'Untitled chat')
+                                : s.title,
                             sub: s.preview,
                             onTap: () {
                               Navigator.of(sheet).pop();
@@ -411,9 +421,12 @@ class _CoachScreenState extends State<CoachScreen> {
               padding: const EdgeInsets.symmetric(horizontal: S.x4),
               child: NavBar(
                 l?.coachNavTitle ?? 'Coach',
-                sub: cfg.configured ? cfg.model : (l?.coachNotSetUp ?? 'Not set up'),
+                sub: cfg.configured
+                    ? cfg.model
+                    : (l?.coachNotSetUp ?? 'Not set up'),
                 trailing: Pressable(
-                  semanticLabel: l?.coachMenuSemantic ?? 'Chats and AI settings',
+                  semanticLabel:
+                      l?.coachMenuSemantic ?? 'Chats and AI settings',
                   onTap: _menu,
                   child: Icon(LucideIcons.ellipsis, size: 22, color: p.ink),
                 ),
@@ -527,9 +540,11 @@ class _CoachScreenState extends State<CoachScreen> {
                       color: p.on(kCoachAccent),
                     ),
                     const SizedBox(width: S.x2),
-                    Text(
-                      l?.coachYourDataYourModel ?? 'YOUR DATA, YOUR MODEL',
-                      style: F.over.copyWith(color: p.on(kCoachAccent)),
+                    Expanded(
+                      child: SurveyLabel(
+                        l?.coachYourDataYourModel ?? 'YOUR DATA, YOUR MODEL',
+                        color: p.on(kCoachAccent),
+                      ),
                     ),
                   ],
                 ),
@@ -550,7 +565,7 @@ class _CoachScreenState extends State<CoachScreen> {
               pad: const EdgeInsets.symmetric(vertical: S.x1),
               child: Column(
                 children: [
-                  for (final s in _starters(c))
+                  for (final (index, s) in _starters(c).indexed)
                     Pressable(
                       onTap: () => _send(s),
                       child: Padding(
@@ -560,6 +575,17 @@ class _CoachScreenState extends State<CoachScreen> {
                         ),
                         child: Row(
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: S.x3),
+                              child: ExcludeSemantics(
+                                child: Text(
+                                  '${index + 1}'.padLeft(2, '0'),
+                                  style: F.label.copyWith(
+                                    color: p.on(kCoachAccent),
+                                  ),
+                                ),
+                              ),
+                            ),
                             Expanded(
                               child: Text(
                                 s,
@@ -593,69 +619,69 @@ class _CoachScreenState extends State<CoachScreen> {
   Widget _composer(BuildContext c, P p) {
     final l = AppLocalizations.of(c);
     return Padding(
-    padding: EdgeInsets.fromLTRB(
-      S.x4,
-      S.x2,
-      S.x4,
-      S.x3 + MediaQuery.of(c).viewInsets.bottom,
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: S.x4,
-              vertical: S.x2,
-            ),
-            decoration: BoxDecoration(
-              color: p.card,
-              borderRadius: R.rXl,
-              border: Border.all(color: p.line),
-            ),
-            child: Semantics(
-              label: l?.coachAskLabel ?? 'Ask the coach',
-              textField: true,
-              child: TextField(
-                controller: _input,
-                minLines: 1,
-                maxLines: 4,
-                enabled: !_busy,
-                style: F.body.copyWith(color: p.ink),
-                cursorColor: p.on(kCoachAccent),
-                textInputAction: TextInputAction.send,
-                onSubmitted: _busy ? null : _send,
-                decoration: InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  hintText: l?.coachInputHint ?? 'Ask about your health…',
-                  hintStyle: F.body.copyWith(color: p.ink3),
+      padding: EdgeInsets.fromLTRB(
+        S.x4,
+        S.x2,
+        S.x4,
+        S.x3 + MediaQuery.of(c).viewInsets.bottom,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: S.x4,
+                vertical: S.x2,
+              ),
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: R.rXl,
+                border: Border.all(color: p.line),
+              ),
+              child: Semantics(
+                label: l?.coachAskLabel ?? 'Ask the coach',
+                textField: true,
+                child: TextField(
+                  controller: _input,
+                  minLines: 1,
+                  maxLines: 4,
+                  enabled: !_busy,
+                  style: F.body.copyWith(color: p.ink),
+                  cursorColor: p.on(kCoachAccent),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: _busy ? null : _send,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    hintText: l?.coachInputHint ?? 'Ask about your health…',
+                    hintStyle: F.body.copyWith(color: p.ink3),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: S.x2),
-        Pressable(
-          semanticLabel: l?.coachSendLabel ?? 'Send',
-          onTap: _busy ? null : () => _send(_input.text),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _busy ? p.card2 : p.fill(kCoachAccent),
-            ),
-            child: Icon(
-              LucideIcons.arrowUp,
-              size: 20,
-              color: _busy ? p.ink3 : p.inkOnFill,
+          const SizedBox(width: S.x2),
+          Pressable(
+            semanticLabel: l?.coachSendLabel ?? 'Send',
+            onTap: _busy ? null : () => _send(_input.text),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _busy ? p.card2 : p.fill(kCoachAccent),
+              ),
+              child: Icon(
+                LucideIcons.arrowUp,
+                size: 20,
+                color: _busy ? p.ink3 : p.inkOnFill,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
   }
 }
 
@@ -681,7 +707,8 @@ class _Bubble extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: p.wash(kCoachAccent),
-              borderRadius: R.rLg,
+              border: Border.all(color: p.line),
+              borderRadius: R.rMd,
             ),
             child: Text(
               item.text ?? '',
@@ -711,7 +738,8 @@ class _Bubble extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: S.x4),
           child: StatusCard(
-            AppLocalizations.of(c)?.coachErrorTitle ?? 'That did not go through',
+            AppLocalizations.of(c)?.coachErrorTitle ??
+                'That did not go through',
             item.text ?? '',
             icon: LucideIcons.triangleAlert,
           ),
@@ -768,7 +796,8 @@ class _MenuRow extends StatelessWidget {
             if (onRemove != null)
               Pressable(
                 semanticLabel:
-                    AppLocalizations.of(c)?.coachDeleteChat(title) ?? 'Delete $title',
+                    AppLocalizations.of(c)?.coachDeleteChat(title) ??
+                    'Delete $title',
                 onTap: onRemove,
                 child: Icon(LucideIcons.trash2, size: 16, color: p.ink3),
               ),
@@ -791,7 +820,8 @@ class _Preset {
 }
 
 List<_Preset> _presets(BuildContext c) {
-  final local = AppLocalizations.of(c)?.coachLocalSub ??
+  final local =
+      AppLocalizations.of(c)?.coachLocalSub ??
       'On this network. Nothing leaves your machine.';
   return <_Preset>[
     _Preset('Ollama', local, 'http://localhost:11434/v1', local: true),
@@ -904,8 +934,9 @@ class _CoachSetupState extends State<CoachSetup> {
         _models = ids;
         _msg = ids.isEmpty
             ? (l?.coachNoModelsListed ??
-                'That endpoint listed no models. Type one below instead.')
-            : (l?.coachModelsFound(ids.length) ?? '${ids.length} models. Tap one.');
+                  'That endpoint listed no models. Type one below instead.')
+            : (l?.coachModelsFound(ids.length) ??
+                  '${ids.length} models. Tap one.');
       });
     } catch (e) {
       if (!mounted) return;
@@ -913,7 +944,8 @@ class _CoachSetupState extends State<CoachSetup> {
       setState(
         () => _msg = e is CoachException
             ? e.message
-            : (l?.coachEndpointUnreachable('$e') ?? 'Could not reach that endpoint: $e'),
+            : (l?.coachEndpointUnreachable('$e') ??
+                  'Could not reach that endpoint: $e'),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -924,7 +956,9 @@ class _CoachSetupState extends State<CoachSetup> {
     final chosen = _model.isNotEmpty ? _model : _search.text.trim();
     final l = AppLocalizations.of(context);
     if (chosen.isEmpty) {
-      setState(() => _msg = l?.coachPickModelFirst ?? 'Pick or type a model first.');
+      setState(
+        () => _msg = l?.coachPickModelFirst ?? 'Pick or type a model first.',
+      );
       return;
     }
     final cfg = context.read<CoachConfig>();
@@ -948,8 +982,11 @@ class _CoachSetupState extends State<CoachSetup> {
       );
     } catch (e) {
       if (mounted) {
-        setState(() =>
-            _msg = l?.coachKeychainRefused('$e') ?? 'The keychain refused the key: $e');
+        setState(
+          () => _msg =
+              l?.coachKeychainRefused('$e') ??
+              'The keychain refused the key: $e',
+        );
       }
       return;
     }
@@ -975,8 +1012,10 @@ class _CoachSetupState extends State<CoachSetup> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: S.x4),
-              child: NavBar(l?.coachSetupNavTitle ?? 'AI settings',
-                  sub: l?.coachSetupNavSub ?? 'Bring your own model'),
+              child: NavBar(
+                l?.coachSetupNavTitle ?? 'AI settings',
+                sub: l?.coachSetupNavSub ?? 'Bring your own model',
+              ),
             ),
             Expanded(
               child: ListView(
@@ -1055,7 +1094,8 @@ class _CoachSetupState extends State<CoachSetup> {
                   OsTextField(
                     controller: _key,
                     label: _isLocal
-                        ? (l?.coachApiKeyLocalLabel ?? 'API key (not needed locally)')
+                        ? (l?.coachApiKeyLocalLabel ??
+                              'API key (not needed locally)')
                         : (l?.coachApiKeyLabel ?? 'API key'),
                     hint: 'sk-…',
                   ),
@@ -1066,17 +1106,19 @@ class _CoachSetupState extends State<CoachSetup> {
                   Text(
                     _isLocal
                         ? (l?.coachLocalDataNote ??
-                            'Your questions and the rows the coach reads stay on '
-                                'your own machine.')
+                              'Your questions and the rows the coach reads stay on '
+                                  'your own machine.')
                         : (l?.coachCloudDataNote ??
-                            'Your questions and the rows the coach reads are sent '
-                                'to this endpoint. See exactly what that is on '
-                                '"What was sent".'),
+                              'Your questions and the rows the coach reads are sent '
+                                  'to this endpoint. See exactly what that is on '
+                                  '"What was sent".'),
                     style: F.cap.copyWith(color: p.ink3, height: 1.5),
                   ),
                   const SizedBox(height: S.x4),
                   BigButton(
-                    _loading ? (l?.coachAsking ?? 'Asking…') : (l?.coachListModels ?? 'List models'),
+                    _loading
+                        ? (l?.coachAsking ?? 'Asking…')
+                        : (l?.coachListModels ?? 'List models'),
                     icon: LucideIcons.refreshCw,
                     color: kCoachAccent,
                     soft: true,

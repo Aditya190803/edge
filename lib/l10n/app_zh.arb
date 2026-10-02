@@ -2090,6 +2090,7 @@
   "activityLiveStrokeFly": "蝶泳",
   "activityLiveStrokeFree": "自由泳",
   "activityLiveThisExerciseLabel": "本动作",
+  "activityLiveHeartRateTitle": "本次训练心率",
   "activityLiveTimeInZonesTitle": "各心率区间时长",
   "activityLiveTimeUnit": "用时",
   "activityLiveTryAgain": "重试",

@@ -839,13 +839,18 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           ]),
         ],
         const SizedBox(height: S.x3),
-        Row(children: [
-          Text(l?.activitySummaryRpeVeryEasy ?? '1 · very easy',
-              style: F.over.copyWith(color: p.ink3)),
-          const Spacer(),
-          Text(l?.activitySummaryRpeMaximal ?? '10 · maximal',
-              style: F.over.copyWith(color: p.ink3)),
-        ]),
+        // A Wrap: at 3.1x text the two ends do not fit one line.
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          spacing: S.x3,
+          runSpacing: S.x1,
+          children: [
+            Text(l?.activitySummaryRpeVeryEasy ?? '1 · very easy',
+                style: F.over.copyWith(color: p.ink3)),
+            Text(l?.activitySummaryRpeMaximal ?? '10 · maximal',
+                style: F.over.copyWith(color: p.ink3)),
+          ],
+        ),
         const SizedBox(height: S.x2),
         Align(
           alignment: Alignment.centerLeft,
@@ -1413,7 +1418,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             decoration: BoxDecoration(
                 borderRadius: R.rLg,
                 color: p.wash(C.teal, strength: 1.6),
-                boxShadow: p.el(1)),
+                border: Border.all(color: p.line)),
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1755,10 +1760,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   const SizedBox(width: S.x2),
                   // The row rule: the name gives way, the measurement keeps
                   // its natural width and sits flush at the card edge.
-                  Text('${_kg(top.loadKg!)} × ${top.reps}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: F.n17.copyWith(color: p.ink)),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text('${_kg(top.loadKg!)} × ${top.reps}',
+                          maxLines: 1, style: F.n17.copyWith(color: p.ink)),
+                    ),
+                  ),
                 ]),
               ),
             ),
@@ -2111,8 +2120,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           height: 24,
           alignment: Alignment.center,
           decoration:
-              BoxDecoration(color: p.wash(C.purple), borderRadius: R.rSm),
-          child: Text('$n', style: F.over.copyWith(color: p.on(C.purple))),
+              BoxDecoration(color: p.wash(C.domMove), borderRadius: R.rSm),
+          child: Text('$n', style: F.over.copyWith(color: p.on(C.domMove))),
         ),
         const SizedBox(width: S.x3),
         Expanded(

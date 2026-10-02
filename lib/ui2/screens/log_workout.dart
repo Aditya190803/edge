@@ -329,7 +329,7 @@ class _SuggestionCard extends StatelessWidget {
     final p = P.of(c);
     final l = AppLocalizations.of(c);
     final a = s.activity;
-    final colour = a?.color ?? C.purple;
+    final colour = a?.color ?? C.domMove;
     return Surface(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -663,7 +663,7 @@ class _LogWorkoutState extends State<LogWorkout> {
                           ? (l?.logWorkoutNextMorningSub ?? 'the next morning')
                           : '',
                       onTap: () => _pickTime(isStart: false)),
-                  SetRow(LucideIcons.timer, C.purple,
+                  SetRow(LucideIcons.timer, C.domMove,
                       l?.logWorkoutLengthLabel ?? 'Length',
                       value: mins > 0 ? '$mins min' : '—',
                       chevron: false),

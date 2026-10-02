@@ -103,7 +103,7 @@ class _ActivityPickerState extends State<ActivityPicker> {
                       autofocus: true,
                       onChanged: (v) => setState(() => q = v),
                       style: F.body.copyWith(color: p.ink),
-                      cursorColor: p.on(C.purple),
+                      cursorColor: p.on(C.domMove),
                       decoration: InputDecoration.collapsed(
                           hintText: l?.activityPickerSearchHint(
                                   allActivities.length) ??
@@ -330,7 +330,7 @@ class _Quick extends StatelessWidget {
       child: Container(
         width: 84,
         decoration: BoxDecoration(
-            color: p.card, borderRadius: R.rLg, boxShadow: p.el(1)),
+            color: p.card, borderRadius: R.rLg, border: Border.all(color: p.line)),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Container(
             width: 38,

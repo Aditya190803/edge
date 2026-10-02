@@ -104,10 +104,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
                 _ => _history(c, d),
               },
             ])
-              if (w is StartCard)
-                w
-              else
-                Padding(
+              Padding(
                     padding: const EdgeInsets.symmetric(horizontal: S.x4),
                     child: w),
           ],
@@ -133,9 +130,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
         label: loc?.workoutStartSessionLabel ?? 'START A SESSION',
         count: allActivities.length,
         noun: loc?.workoutActivitiesNoun ?? 'activities',
-        asset: 'mascot_workout.png',
-        accent: C.purple,
-        deep: C.indigo,
+        accent: C.domMove,
         onTap: () => _openPicker(c, d),
       ),
       const SizedBox(height: S.x3),
@@ -179,7 +174,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
                         shape: BoxShape.circle,
                         color: done
                             ? p.wash(C.green, strength: 1.5)
-                            : (i == today ? p.fill(C.purple) : p.card2)),
+                            : (i == today ? p.fill(C.domMove) : p.card2)),
                     child: Icon(
                         done
                             ? LucideIcons.check
@@ -355,7 +350,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
               child: CustomPaint(
                   size: Size.infinite,
                   // Today is the last slot, always — not "the newest value".
-                  painter: Bars(d.trimp7, p.on(C.purple),
+                  painter: Bars(d.trimp7, p.on(C.domMove),
                       highlight: d.trimp7.last == null ? -1 : 6,
                       axis: axis,
                       t: animate(context, 1))),
@@ -376,7 +371,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
             ld.tsb == null
                 ? notYet
                 : '${ld.tsb! >= 0 ? '+' : '−'}${ld.tsb!.abs().round()}',
-            C.purple
+            C.domMove
           ),
         ]),
       ]),
@@ -864,7 +859,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with RevisionReload {
     final sign = e.delta >= 0 ? '+' : '−';
     return MetricRow(
       a?.icon ?? LucideIcons.activity,
-      a?.color ?? C.purple,
+      a?.color ?? C.domMove,
       loc?.workoutAfterActivity(a?.name ?? e.type) ??
           'After ${a?.name ?? e.type}',
       e.exceedsMdc
@@ -1009,19 +1004,6 @@ class _HistoryRow extends StatelessWidget {
                       style: F.over.copyWith(color: p.ink3)),
                 ]),
           ),
-          if (w.strain != null) ...[
-            Text(w.strain!.toStringAsFixed(1),
-                style: F.n17.copyWith(color: p.ink)),
-            const SizedBox(width: S.x1),
-            Padding(
-              padding: const EdgeInsets.only(top: S.x1),
-              // "strain", not "load". Training load is CTL/ATL over weeks;
-              // this is one session's 0–21 strain, and the two were being
-              // shown under the same word on the same screen.
-              child: Text(loc?.workoutStrainLabel ?? 'strain',
-                  style: F.over.copyWith(color: p.ink3)),
-            ),
-          ],
           if (onDelete != null) ...[
             const SizedBox(width: S.x2),
             Pressable(
@@ -1035,6 +1017,22 @@ class _HistoryRow extends StatelessWidget {
             ),
           ],
         ]),
+        if (w.strain != null) ...[
+          const SizedBox(height: S.x3),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Wrap(
+              spacing: S.x2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(w.strain!.toStringAsFixed(1),
+                    style: F.n24.copyWith(color: p.on(C.domMove))),
+                Text(loc?.workoutStrainLabel ?? 'strain',
+                    style: F.cap.copyWith(color: p.ink3)),
+              ],
+            ),
+          ),
+        ],
         if (w.zoneMinutes.length == 5) ...[
           const SizedBox(height: S.x4),
           ChartFrame(
@@ -1970,7 +1968,7 @@ Future<_WorkoutData> _loadWorkoutData(AppState app) async {
           final ts = (r['start_ts'] as num?)?.toInt();
           if (ts == null) continue;
           final a = activityByName(r['type'] as String?) ??
-              const Activity('Workout', LucideIcons.activity, C.purple,
+              const Activity('Workout', LucideIcons.activity, C.domMove,
                   Track.duration, 5.0);
           past.add(_PastWorkout(
             (r['id'] as String?) ?? '',
@@ -2021,7 +2019,7 @@ Future<_WorkoutData> _loadWorkoutData(AppState app) async {
           // resolves the ~40 types this app can start, and the fallback would
           // print "Workout" over a surf.
           activityByName(title) ??
-              const Activity('Workout', LucideIcons.activity, C.purple,
+              const Activity('Workout', LucideIcons.activity, C.domMove,
                   Track.duration, 5.0),
           at,
           Motion.tick * (endTs - ts),

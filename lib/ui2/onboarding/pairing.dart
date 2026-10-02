@@ -194,13 +194,15 @@ class PairingView extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(S.x4, S.x8, S.x4, S.x8),
           children: [
-            Icon(
-                blocked == null
+            SurveyHero(
+                icon: blocked == null
                     ? LucideIcons.bluetooth
                     : LucideIcons.bluetoothOff,
-                size: 36,
-                color: p.on(C.blue)),
-            const SizedBox(height: S.x5),
+                accent: C.blue,
+                // Unsurveyed until a band is found: nothing has been measured.
+                lit: phase == PairPhase.paired ? 1 : null,
+                height: 180),
+            const SizedBox(height: S.x6),
             Text(_title(c, phase, blocker), style: F.t1.copyWith(color: p.ink)),
             const SizedBox(height: S.x3),
             Text(_body(c, phase, blocker), style: F.body.copyWith(color: p.ink2)),

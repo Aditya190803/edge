@@ -139,7 +139,11 @@ class _ActivitySetupState extends State<ActivitySetup> {
                       width: 84,
                       height: 84,
                       decoration: BoxDecoration(
-                          color: p.wash(a.color), shape: BoxShape.circle),
+                        color: p.wash(a.color),
+                        borderRadius: R.rXl,
+                        border: Border.all(
+                            color: p.on(a.color).withValues(alpha: .35)),
+                      ),
                       child: Icon(a.icon, size: 38, color: p.on(a.color)),
                     ),
                     const SizedBox(height: S.x4),

@@ -12,7 +12,6 @@
 // moment the app is already slowest.
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../ui2.dart';
 
@@ -82,9 +81,22 @@ class _Cover extends StatelessWidget {
       color: p.bg,
       child: Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(LucideIcons.activity, size: 44, color: p.on(C.green)),
+          SizedBox(
+            width: 220,
+            height: 170,
+            child: CustomPaint(
+              painter: ContourIsland(
+                frac: 1,
+                ink: p.on(C.green),
+                muted: p.ink3,
+                line: p.line,
+              ),
+            ),
+          ),
           const SizedBox(height: S.x4),
-          Text('OpenStrap', style: F.t2.copyWith(color: p.ink)),
+          Text('OPENSTRAP',
+              style: F.t2.copyWith(
+                  color: p.ink, fontFamily: F.wide, letterSpacing: 2)),
         ]),
       ),
     );

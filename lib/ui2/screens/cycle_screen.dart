@@ -253,7 +253,8 @@ class _CycleTabState extends State<CycleTab> with RevisionReload {
     final ok = await confirmRemove(
       context,
       title:
-          l?.cycleRemoveLogTitle(_short(date, l)) ?? 'Remove ${_short(date, l)}?',
+          l?.cycleRemoveLogTitle(_short(date, l)) ??
+          'Remove ${_short(date, l)}?',
       body:
           l?.cycleRemoveLogBody ??
           'Cycle day, phase and the predicted next date are all counted from '
@@ -444,32 +445,28 @@ class _CycleTabState extends State<CycleTab> with RevisionReload {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: S.x3,
+            runSpacing: S.x2,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
+              SurveyLabel(
                 l?.cycleDayInThisCycle ?? 'DAY IN THIS CYCLE',
-                style: F.over.copyWith(color: p.ink3),
+                color: p.on(C.pink),
               ),
-              const Spacer(),
               if (d.phase != 'unknown') Pill(_phaseLabel(l, d.phase), C.pink),
             ],
           ),
+          const SizedBox(height: S.x4),
+          Text('${d.cycleDay}', style: F.n34.copyWith(color: p.ink)),
           const SizedBox(height: S.x2),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text('${d.cycleDay}', style: F.n34.copyWith(color: p.ink)),
-              const SizedBox(width: S.x2),
-              Text(
-                d.medianLength == null
-                    ? (l?.cycleCountedFromLastStart ??
-                          'counted from your last logged start')
-                    : (l?.cycleOfAboutDays(d.medianLength!.round()) ??
-                          'of about ${d.medianLength!.round()}'),
-                style: F.cap.copyWith(color: p.ink3),
-              ),
-            ],
+          Text(
+            d.medianLength == null
+                ? (l?.cycleCountedFromLastStart ??
+                      'counted from your last logged start')
+                : (l?.cycleOfAboutDays(d.medianLength!.round()) ??
+                      'of about ${d.medianLength!.round()}'),
+            style: F.cap.copyWith(color: p.ink3),
           ),
         ],
       ),
@@ -534,7 +531,7 @@ class _CycleTabState extends State<CycleTab> with RevisionReload {
     if (d.predictedFrom == null || d.predictedTo == null) {
       final days = d.daysUntilNext?.round();
       return '${_lead(l, days)}${l?.cycleFromOneMeasuredGap ?? 'from your one measured gap, which cannot show how '
-          'much your own cycle varies'}';
+              'much your own cycle varies'}';
     }
     // Offsets off the SAME `days_until_next` the point case uses, never a
     // second read of the clock: the repo already resolved "today" once, and a
@@ -554,7 +551,7 @@ class _CycleTabState extends State<CycleTab> with RevisionReload {
       when = l?.cycleInDaysRange(lo, hi) ?? 'in $lo–$hi days · ';
     }
     return '$when${l?.cycleHalfOfMeasuredGaps(n) ?? 'half of your $n measured gaps landed inside a range this '
-        'wide'}';
+            'wide'}';
   }
 
   String _lead(AppLocalizations? l, int? days) => days == null
@@ -665,18 +662,17 @@ class _CycleTabState extends State<CycleTab> with RevisionReload {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(_symptomLabel(l, e.$1),
-                        style: F.cap.copyWith(color: p.ink)),
+                    child: Text(
+                      _symptomLabel(l, e.$1),
+                      style: F.cap.copyWith(color: p.ink),
+                    ),
                   ),
                   Text(e.$2.join(' · '), style: F.n17.copyWith(color: p.ink2)),
                 ],
               ),
             ),
           Text(
-            l?.cycleSymptomShapeSummary(
-                  s.daysByWeek.join(', '),
-                  s.cycles,
-                ) ??
+            l?.cycleSymptomShapeSummary(s.daysByWeek.join(', '), s.cycles) ??
                 'Four numbers, one per week of the cycle, counted back to your own '
                     'logged starts. You logged something on ${s.daysByWeek.join(', ')} '
                     'days of each week across ${s.cycles} cycles — those are the only '
@@ -759,9 +755,7 @@ class _CycleTabState extends State<CycleTab> with RevisionReload {
                   const SizedBox(width: S.x3),
                   Pressable(
                     semanticLabel:
-                        l?.cycleRemoveLoggedDay(
-                          '${recent[i]['date']}',
-                        ) ??
+                        l?.cycleRemoveLoggedDay('${recent[i]['date']}') ??
                         'Remove ${recent[i]['date']}',
                     onTap: () => _deleteLog(recent[i]['date'] as String),
                     child: Icon(LucideIcons.x, size: 18, color: p.ink3),
@@ -805,8 +799,7 @@ String _reproDisplayLabel(AppLocalizations? l, String? key) => switch (key) {
   'cycling' => l?.cycleReproCyclingLabel ?? 'I have natural cycles',
   'contraception' =>
     l?.cycleReproContraceptionLabel ?? 'Hormonal contraception',
-  'none' =>
-    l?.cycleReproNoneLabel ?? 'Pregnant, postpartum, or not cycling',
+  'none' => l?.cycleReproNoneLabel ?? 'Pregnant, postpartum, or not cycling',
   '' => l?.cyclePreferNotToSay ?? 'Prefer not to say',
   _ => l?.cycleReproNotSet ?? 'Not set',
 };
@@ -978,7 +971,8 @@ class _CycleHistoryState extends State<_CycleHistory> {
   bool get _lengthReview {
     try {
       return context.select<AppState, bool>(
-          (a) => a.user?['cycle_length_review'] == true);
+        (a) => a.user?['cycle_length_review'] == true,
+      );
     } catch (_) {
       return false;
     }
@@ -987,15 +981,19 @@ class _CycleHistoryState extends State<_CycleHistory> {
   @override
   Widget build(BuildContext c) {
     final l = AppLocalizations.of(c);
-    return detailScaffold(c, l?.cycleAcrossCyclesTitle ?? 'Across your cycles', [
-      const SizedBox(height: S.x2),
-      Section(l?.cycleThisCycle ?? 'This cycle', _currentCycleChart(c, d)),
-      Section(l?.cycleByDayOfYourCycle ?? 'By day of your cycle', _byDay(c)),
-      Section(
-        l?.cycleHowLongCyclesBeen ?? 'How long your cycles have been',
-        _lengths(c),
-      ),
-    ]);
+    return detailScaffold(
+      c,
+      l?.cycleAcrossCyclesTitle ?? 'Across your cycles',
+      [
+        const SizedBox(height: S.x2),
+        Section(l?.cycleThisCycle ?? 'This cycle', _currentCycleChart(c, d)),
+        Section(l?.cycleByDayOfYourCycle ?? 'By day of your cycle', _byDay(c)),
+        Section(
+          l?.cycleHowLongCyclesBeen ?? 'How long your cycles have been',
+          _lengths(c),
+        ),
+      ],
+    );
   }
 
   // ── WH-02 ────────────────────────────────────────────────────────────────
@@ -1265,10 +1263,7 @@ class _CycleHistoryState extends State<_CycleHistory> {
     if (gaps.length < kCycleLengthReviewMinGaps) {
       return StatusCard(
         l?.cycleNotEnoughLoggedTitle ?? 'Not enough logged cycles yet',
-        l?.cycleNotEnoughLoggedBody(
-              gaps.length,
-              kCycleLengthReviewMinGaps,
-            ) ??
+        l?.cycleNotEnoughLoggedBody(gaps.length, kCycleLengthReviewMinGaps) ??
             'This needs a long run: ${gaps.length} of '
                 '$kCycleLengthReviewMinGaps gaps so far, which is about a year of '
                 'logging every start.',
@@ -1305,7 +1300,8 @@ class _CycleHistoryState extends State<_CycleHistory> {
       children: [
         Surface(
           child: ChartFrame(
-            title: l?.cycleDaysBetweenStarts ?? 'Days between your logged starts',
+            title:
+                l?.cycleDaysBetweenStarts ?? 'Days between your logged starts',
             unit: l?.cycleUnitDays ?? 'days',
             yAxis: axis,
             xLabels: [

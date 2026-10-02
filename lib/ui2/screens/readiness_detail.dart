@@ -191,25 +191,50 @@ class _ReadinessDetailState extends State<ReadinessDetail> {
             Section(l?.readinessDetailWhatWasMissing ?? 'What was missing',
                 _absence(c, p, d.absentDiag!)),
         ] else
-          Surface(
-            child: Column(children: [
-              SizedBox(
-                width: 150,
-                height: 150,
-                child: Stack(alignment: Alignment.center, children: [
-                  CustomPaint(
-                    size: const Size(150, 150),
-                    painter: Ring(d.readiness.normalized(100), p.on(band.color),
-                        p.track,
-                        stroke: 14, t: animate(c, 1)),
+          // The same island Home draws, larger and with the band beside it —
+          // one picture of readiness across the app.
+          Semantics(
+            label: '${v.round()} out of 100, ${band.label}',
+            child: ExcludeSemantics(
+              child: SizedBox(
+                height: 280,
+                child: Stack(children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: ContourIsland(
+                        frac: d.readiness.normalized(100),
+                        ink: p.on(band.color),
+                        muted: p.ink3,
+                        line: p.line,
+                        t: animate(c, 1),
+                      ),
+                    ),
                   ),
-                  Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('${v.round()}', style: F.n48.copyWith(color: p.ink)),
-                    Text(band.label, style: F.cap.copyWith(color: p.ink3)),
-                  ]),
+                  Positioned(
+                    left: S.x1,
+                    bottom: S.x1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text('${v.round()}',
+                                style: F.hero.copyWith(color: p.ink)),
+                            const SizedBox(width: S.x2),
+                            const SurveyLabel('/ 100'),
+                          ],
+                        ),
+                        const SizedBox(height: S.x2),
+                        Text(band.label,
+                            style: F.head.copyWith(color: p.on(band.color))),
+                      ],
+                    ),
+                  ),
                 ]),
               ),
-            ]),
+            ),
           ),
 
         if (d.breakdown.isNotEmpty) ...[

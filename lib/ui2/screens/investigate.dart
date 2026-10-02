@@ -1139,7 +1139,7 @@ class _InvestigateState extends State<Investigate> {
         if (spec.citation.isNotEmpty) ...[
           const SizedBox(height: S.x3),
           Text(spec.citation,
-              style: F.over.copyWith(color: p.ink3, fontFamily: 'Menlo')),
+              style: F.over.copyWith(color: p.ink3, fontFamily: F.mono)),
         ],
       ]),
     );

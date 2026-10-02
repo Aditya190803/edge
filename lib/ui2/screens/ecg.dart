@@ -230,26 +230,34 @@ class EcgReadingRow extends StatelessWidget {
           '$cat, ${hr == null ? '' : '$hr bpm, '}${_fmtWhen(reading.startTs)}',
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x3),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(cat, style: F.head.copyWith(color: p.ink)),
+                ),
+                const SizedBox(width: S.x2),
+                Icon(LucideIcons.chevronRight, size: 16, color: p.ink3),
+              ],
+            ),
+            const SizedBox(height: S.x2),
+            Text(
+              '${_fmtWhen(reading.startTs)} · ${_wristLabel(l, reading.wrist)}',
+              style: F.cap.copyWith(color: p.ink3),
+            ),
+            if (hr != null) ...[
+              const SizedBox(height: S.x3),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: S.x2,
                 children: [
-                  Text(cat, style: F.body.copyWith(color: p.ink)),
-                  const SizedBox(height: S.x1),
-                  Text(
-                    '${_fmtWhen(reading.startTs)} · ${_wristLabel(l, reading.wrist)}',
-                    style: F.cap.copyWith(color: p.ink3),
-                  ),
+                  Text('$hr', style: F.n24.copyWith(color: p.on(C.domHealth))),
+                  Text('bpm', style: F.label.copyWith(color: p.ink3)),
                 ],
               ),
-            ),
-            if (hr != null) Text('$hr', style: F.n24.copyWith(color: p.ink)),
-            if (hr != null) const SizedBox(width: S.x1),
-            if (hr != null) Text('bpm', style: F.cap.copyWith(color: p.ink3)),
-            const SizedBox(width: S.x2),
-            Icon(LucideIcons.chevronRight, size: 16, color: p.ink3),
+            ],
           ],
         ),
       ),
