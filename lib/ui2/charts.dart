@@ -597,14 +597,15 @@ class Ring extends CustomPainter {
     final c = Offset(s.width / 2, s.height / 2);
     final r = min(s.width, s.height) / 2 - stroke / 2;
     if (r <= 0) return;
-    cv.drawCircle(
-      c,
-      r,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..color = track,
-    );
+    // The track is surveyed ground: three contour hairlines across the stroke
+    // width rather than a solid gutter.
+    final hair = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = track;
+    for (final k in const [-.5, 0.0, .5]) {
+      cv.drawCircle(c, r + k * (stroke - 1), hair);
+    }
     final sweep = 2 * pi * v.clamp(0, 1) * t.clamp(0, 1);
     if (sweep <= 0) return;
     cv.drawArc(
@@ -615,7 +616,7 @@ class Ring extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round
+        ..strokeCap = StrokeCap.butt
         ..color = solid ? color : const Color(0x00000000)
         ..shader = solid
             ? null
@@ -747,10 +748,10 @@ class Hypnogram extends CustomPainter {
   Hypnogram(this.stages, this.p, {this.t = 1});
 
   static const pigment = <SleepStage, Color>{
-    SleepStage.awake: C.orange,
-    SleepStage.rem: C.teal,
-    SleepStage.light: C.sky,
-    SleepStage.deep: C.blue,
+    SleepStage.awake: C.n300,
+    SleepStage.rem: C.sky,
+    SleepStage.light: C.blue,
+    SleepStage.deep: C.indigo,
   };
 
   /// The lane colours as drawn. Four lanes at four different heights, so hue is
@@ -811,8 +812,37 @@ class Hypnogram extends CustomPainter {
     // A run is one rect however long it is, and a step joins it to the next —
     // which is what a hypnogram is: a line that moves between four levels, not
     // a scatter of blocks.
+    // THE CROSS-SECTION. Each lane is a stratum, tinted faintly with its own
+    // stage colour; the ground under the night's line is filled, so deeper
+    // sleep is literally deeper ground. Texture only — the ledges below are
+    // the marks, and they are what the contrast sweep measures.
+    for (final st in SleepStage.values) {
+      cv.drawRect(Rect.fromLTWH(0, st.index * lane, s.width, lane),
+          Paint()..color = ink[st]!.withValues(alpha: .045 + st.index * .012));
+    }
+    final ground = Path()..moveTo(0, s.height);
+    for (var k = 0; k < n; k++) {
+      final y = v[k].index * lane + lane / 2;
+      ground
+        ..lineTo(k * w, y)
+        ..lineTo((k + 1) * w, y);
+    }
+    ground
+      ..lineTo(n * w, s.height)
+      ..close();
+    cv.drawPath(
+        ground,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              ink[SleepStage.rem]!.withValues(alpha: .05),
+              ink[SleepStage.deep]!.withValues(alpha: .22),
+            ],
+          ).createShader(Offset.zero & s));
     final step = Paint()
-      ..color = p.line
+      ..color = p.ink3.withValues(alpha: .6)
       ..strokeWidth = 1;
     var i = 0;
     while (i < n) {
@@ -822,11 +852,13 @@ class Hypnogram extends CustomPainter {
         j++;
       }
       final x0 = i * w, x1 = (j + 1) * w;
-      final y = st.index * lane + 2, h = lane - 5;
+      // A ledge, not a block: the stage is a thick line at the middle of its
+      // stratum, so the ground fill beneath it stays readable.
+      final h = min(6.0, lane - 4), y = st.index * lane + lane / 2 - h / 2;
       cv.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(x0, y, max(x1 - x0 - .8, 2), h),
-          const Radius.circular(2),
+          const Radius.circular(1.5),
         ),
         Paint()..color = ink[st]!,
       );
@@ -834,7 +866,7 @@ class Hypnogram extends CustomPainter {
       // and the lanes already carry the stage.
       if (j + 1 < n) {
         final next = v[j + 1];
-        final a = y + h / 2, b = next.index * lane + 2 + h / 2;
+        final a = y + h / 2, b = next.index * lane + lane / 2;
         cv.drawLine(Offset(x1, min(a, b)), Offset(x1, max(a, b)), step);
       }
       i = j + 1;
@@ -853,7 +885,7 @@ class ZoneBar extends CustomPainter {
 
   ZoneBar(this.z, this.p);
 
-  static const pigment = [C.blueSoft, C.blue, C.green, C.orange, C.red];
+  static const pigment = [C.blueSoft, C.teal, C.green, C.orange, C.red];
 
   /// The bands as drawn — solved against the surface, like every other mark.
   /// `blueSoft` measured 1.80:1 on a white card, so zone 1 was a pale smear.
@@ -1284,4 +1316,238 @@ class DayLanes extends CustomPainter {
       o.work != work ||
       o.movement != movement ||
       o.p.dark != p.dark;
+}
+
+// ══════════════════════════ STRATA SIGNATURES ══════════════════════════
+
+/// One closed contour: a circle perturbed by three fixed harmonics, so every
+/// ring of an island shares the same coastline and they nest without
+/// crossing. Deterministic — the same [seed] draws the same land every frame.
+Path contourPath(Offset c, double r, int seed,
+    {double wobble = 1, double sx = 1.16, double sy = .84}) {
+  final ph = [seed * 1.7 % (2 * pi), seed * 2.9 % (2 * pi), seed * 4.3 % (2 * pi)];
+  final path = Path();
+  const n = 96;
+  for (var i = 0; i <= n; i++) {
+    final a = i / n * 2 * pi;
+    final rr = r *
+        (1 +
+            wobble *
+                (.085 * sin(3 * a + ph[0]) +
+                    .05 * sin(5 * a + ph[1]) +
+                    .035 * sin(2 * a + ph[2])));
+    final pt = Offset(c.dx + rr * cos(a) * sx, c.dy + rr * sin(a) * sy);
+    if (i == 0) {
+      path.moveTo(pt.dx, pt.dy);
+    } else {
+      path.lineTo(pt.dx, pt.dy);
+    }
+  }
+  return path..close();
+}
+
+void _dashPath(Canvas cv, Path p, Paint paint, {double on = 3, double off = 4}) {
+  for (final m in p.computeMetrics()) {
+    for (var d = 0.0; d < m.length; d += on + off) {
+      cv.drawPath(m.extractPath(d, min(d + on, m.length)), paint);
+    }
+  }
+}
+
+/// THE ISLAND — a 0…1 score drawn as elevation. [rings] contours climb from
+/// the coast to the summit, and a score lights that fraction of them from the
+/// coast inward, so a higher score is literally higher ground.
+///
+/// Three looks, never blurred into one another:
+///   · MEASURED — lit contours in [ink], the rest as faint dashed survey lines.
+///   · CALIBRATING — the lit count is nights banked, drawn dashed in [muted]:
+///     progress toward a map, not a height.
+///   · ABSENT ([frac] null) — every contour dashed and unlit. Unsurveyed land
+///     is still land; it just has no height on it yet.
+class ContourIsland extends CustomPainter {
+  final double? frac;
+  final bool calibrating;
+  final Color ink, muted, line;
+  final double t;
+  final int rings;
+  final int seed;
+
+  ContourIsland({
+    required this.frac,
+    required this.ink,
+    required this.muted,
+    required this.line,
+    this.calibrating = false,
+    this.t = 1,
+    this.rings = 10,
+    this.seed = 41,
+  });
+
+  /// How many contours a fraction lights. Rounded, and a real non-zero score
+  /// always lights at least the coastline.
+  static int lit(double? f, int rings) {
+    if (f == null) return 0;
+    final n = (f.clamp(0.0, 1.0) * rings).round();
+    return f > 0 && n == 0 ? 1 : n;
+  }
+
+  @override
+  void paint(Canvas cv, Size s) {
+    if (s.width <= 0 || s.height <= 0) return;
+    // The summit sits up and right of centre, leaving the lower-left quarter
+    // clear for the figure that states the score.
+    final c = Offset(s.width * .60, s.height * .42);
+    // Fits the widest coastline (x-stretch 1.16, wobble ~17 %) inside the box.
+    final r0 = min(s.width * .40 / 1.36, s.height * .46 / 1.0);
+    final n = lit(frac, rings);
+    final shown = (n * t.clamp(0.0, 1.0)).round();
+    for (var i = 0; i < rings; i++) {
+      final r = r0 * (1 - i / (rings + 1.5));
+      // Each ring drifts a little toward the summit so the slope is uneven —
+      // real ground is steeper on one side.
+      final cc = c.translate(-i * r0 * .012, -i * r0 * .018);
+      // ONE coastline for every ring, so they nest and never cross; the
+      // wobble eases toward the summit, as land rounds off near the top.
+      final path = contourPath(cc, r, seed, wobble: 1 - i * .04);
+      final on = i < shown;
+      final paint = Paint()..style = PaintingStyle.stroke;
+      if (on && !calibrating) {
+        // Index contours (every fifth) are drawn heavier, as on a real map.
+        paint
+          ..strokeWidth = (i + 1) % 5 == 0 ? 2.2 : 1.3
+          ..color = ink.withValues(alpha: .35 + .65 * (i + 1) / max(n, 1));
+        if (i == shown - 1) {
+          cv.drawPath(path, Paint()..color = ink.withValues(alpha: .10));
+        }
+        cv.drawPath(path, paint);
+      } else if (on) {
+        paint
+          ..strokeWidth = 1.3
+          ..color = muted;
+        _dashPath(cv, path, paint);
+      } else {
+        paint
+          ..strokeWidth = 1
+          ..color = line;
+        _dashPath(cv, path, paint, on: 2, off: 4);
+      }
+    }
+    // The summit marker — a trig point. Lit only when the ground reaches it.
+    final top = c.translate(-rings * r0 * .012, -rings * r0 * .018);
+    final reached = !calibrating && shown >= rings;
+    cv.drawCircle(top, 3.2, Paint()..color = reached ? ink : line);
+    cv.drawCircle(
+        top,
+        7,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = (reached ? ink : line).withValues(alpha: .6));
+  }
+
+  @override
+  bool shouldRepaint(covariant ContourIsland o) =>
+      o.frac != frac ||
+      o.calibrating != calibrating ||
+      o.ink != ink ||
+      o.muted != muted ||
+      o.line != line ||
+      o.t != t;
+}
+
+/// Faint contour lines behind a hero — texture for a splash, a welcome, an
+/// empty page. Carries no data, so it is drawn only in the line ink.
+class ContourField extends CustomPainter {
+  final Color line;
+  final int seed;
+  final Offset centre;
+  const ContourField(this.line,
+      {this.seed = 7, this.centre = const Offset(.7, .3)});
+
+  @override
+  void paint(Canvas cv, Size s) {
+    final c = Offset(s.width * centre.dx, s.height * centre.dy);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = line;
+    final r0 = max(s.width, s.height) * .9;
+    for (var i = 0; i < 16; i++) {
+      cv.drawPath(contourPath(c, r0 * (1 - i / 17), seed, wobble: 1.2 - i * .03), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ContourField o) =>
+      o.line != line || o.seed != seed || o.centre != centre;
+}
+
+/// Heart rate drawn as an ELEVATION PROFILE: the trace is the ridge line and
+/// the ground under it is filled, with the zone thresholds as dashed contour
+/// lines. [bpm] is dense; a null is a gap in the ridge, never a zero.
+class ElevationProfile extends CustomPainter {
+  final List<double?> bpm;
+  final Color ink, line;
+  final List<double> thresholds;
+  final double lo, hi;
+  const ElevationProfile(this.bpm, this.ink, this.line,
+      {this.thresholds = const [], required this.lo, required this.hi});
+
+  @override
+  void paint(Canvas cv, Size s) {
+    if (bpm.length < 2 || hi <= lo || s.width <= 0) return;
+    double y(double v) => s.height - (v - lo) / (hi - lo) * s.height;
+    final dash = Paint()
+      ..color = line
+      ..strokeWidth = 1;
+    for (final z in thresholds) {
+      if (z <= lo || z >= hi) continue;
+      final yy = y(z);
+      for (var x = 0.0; x < s.width; x += 6) {
+        cv.drawLine(Offset(x, yy), Offset(min(x + 3, s.width), yy), dash);
+      }
+    }
+    final dx = s.width / (bpm.length - 1);
+    final fill = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [ink.withValues(alpha: .28), ink.withValues(alpha: .02)],
+      ).createShader(Offset.zero & s);
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeJoin = StrokeJoin.round
+      ..color = ink;
+    var run = <Offset>[];
+    void flush() {
+      if (run.length > 1) {
+        final ridge = Path()..addPolygon(run, false);
+        final ground = Path()..moveTo(run.first.dx, s.height);
+        for (final o in run) {
+          ground.lineTo(o.dx, o.dy);
+        }
+        ground
+          ..lineTo(run.last.dx, s.height)
+          ..close();
+        cv.drawPath(ground, fill);
+        cv.drawPath(ridge, stroke);
+      }
+      run = <Offset>[];
+    }
+
+    for (var i = 0; i < bpm.length; i++) {
+      final v = bpm[i];
+      if (v == null || !v.isFinite) {
+        flush();
+        continue;
+      }
+      run.add(Offset(i * dx, y(v.clamp(lo, hi))));
+    }
+    flush();
+  }
+
+  @override
+  bool shouldRepaint(covariant ElevationProfile o) =>
+      o.bpm != bpm || o.ink != ink || o.lo != lo || o.hi != hi;
 }

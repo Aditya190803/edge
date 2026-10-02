@@ -107,7 +107,11 @@ class _PressableState extends State<Pressable> {
         child: AnimatedScale(
           scale: _down ? .975 : 1,
           duration: motion(c, Motion.fast),
-          child: out,
+          child: AnimatedOpacity(
+            opacity: _down ? .82 : 1,
+            duration: motion(c, Motion.fast),
+            child: out,
+          ),
         ),
       ),
     );
@@ -194,7 +198,9 @@ class Scrubber extends StatelessWidget {
   }
 }
 
-/// The base card surface. Elevation, not outline.
+/// The base card surface — one layer of the strata. A hairline edge, not a
+/// shadow: rock does not float. Only elevation 2+ (a sheet, a floating bar)
+/// casts anything.
 class Surface extends StatelessWidget {
   final Widget child;
   final EdgeInsets pad;
@@ -202,6 +208,10 @@ class Surface extends StatelessWidget {
   final Color? color;
   final int elevation;
   final String? semanticLabel;
+
+  /// The hairline. Off for the unsurveyed [StatusCard], which draws its own
+  /// dashed edge instead.
+  final bool outline;
 
   const Surface({
     super.key,
@@ -211,6 +221,7 @@ class Surface extends StatelessWidget {
     this.color,
     this.elevation = 1,
     this.semanticLabel,
+    this.outline = true,
   });
 
   @override
@@ -225,12 +236,131 @@ class Surface extends StatelessWidget {
         decoration: BoxDecoration(
           color: color ?? p.card,
           borderRadius: R.rLg,
-          boxShadow: p.el(elevation),
+          border: outline ? Border.all(color: p.line) : null,
+          boxShadow: p.el(elevation - 1),
         ),
         child: child,
       ),
     );
   }
+}
+
+/// ── STRATA PRIMITIVES ─────────────────────────────────────────────────────
+
+/// The survey label: a short uppercase mono line — an eyebrow, a unit, an
+/// axis. Never a sentence; a line someone has to read is [F.cap].
+class SurveyLabel extends StatelessWidget {
+  final String text;
+  final Color? color;
+  final int maxLines;
+  const SurveyLabel(this.text, {super.key, this.color, this.maxLines = 1});
+
+  @override
+  Widget build(BuildContext c) => Text(
+        text.toUpperCase(),
+        style: F.label.copyWith(color: color ?? P.of(c).ink3),
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+      );
+}
+
+/// A vein of mineral beside a label — the metric's colour, stated once, small.
+class Vein extends StatelessWidget {
+  final Color color;
+  final double height;
+  const Vein(this.color, {super.key, this.height = 12});
+
+  @override
+  Widget build(BuildContext c) => Container(
+        width: 3,
+        height: height,
+        decoration: BoxDecoration(
+          color: P.of(c).on(color),
+          borderRadius: const BorderRadius.all(Radius.circular(1.5)),
+        ),
+      );
+}
+
+/// A progress band drawn as a stratum: a solid fill scored with fine vertical
+/// striations, so it reads as a layer of rock rather than a loading bar. The
+/// striation is texture, not data — the fill width is the only measurement.
+class StrataBand extends CustomPainter {
+  final double frac;
+  final Color fill, track;
+  final double? marker;
+  final Color? markerInk;
+  const StrataBand(this.frac, this.fill, this.track,
+      {this.marker, this.markerInk});
+
+  @override
+  void paint(Canvas cv, Size s) {
+    if (s.width <= 0 || s.height <= 0) return;
+    const r = Radius.circular(3);
+    cv.drawRRect(RRect.fromRectAndRadius(Offset.zero & s, r),
+        Paint()..color = track);
+    final w = frac.clamp(0.0, 1.0) * s.width;
+    if (w > 0) {
+      final body = RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, w, s.height), r);
+      cv.save();
+      cv.clipRRect(body);
+      cv.drawRect(Offset.zero & s, Paint()..color = fill);
+      final score = Paint()
+        ..color = C.n900.withValues(alpha: .35)
+        ..strokeWidth = 1;
+      for (var x = 3.5; x < w; x += 4) {
+        cv.drawLine(Offset(x, 0), Offset(x, s.height), score);
+      }
+      cv.restore();
+    }
+    final m = marker, ink = markerInk;
+    if (m != null && ink != null) {
+      final x = (m.clamp(0.0, 1.0) * s.width).clamp(1.0, s.width - 1);
+      cv.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                  center: Offset(x, s.height / 2),
+                  width: 2,
+                  height: s.height + 6),
+              const Radius.circular(1)),
+          Paint()..color = ink);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant StrataBand o) =>
+      o.frac != frac ||
+      o.fill != fill ||
+      o.track != track ||
+      o.marker != marker ||
+      o.markerInk != markerInk;
+}
+
+/// A dashed hairline round a rounded rect — the edge of ground that has not
+/// been surveyed. The one visual for "absent" across the app.
+class Unsurveyed extends CustomPainter {
+  final Color color;
+  final double radius;
+  const Unsurveyed(this.color, {this.radius = R.lg});
+
+  @override
+  void paint(Canvas cv, Size s) {
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+          (Offset.zero & s).deflate(.5), Radius.circular(radius)));
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (final m in path.computeMetrics()) {
+      for (var d = 0.0; d < m.length; d += 7) {
+        cv.drawPath(m.extractPath(d, math.min(d + 3.5, m.length)), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant Unsurveyed o) =>
+      o.color != color || o.radius != radius;
 }
 
 /// Full-width section. Whitespace separates concepts, not borders.
@@ -255,7 +385,7 @@ class Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(S.x1, S.x5, S.x1, S.x2),
+          padding: const EdgeInsets.fromLTRB(S.x1, S.x6, S.x1, S.x3),
           child: Row(
             // spaceBetween owns the gap, so the action sits on the right edge
             // however short the title is. Previously the title was Expanded
@@ -282,8 +412,8 @@ class Section extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: S.x2),
                       child: Text(
                         action!,
-                        style: F.cap.copyWith(
-                          color: p.on(C.blue),
+                        style: F.label.copyWith(
+                          color: p.on(C.green),
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,
@@ -337,30 +467,23 @@ class SignalCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: p.on(color)),
+              Vein(color),
               const SizedBox(width: S.x2),
-              Expanded(
-                child: Text(
-                  label,
-                  style: F.cap.copyWith(color: p.ink2),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              Expanded(child: SurveyLabel(label, color: p.ink2)),
               ?trailing,
             ],
           ),
-          const SizedBox(height: S.x3),
+          const SizedBox(height: S.x4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Flexible(
-                child: Text(
-                  value,
-                  style: F.n24.copyWith(color: p.ink),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                // A measurement shrinks to fit; it is never cut to '7h 1…'.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(value, style: F.n24.copyWith(color: p.ink), maxLines: 1),
                 ),
               ),
               if (unit.isNotEmpty) ...[
@@ -470,13 +593,12 @@ class _Bar extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return ClipRRect(
-      borderRadius: R.rPill,
-      child: LinearProgressIndicator(
-        value: frac.clamp(0, 1),
-        minHeight: 8,
-        backgroundColor: p.track,
-        valueColor: AlwaysStoppedAnimation(p.on(color)),
+    return Semantics(
+      value: '${(frac.clamp(0, 1) * 100).round()} percent',
+      child: SizedBox(
+        height: 10,
+        width: double.infinity,
+        child: CustomPaint(painter: StrataBand(frac, p.on(color), p.track)),
       ),
     );
   }
@@ -551,8 +673,12 @@ class TrendCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: F.cap.copyWith(color: p.ink2)),
-          const SizedBox(height: S.x2),
+          Row(children: [
+            Vein(color),
+            const SizedBox(width: S.x2),
+            Expanded(child: SurveyLabel(label, color: p.ink2)),
+          ]),
+          const SizedBox(height: S.x3),
           // A realistic value — `7h 42m`, not the two characters the golden used
           // to pass on — pushed the delta and its arrow clean off the card: 202 px
           // at 2×, 458 at 3×. Above the restack point the change moves to its own
@@ -574,11 +700,11 @@ class TrendCard extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Flexible(
-                  child: Text(
-                    value,
-                    style: F.n34.copyWith(color: p.ink),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // A measurement shrinks to fit; it is never cut to '7h 1…'.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(value, style: F.n34.copyWith(color: p.ink), maxLines: 1),
                   ),
                 ),
                 const SizedBox(width: S.x1),
@@ -648,7 +774,7 @@ class InsightCard extends StatelessWidget {
     final ink = p.on(color);
     return Surface(
       onTap: onTap,
-      color: p.wash(color, strength: .65),
+      color: Color.alphaBlend(p.wash(color, strength: .45), p.card),
       elevation: 0,
       semanticLabel: '$headline. $reason',
       child: Column(
@@ -664,6 +790,7 @@ class InsightCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: p.wash(color),
                   borderRadius: R.rSm,
+                  border: Border.all(color: ink.withValues(alpha: .35)),
                 ),
                 child: Icon(icon, size: 16, color: ink),
               ),
@@ -773,7 +900,11 @@ class ActionCard extends StatelessWidget {
           width: S.tap,
           height: S.tap,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: p.wash(color), borderRadius: R.rMd),
+          decoration: BoxDecoration(
+            color: p.wash(color),
+            borderRadius: R.rMd,
+            border: Border.all(color: p.on(color).withValues(alpha: .35)),
+          ),
           child: Icon(icon, size: 20, color: p.on(color)),
         ),
         const SizedBox(width: S.x3),
@@ -966,9 +1097,12 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Surface(
+    return CustomPaint(
+      foregroundPainter: Unsurveyed(p.ink3.withValues(alpha: .55)),
+      child: Surface(
       elevation: 0,
-      color: p.card2,
+      outline: false,
+      color: p.bg,
       onTap: onFix,
       semanticLabel: '$what. $why. $fix'.trim(),
       child: Column(
@@ -999,9 +1133,10 @@ class StatusCard extends StatelessWidget {
           ],
           if (fix.isNotEmpty) ...[
             const SizedBox(height: S.x3),
-            _Cta(fix, p.on(C.blue), arrow: onFix != null),
+            _Cta(fix, p.on(C.green), arrow: onFix != null),
           ],
         ],
+      ),
       ),
     );
   }
@@ -1072,11 +1207,11 @@ class DeepDiveCard extends StatelessWidget {
                 ),
                 const SizedBox(width: S.x2),
                 Flexible(
-                  child: Text(
-                    value,
-                    style: F.n24.copyWith(color: p.ink),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // A measurement shrinks to fit; it is never cut to '7h 1…'.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(value, style: F.n24.copyWith(color: p.ink), maxLines: 1),
                   ),
                 ),
                 const SizedBox(width: S.x1),
@@ -1223,13 +1358,13 @@ class MetricRow extends StatelessWidget {
         // supposed to never do. It is the name that gives way now.
         Text(
           value,
-          style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w600),
+          style: F.n17.copyWith(color: p.ink),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         if (unit.isNotEmpty) ...[
-          const SizedBox(width: 2),
-          Text(unit, style: F.over.copyWith(color: p.ink3)),
+          const SizedBox(width: 3),
+          Text(unit, style: F.label.copyWith(color: p.ink3)),
         ],
       ],
     );
@@ -1337,7 +1472,7 @@ class InlineMetrics extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(e.$1, style: F.over.copyWith(color: p.ink3)),
+                SurveyLabel(e.$1),
                 const SizedBox(height: S.x1),
                 // scaleDown, NOT ellipsis. These are measurements sharing
                 // one row, so the slot is a third of a card and a two-digit
@@ -1509,8 +1644,13 @@ class Observation extends StatelessWidget {
         decoration: BoxDecoration(
           color: p.card,
           borderRadius: R.rLg,
-          border: Border(left: BorderSide(color: ink, width: 3)),
-          boxShadow: p.el(1),
+          border: Border.all(color: p.line),
+          // The accent edge is a gradient stop, not a side colour: a rounded
+          // border has to be one colour all the way round.
+          gradient: LinearGradient(
+            colors: [ink, ink, p.card, p.card],
+            stops: const [0, .012, .012, 1],
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1522,7 +1662,7 @@ class Observation extends StatelessWidget {
                 Flexible(
                   child: Text(
                     'HEALTH OBSERVATION',
-                    style: F.over.copyWith(color: ink),
+                    style: F.label.copyWith(color: ink),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1594,10 +1734,10 @@ class Consistency extends StatelessWidget {
                 Expanded(
                   child: Container(
                     margin: EdgeInsets.only(right: i == n - 1 ? 0 : 2),
-                    height: 6,
+                    height: 10,
                     decoration: BoxDecoration(
                       color: i < have ? p.on(color) : p.track,
-                      borderRadius: const BorderRadius.all(Radius.circular(2)),
+                      borderRadius: const BorderRadius.all(Radius.circular(1.5)),
                     ),
                   ),
                 ),
@@ -1756,6 +1896,7 @@ class SubTabs extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: S.x4),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
+                  border: on ? Border.all(color: p.line) : null,
                   // THREE STATES, THREE LOOKS. A disabled pill used to compute
                   // `on == false` and render exactly like a selectable-but-
                   // unselected one — transparent, same ink — so the user
@@ -1767,14 +1908,14 @@ class SubTabs extends StatelessWidget {
                   color: off
                       ? p.card2
                       : on
-                          ? p.wash(color)
+                          ? p.card
                           : const Color(0x00000000),
-                  borderRadius: R.rPill,
+                  borderRadius: R.rMd,
                 ),
                 child: Text(
                   items[i],
                   style: F.cap.copyWith(
-                    color: on ? p.on(color) : p.ink3,
+                    color: on ? p.ink : p.ink3,
                     fontWeight: on ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
@@ -1826,8 +1967,12 @@ class Pill extends StatelessWidget {
     final p = P.of(c);
     final ink = p.on(color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: S.x3, vertical: 5),
-      decoration: BoxDecoration(color: p.wash(color), borderRadius: R.rPill),
+      padding: const EdgeInsets.symmetric(horizontal: S.x2 + 2, vertical: 4),
+      decoration: BoxDecoration(
+        color: p.wash(color),
+        borderRadius: R.rSm,
+        border: Border.all(color: ink.withValues(alpha: .3)),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1881,9 +2026,9 @@ class BigButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: S.x4, vertical: S.x3),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: soft ? p.wash(color) : p.fill(color),
-          borderRadius: R.rMd,
-          boxShadow: soft ? null : p.el(2),
+          color: soft ? p.card2 : p.fill(color),
+          borderRadius: R.rLg,
+          border: soft ? Border.all(color: p.line) : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2059,7 +2204,8 @@ class ChartFrame extends StatelessWidget {
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
-    final measure = Text(unit, style: F.over.copyWith(color: p.ink3));
+    // Mono, but never uppercased: a unit's case is part of it (ms, MS, mS).
+    final measure = Text(unit, style: F.label.copyWith(color: p.ink3));
     if (!stacked) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -2084,7 +2230,7 @@ class ChartFrame extends StatelessWidget {
     // ink3 is the muted token that is *solved* to 4.5:1 on every surface — the
     // axis is the smallest type on the card, so it gets the floor, not a
     // lighter grey chosen by eye.
-    final tick = F.over.copyWith(color: p.ink3);
+    final tick = F.label.copyWith(color: p.ink3);
 
     final a = empty == null ? yAxis : null;
     var labels = const <String>[];
@@ -2261,7 +2407,8 @@ class ChartFrame extends StatelessWidget {
                             width: 9,
                             height: 9,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(2)),
                               color: colour,
                               // The swatch is the mark's real colour so the two match,
                               // and a pale mark still needs an edge to be findable.
@@ -2310,7 +2457,10 @@ class _Gridlines extends CustomPainter {
     for (var i = 0; i < n; i++) {
       // Inset half a stroke so the first and last rules are drawn, not clipped.
       final y = (i / (n - 1) * s.height).clamp(.5, s.height - .5);
-      cv.drawLine(Offset(0, y), Offset(s.width, y), paint);
+      // Survey rules: dashed, so a gridline is never read as a data line.
+      for (var x = 0.0; x < s.width; x += 5) {
+        cv.drawLine(Offset(x, y), Offset(math.min(x + 2, s.width), y), paint);
+      }
     }
   }
 
@@ -2405,7 +2555,17 @@ class NavBar extends StatelessWidget {
           Pressable(
             onTap: onBack ?? () => Navigator.maybePop(c),
             semanticLabel: 'Back',
-            child: Icon(LucideIcons.chevronLeft, size: 24, color: p.ink),
+            child: Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: R.rMd,
+                border: Border.all(color: p.line),
+              ),
+              child: Icon(LucideIcons.chevronLeft, size: 20, color: p.ink),
+            ),
           ),
           Expanded(
             child: Column(
@@ -2417,13 +2577,7 @@ class NavBar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (sub.isNotEmpty)
-                  Text(
-                    sub,
-                    style: F.over.copyWith(color: p.ink3),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                if (sub.isNotEmpty) SurveyLabel(sub),
               ],
             ),
           ),
@@ -2432,6 +2586,67 @@ class NavBar extends StatelessWidget {
             child: Align(alignment: Alignment.centerRight, child: trailing),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The landscape at the top of a first-run page — welcome, pairing, the boot
+/// cover. [lit] lights the island's contours as a brand mark (1.0) or leaves
+/// them unsurveyed (null) while there is no band yet. It never carries a
+/// number, so it can never be read as a score.
+class SurveyHero extends StatelessWidget {
+  final IconData icon;
+  final Color accent;
+  final double? lit;
+  final double height;
+  const SurveyHero({
+    super.key,
+    required this.icon,
+    required this.accent,
+    this.lit,
+    this.height = 220,
+  });
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: height,
+        child: Stack(children: [
+          Positioned.fill(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: motion(c, Motion.reveal),
+              curve: Curves.easeOutCubic,
+              builder: (c, t, _) => CustomPaint(
+                painter: ContourIsland(
+                  frac: lit,
+                  ink: p.on(accent),
+                  muted: p.ink3,
+                  line: p.line,
+                  t: animate(c, t),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            bottom: 0,
+            child: Container(
+              width: 52,
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: R.rLg,
+                border: Border.all(color: p.on(accent).withValues(alpha: .4)),
+              ),
+              child: Icon(icon, size: 24, color: p.on(accent)),
+            ),
+          ),
+        ]),
       ),
     );
   }

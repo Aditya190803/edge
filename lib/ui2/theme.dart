@@ -34,26 +34,27 @@ import 'package:flutter/material.dart';
 /// them fail AA on white. Run them through [P.on] (accent as text) or
 /// [P.fill] (accent as a filled surface under [P.inkOnFill]) first.
 class C {
-  // primary
-  static const green = Color(0xFF22C55E);
-  static const greenD = Color(0xFF16A34A);
-  static const blue = Color(0xFF3B82F6);
-  static const purple = Color(0xFF8B5CF6);
+  // STRATA — every accent is a mineral, and each one means one thing.
+  // The names stay generic (green, blue…) because 800 call sites spend them
+  // by role; the values are the survey palette.
+  static const green = Color(0xFF5CC9A7); // verdigris — recovery, good
+  static const greenD = Color(0xFF3FA88A); // weathered verdigris
+  static const blue = Color(0xFF6C89EE); // lapis — sleep
+  static const purple = Color(0xFFA58BE8); // amethyst — mind
 
-  // secondary
-  static const orange = Color(0xFFF97316);
-  static const red = Color(0xFFEF4444);
-  static const teal = Color(0xFF14B8A6);
-  static const yellow = Color(0xFFEAB308);
-  static const pink = Color(0xFFEC4899);
-  static const indigo = Color(0xFF6366F1);
+  static const orange = Color(0xFFE0662E); // iron oxide — strain, load
+  static const red = Color(0xFFEE6B7E); // rhodochrosite — heart, and warnings
+  static const teal = Color(0xFF4FB6C2); // chrysocolla — breath, calm
+  static const yellow = Color(0xFFE8CB4F); // sulphur — food, energy
+  static const pink = Color(0xFFE48BD0); // kunzite — cycle
+  static const indigo = Color(0xFF7A83E8); // azurite
 
   /// Two light blues the ramps need and nothing else does: the light-sleep
   /// lane sits between REM and deep, and zone 1 sits below `blue`. They live
   /// here rather than inside the painters because a palette that is partly in
   /// theme.dart and partly in charts.dart is two palettes.
-  static const sky = Color(0xFF7DD3FC);
-  static const blueSoft = Color(0xFF93C5FD);
+  static const sky = Color(0xFF9DB0F5); // celestine — REM / light lanes
+  static const blueSoft = Color(0xFF8FA6F0);
 
   /// The route ramp, and only the route ramp.
   ///
@@ -91,25 +92,26 @@ class C {
   static const mapCeil = Color(0xFF44536D);
 
   // neutrals
-  static const n900 = Color(0xFF0F172A);
-  static const n800 = Color(0xFF1E293B);
-  static const n600 = Color(0xFF475569);
-  static const n500 = Color(0xFF64748B);
-  static const n400 = Color(0xFF94A3B8);
-  static const n300 = Color(0xFFCBD5E1);
-  static const n200 = Color(0xFFE2E8F0);
-  static const n100 = Color(0xFFF1F5F9);
-  static const n50 = Color(0xFFF8FAFC);
+  // basalt → bone, warm-neutral so the minerals sit in rock, not in slate
+  static const n900 = Color(0xFF0E1011);
+  static const n800 = Color(0xFF1C2022);
+  static const n600 = Color(0xFF4A4C4A);
+  static const n500 = Color(0xFF6F6D66);
+  static const n400 = Color(0xFF8C897F);
+  static const n300 = Color(0xFFC9C5BA);
+  static const n200 = Color(0xFFE2DED3);
+  static const n100 = Color(0xFFEDE9E0);
+  static const n50 = Color(0xFFF5F2EB);
 
   static const white = Color(0xFFFFFFFF);
 
   /// Each domain owns an accent — the mental map is colour-coded, and the map
   /// is the point. These five are the five tabs, in order, forever.
   static const domHome = green;
-  static const domHealth = blue;
-  static const domFood = orange;
-  static const domMove = purple;
-  static const domMind = teal;
+  static const domHealth = red;
+  static const domFood = yellow;
+  static const domMove = orange;
+  static const domMind = purple;
 
   /// Every accent the contrast test sweeps. Adding a colour above without
   /// adding it here means it ships unverified.
@@ -129,24 +131,26 @@ class P {
 
   static P of(BuildContext c) => P(Theme.of(c).brightness == Brightness.dark);
 
-  Color get bg => dark ? const Color(0xFF0B1017) : C.n50;
-  Color get card => dark ? const Color(0xFF151C26) : C.white;
-  Color get card2 => dark ? const Color(0xFF1D2632) : C.n100;
-  Color get line => dark ? const Color(0xFF232D3B) : C.n200;
-  Color get track => dark ? const Color(0xFF232D3B) : C.n200;
+  // Basalt ground; cards are the next layer up, hairlines not shadows.
+  Color get bg => dark ? C.n900 : const Color(0xFFF1EEE6);
+  Color get card => dark ? const Color(0xFF15181A) : const Color(0xFFFBF9F4);
+  Color get card2 => dark ? C.n800 : const Color(0xFFE9E5DB);
+  Color get line => dark ? const Color(0xFF262B2D) : const Color(0xFFDAD5C9);
+  Color get track => dark ? const Color(0xFF23282A) : const Color(0xFFDAD5C9);
 
-  Color get ink => dark ? const Color(0xFFF1F5F9) : C.n900;
-  Color get ink2 => dark ? const Color(0xFF94A3B8) : C.n600;
+  Color get ink => dark ? const Color(0xFFE7E3D8) : const Color(0xFF17191A);
+  Color get ink2 => dark ? const Color(0xFFA6A399) : const Color(0xFF4A4C4A);
 
   /// The muted caption ink. Hand-solved to clear 4.5:1 on [card2], the darkest
   /// (light theme) / lightest (dark theme) surface it can sit on — so it is
   /// legible on every surface, not just the one it was eyeballed against.
   /// The values it replaces measured 4.34:1 and 3.21:1 respectively.
-  Color get ink3 => dark ? const Color(0xFF7F8DA0) : const Color(0xFF627188);
+  Color get ink3 => dark ? C.n400 : const Color(0xFF5E605C);
 
-  /// The ink that goes on top of a [fill]. White by construction — [fill]
-  /// darkens the accent until white clears AA on it.
-  Color get inkOnFill => C.white;
+  /// The ink that goes on top of a [fill]: basalt. Strata fills are the
+  /// minerals themselves, bright, with dark type cut into them — [fill]
+  /// lightens the accent until basalt clears AA on it.
+  Color get inkOnFill => C.n900;
 
   /// [accent] rendered as TEXT on one of this brightness' surfaces, nudged
   /// toward the page ink until it clears [_aa] against the worst legal
@@ -160,14 +164,14 @@ class P {
   /// solver only ever nudges toward the page ink, so clearing the second
   /// surface cannot un-clear the first.
   Color on(Color accent) {
-    final toward = dark ? ink : C.n900;
+    final toward = dark ? ink : const Color(0xFF17191A);
     final flat = _solve(accent, toward, card2, dark);
     return _solve(flat, toward, Color.alphaBlend(wash(accent), card2), dark);
   }
 
   /// [accent] rendered as a FILLED surface under [inkOnFill], darkened until
   /// white text on it clears [_aa]. Buttons, chips, CTA badges.
-  Color fill(Color accent) => _solve(accent, const Color(0xFF000000), C.white, false);
+  Color fill(Color accent) => _solve(accent, C.white, C.n900, false);
 
   /// A tinted wash of [accent] — the InsightCard / Pill / active-tab
   /// background. Never carries text of its own colour; pair it with [on].
@@ -181,11 +185,13 @@ class P {
   List<BoxShadow> el(int level) {
     if (level <= 0) return const [];
     if (dark) {
+      // Rock does not float. Elevation is a deep, soft pool under a raised
+      // layer — never a glow, never a hard drop.
       return [
         BoxShadow(
-          color: const Color(0xFF000000).withValues(alpha: .32 + level * .06),
-          blurRadius: 6.0 * level,
-          offset: Offset(0, level.toDouble()),
+          color: const Color(0xFF000000).withValues(alpha: .28 + level * .08),
+          blurRadius: 14.0 * level,
+          offset: Offset(0, 4.0 * level),
         ),
       ];
     }
@@ -243,95 +249,123 @@ class P {
   }
 }
 
-/// ── TYPE ── 7 steps, 3 weights, tabular figures on anything that changes ──
+/// ── TYPE ── the survey hand ───────────────────────────────────────────────
 ///
-/// The family is the platform's own text face where it exists, falling back to
-/// the bundled Manrope (assets/fonts/Manrope) everywhere else — so Android and
-/// the golden tests render the same shapes the design was drawn in rather than
-/// silently landing on Roboto.
+/// Four bundled faces, each with one job:
+///   · Anybody Wide (150 %) — measured numbers. Extra-wide, like elevation
+///     figures on a survey sheet. Only a value the band actually measured
+///     gets this face; a label never does.
+///   · Anybody Semi (118 %) — screen and card titles.
+///   · Albert Sans — everything you read.
+///   · Azeret Mono — [over]: the small survey labels (units, axes, eyebrows).
+/// All four are static instances under assets/fonts, so nothing is fetched.
 class F {
-  static const _f = '.SF Pro Text';
-  static const _fb = ['Manrope'];
+  static const wide = 'Anybody Wide';
+  static const semi = 'Anybody Semi';
+  static const sans = 'Albert Sans';
+  static const mono = 'Azeret Mono';
+  static const _fb = [sans];
   static const _tab = [FontFeature.tabularFigures()];
 
   // The 7 steps.
   static const display = TextStyle(
-      fontFamily: _f,
+      fontFamily: semi,
       fontFamilyFallback: _fb,
-      fontSize: 34,
-      height: 40 / 34,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -.8);
+      fontSize: 32,
+      height: 38 / 32,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -.6);
   static const t1 = TextStyle(
-      fontFamily: _f,
+      fontFamily: semi,
       fontFamilyFallback: _fb,
-      fontSize: 28,
-      height: 34 / 28,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -.5);
-  static const t2 = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
-      fontSize: 22,
-      height: 28 / 22,
-      fontWeight: FontWeight.w600,
+      fontSize: 26,
+      height: 32 / 26,
+      fontWeight: FontWeight.w800,
       letterSpacing: -.4);
+  static const t2 = TextStyle(
+      fontFamily: semi,
+      fontFamilyFallback: _fb,
+      fontSize: 20,
+      height: 26 / 20,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -.3);
   static const head = TextStyle(
-      fontFamily: _f,
+      fontFamily: semi,
       fontFamilyFallback: _fb,
-      fontSize: 17,
-      height: 24 / 17,
-      fontWeight: FontWeight.w600,
-      letterSpacing: -.2);
+      fontSize: 16,
+      height: 22 / 16,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -.1);
   static const body = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
+      fontFamily: sans,
       fontSize: 15,
       height: 22 / 15,
-      letterSpacing: -.1);
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0);
   static const cap = TextStyle(
-      fontFamily: _f, fontFamilyFallback: _fb, fontSize: 13, height: 18 / 13);
+      fontFamily: sans, fontSize: 13, height: 18 / 13, fontWeight: FontWeight.w400);
   static const over = TextStyle(
-      fontFamily: _f,
-      fontFamilyFallback: _fb,
-      fontSize: 11,
-      height: 14 / 11,
+      fontFamily: sans,
+      fontSize: 12,
+      height: 16 / 12,
       fontWeight: FontWeight.w600,
-      letterSpacing: .5);
+      letterSpacing: .1);
 
-  // Numerals — a parallel display ramp. Tabular, so a live value never jitters
-  // its own layout as digits change.
-  static const n48 = TextStyle(
-      fontFamily: _f,
+  /// The survey label: units, axis marks, eyebrows, counts. Mono, and never a
+  /// sentence — a line someone has to READ belongs in [cap] or [over].
+  static const label = TextStyle(
+      fontFamily: mono,
       fontFamilyFallback: _fb,
-      fontSize: 48,
+      fontSize: 10.5,
+      height: 14 / 10.5,
+      fontWeight: FontWeight.w500,
+      letterSpacing: .6);
+
+  // Numerals — a parallel display ramp in the wide cut. Tabular, so a live
+  // value never jitters its own layout as digits change. Sized a step down
+  // from a narrow face: the width is where this face spends its presence.
+  static const n48 = TextStyle(
+      fontFamily: wide,
+      fontFamilyFallback: _fb,
+      fontSize: 44,
       height: 1,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -1.8,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -.8,
       fontFeatures: _tab);
   static const n34 = TextStyle(
-      fontFamily: _f,
+      fontFamily: wide,
       fontFamilyFallback: _fb,
-      fontSize: 34,
+      fontSize: 30,
       height: 1,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -1.2,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -.5,
       fontFeatures: _tab);
   static const n24 = TextStyle(
-      fontFamily: _f,
+      fontFamily: wide,
       fontFamilyFallback: _fb,
-      fontSize: 24,
+      fontSize: 21,
       height: 1,
       fontWeight: FontWeight.w700,
-      letterSpacing: -.7,
+      letterSpacing: -.3,
       fontFeatures: _tab);
   static const n17 = TextStyle(
-      fontFamily: _f,
+      fontFamily: semi,
       fontFamilyFallback: _fb,
-      fontSize: 17,
+      fontSize: 16,
       height: 1,
-      fontWeight: FontWeight.w600,
-      letterSpacing: -.3,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -.1,
+      fontFeatures: _tab);
+
+  /// The hero figure — one per screen at most (readiness on Home, total sleep
+  /// on Sleep, live heart rate). Not part of the everyday ramp on purpose.
+  static const hero = TextStyle(
+      fontFamily: wide,
+      fontFamilyFallback: _fb,
+      fontSize: 84,
+      height: .9,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -2,
       fontFeatures: _tab);
 }
 
@@ -355,11 +389,12 @@ class S {
 
 /// ── RADII ─────────────────────────────────────────────────────────────────
 class R {
-  static const sm = 8.0;
-  static const md = 12.0;
-  static const lg = 16.0;
-  static const xl = 24.0;
-  static const xxl = 32.0;
+  // Strata corners: small and firm — cut stone, not pebbles.
+  static const sm = 6.0;
+  static const md = 10.0;
+  static const lg = 14.0;
+  static const xl = 20.0;
+  static const xxl = 28.0;
   static const pill = 999.0;
 
   static const rSm = BorderRadius.all(Radius.circular(sm));
@@ -386,6 +421,11 @@ class Motion {
   static const fast = Duration(milliseconds: 120);
   static const base = Duration(milliseconds: 180);
   static const slow = Duration(milliseconds: 280);
+
+  /// The one orchestrated moment: contours lighting from the coast to the
+  /// summit when Home first shows a score. Passes through [motion] like any
+  /// other duration, so reduced motion lands on the finished map.
+  static const reveal = Duration(milliseconds: 900);
 
   /// The session clock. A live workout counts REAL seconds, so this is the one
   /// duration that must NOT pass through [motion] — reduced motion silences
@@ -460,10 +500,91 @@ ThemeData buildTheme(Brightness b) {
   return ThemeData(
     brightness: b,
     scaffoldBackgroundColor: p.bg,
-    colorScheme:
-        ColorScheme.fromSeed(seedColor: C.green, brightness: b, surface: p.card),
-    fontFamily: '.SF Pro Text',
-    fontFamilyFallback: const ['Manrope'],
+    colorScheme: ColorScheme.fromSeed(
+            seedColor: C.green, brightness: b, surface: p.card)
+        .copyWith(
+      primary: p.on(C.green),
+      onPrimary: p.inkOnFill,
+      surface: p.card,
+      onSurface: p.ink,
+      outline: p.line,
+      outlineVariant: p.line,
+    ),
+    fontFamily: F.sans,
+    canvasColor: p.bg,
+    // The few screens that still use a Material AppBar read as the NavBar:
+    // centred Anybody title, basalt ground, no tint when content scrolls under.
+    appBarTheme: AppBarTheme(
+      backgroundColor: p.bg,
+      surfaceTintColor: const Color(0x00000000),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: true,
+      foregroundColor: p.ink,
+      iconTheme: IconThemeData(color: p.ink),
+      titleTextStyle: F.head.copyWith(color: p.ink),
+    ),
+    dividerColor: p.line,
+    dialogTheme: DialogThemeData(
+      backgroundColor: p.card,
+      shape: RoundedRectangleBorder(
+          borderRadius: R.rXl, side: BorderSide(color: p.line)),
+      titleTextStyle: F.t2.copyWith(color: p.ink),
+      contentTextStyle: F.body.copyWith(color: p.ink2),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: p.card,
+      modalBackgroundColor: p.card,
+      showDragHandle: true,
+      dragHandleColor: p.line,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(R.xxl))),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: p.card2,
+      contentTextStyle: F.body.copyWith(color: p.ink),
+      actionTextColor: p.on(C.green),
+      shape: RoundedRectangleBorder(
+          borderRadius: R.rLg, side: BorderSide(color: p.line)),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: p.on(C.green),
+      linearTrackColor: p.track,
+      circularTrackColor: p.track,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected) ? p.inkOnFill : p.ink3),
+      trackColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected) ? p.fill(C.green) : p.card2),
+      trackOutlineColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected) ? p.fill(C.green) : p.line),
+    ),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: p.on(C.green),
+      inactiveTrackColor: p.track,
+      thumbColor: p.ink,
+      overlayColor: p.wash(C.green),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: p.card2,
+      hintStyle: F.body.copyWith(color: p.ink3),
+      labelStyle: F.body.copyWith(color: p.ink2),
+      border: OutlineInputBorder(
+          borderRadius: R.rMd, borderSide: BorderSide(color: p.line)),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: R.rMd, borderSide: BorderSide(color: p.line)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: R.rMd,
+          borderSide: BorderSide(color: p.on(C.green), width: 1.5)),
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: p.on(C.green),
+      selectionColor: p.wash(C.green),
+      selectionHandleColor: p.on(C.green),
+    ),
     splashFactory: NoSplash.splashFactory,
     highlightColor: const Color(0x00000000),
     pageTransitionsTheme: PageTransitionsTheme(builders: {

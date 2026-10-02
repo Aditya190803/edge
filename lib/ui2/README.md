@@ -11,6 +11,47 @@ and `paint_activity.dart` (painters), `app_shell.dart` (the five tabs).
 
 ---
 
+## The look — Strata
+
+The app is dark only, and it draws body data as **terrain**. Every choice below
+serves that one idea; a new screen that cannot say how it fits the metaphor
+should use the plain components and leave the metaphor alone.
+
+- **Ground.** Basalt `#0E1011`, cards one layer up (`#15181A`) with a hairline
+  edge, never a drop shadow. Rock does not float; only a floating tray
+  (`elevation >= 2`) casts anything.
+- **Minerals, one meaning each.** Verdigris = recovery / good, iron oxide =
+  strain and the Workout tab, lapis = sleep, rhodochrosite = heart and the
+  Health tab, sulphur = food, amethyst = mind, chrysocolla = breath / calm.
+  Fills are the minerals themselves with basalt type cut into them
+  (`p.inkOnFill` is dark).
+- **Type.** Anybody Wide (150 %) for numbers a band measured — only those.
+  Anybody Semi for titles, Albert Sans for reading, Azeret Mono (`F.label`,
+  `SurveyLabel`) for short uppercase survey labels: units, axes, eyebrows.
+  A sentence is never mono.
+- **Signatures.** Readiness is a contour island (`ContourIsland`): a score
+  lights that share of its contours from the coast to the summit. Sleep is a
+  cross-section of the ground (`Hypnogram`): deeper sleep is deeper strata.
+  Progress is a striated stratum (`StrataBand`), live heart rate an elevation
+  profile (`ElevationProfile`), and absence is unsurveyed ground — the dashed
+  edge of a `StatusCard` (`Unsurveyed`) and unlit dashed contours.
+- **Motion.** One orchestrated moment: contours light up coast-to-summit on
+  first show (`Motion.reveal`, gated like every other duration).
+
+Health's overview gives RHR and HRV one ridge each, retaining the source-night
+caption instead of repeating those values in the list below. Nutrition draws
+eaten and burned energy on a shared scale only when both readings exist; partial
+logs retain their lower-bound labels. Cycle counts stay counts, with no implied
+progress toward a predicted period. ECG and workout history separate the reading
+from the source/date so both remain readable at large text sizes.
+
+`test/strata_continuation_test.dart` checks these absence and layout contracts.
+`test/ui2_tabs_preview_test.dart` also exercises populated tabs against a temporary
+database. Render them with `--dart-define=PREVIEW=true`; add
+`--dart-define=SCALE=3.1` for the accessibility pass. All fixture data is synthetic.
+
+---
+
 ## The rules the tests enforce
 
 `test/ui2_tokens_test.dart` greps `lib/ui2` and fails the build on any of:
@@ -78,14 +119,17 @@ Raw pigment is **not** legible as text — `C.green` on white is 2.28:1. Convert
 
 `P.contrast(a, b)` is public if you need to measure.
 
-### Type — 7 steps, 3 weights
+### Type — 7 steps, plus the survey label
 
-`F.display` 34 · `F.t1` 28 · `F.t2` 22 · `F.head` 17 · `F.body` 15 ·
-`F.cap` 13 · `F.over` 11.
+`F.display` 32 · `F.t1` 26 · `F.t2` 20 · `F.head` 16 (Anybody Semi) ·
+`F.body` 15 · `F.cap` 13 · `F.over` 12 (Albert Sans) · `F.label` 10.5
+(Azeret Mono — short uppercase labels only; use `SurveyLabel`).
 
 Numerals (tabular figures — a changing value must not re-flow its own layout):
-`F.n48`, `F.n34`, `F.n24`, `F.n17`. **Use these for every number that can
-change.**
+`F.n48` 44, `F.n34` 30, `F.n24` 21 in Anybody Wide, `F.n17` in Anybody Semi,
+and `F.hero` 84 for the one figure a screen is about. **Use these for every
+number that can change**, and let a wide numeral scale down (`FittedBox`)
+rather than ellipsise — a clipped measurement is a different number.
 
 ### Spacing and radii
 
@@ -134,6 +178,15 @@ Surface({required Widget child, EdgeInsets pad = EdgeInsets.all(S.x4),
          String? semanticLabel})
 
 Section(String title, Widget child, {String? action, VoidCallback? onAction})
+
+// Strata primitives
+SurveyLabel(String text, {Color? color})   // uppercase mono label
+Vein(Color color, {double height = 12})    // the metric's colour beside a label
+StrataBand(double frac, Color fill, Color track,
+           {double? marker, Color? markerInk})   // painter: a striated band
+Unsurveyed(Color color, {double radius})   // painter: dashed absent edge
+SurveyHero({required IconData icon, required Color accent,
+            double? lit, double height = 220})   // first-run landscape
 ```
 
 ### The seven card jobs
@@ -263,7 +316,12 @@ Bars(List<double> d, Color color,
      {int highlight = -1, double t = 1, AxisSpec? axis})
 Ring(double v, Color color, Color track, {double stroke = 10, double t = 1})
 MacroRing(double v, Color color, Color track)
-Hypnogram(List<SleepStage> stages, P p, {double t = 1})  // awake/rem/light/deep
+Hypnogram(List<SleepStage> stages, P p, {double t = 1})  // cross-section: awake/rem/light/deep
+ContourIsland({required double? frac, required Color ink, muted, line,
+               bool calibrating = false, double t = 1})  // null frac = unsurveyed
+ContourField(Color line, {int seed, Offset centre})   // texture only, no data
+ElevationProfile(List<double?> bpm, Color ink, Color line,
+                 {List<double> thresholds, required double lo, hi})
 ZoneBar(List<double> z, P p)                         // five fractions
 Actogram(List<List<double>?> days, Color color)      // per day, 24 slots; null = no record
 HeatMap(List<List<double?>> weeks, Color color, Color track)  // null = no data

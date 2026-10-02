@@ -120,15 +120,14 @@ class _OpenStrapAppState extends State<OpenStrapApp> with WidgetsBindingObserver
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeController>();
     final locale = context.watch<LocaleController>();
     return MaterialApp(
       title: 'OpenStrap',
       debugShowCheckedModeBanner: false,
-      // The palette is the design system's, the CHOICE is still the user's.
-      theme: buildTheme(Brightness.light),
+      // Strata is a dark instrument — there is no light rendering of it.
+      theme: buildTheme(Brightness.dark),
       darkTheme: buildTheme(Brightness.dark),
-      themeMode: theme.materialThemeMode,
+      themeMode: ThemeMode.dark,
       locale: locale.locale, // null = follow the OS locale
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
