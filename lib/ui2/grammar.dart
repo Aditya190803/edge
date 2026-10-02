@@ -447,6 +447,189 @@ class SignalCard extends StatelessWidget {
   }
 }
 
+/// A · SIGNAL, full width — the pinned card on a health summary.
+///
+/// The category names itself in colour along the top with its own context at
+/// the far end ("Resting", "Last night"), the reading sits large in the
+/// bottom-left, and [visual] — a goal ring, a sparkline — answers "against
+/// what?" in the bottom-right. One per row: a summary is read top to bottom,
+/// not scanned across a grid.
+class SummaryCard extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label, value, unit, sub, meta;
+  final Widget? visual;
+  final VoidCallback? onTap;
+
+  const SummaryCard(
+    this.icon,
+    this.color,
+    this.label,
+    this.value, {
+    super.key,
+    this.unit = '',
+    this.sub = '',
+    this.meta = '',
+    this.visual,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final ink = p.on(color);
+    final reading = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 3,
+          children: [
+            Text(value, style: F.n34.copyWith(color: p.ink)),
+            if (unit.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(unit,
+                    style: F.cap.copyWith(
+                        color: p.ink3, fontWeight: FontWeight.w600)),
+              ),
+          ],
+        ),
+        if (sub.isNotEmpty) ...[
+          const SizedBox(height: S.x1),
+          Text(sub, style: F.cap.copyWith(color: p.ink3)),
+        ],
+      ],
+    );
+    return Surface(
+      onTap: onTap,
+      pad: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x3, S.x4),
+      semanticLabel: [label, '$value $unit'.trim(), sub, meta]
+          .where((s) => s.isNotEmpty)
+          .join(', '),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (_, box) => Row(children: [
+              Icon(icon, size: 15, color: ink),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style:
+                      F.cap.copyWith(color: ink, fontWeight: FontWeight.w700),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // The context hugs the right edge at its own width, capped at
+              // under half the card — two flex children would split the row
+              // and float it mid-card.
+              if (meta.isNotEmpty)
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: box.maxWidth * .45),
+                  child: Text(
+                    meta,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: F.cap.copyWith(color: p.ink3),
+                  ),
+                ),
+              if (onTap != null) ...[
+                const SizedBox(width: 2),
+                const _Chevron(size: 15),
+              ],
+            ]),
+          ),
+          const SizedBox(height: S.x4),
+          if (visual == null || bigText(c)) ...[
+            reading,
+            if (visual != null) ...[const SizedBox(height: S.x3), visual!],
+          ] else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(child: reading),
+                const SizedBox(width: S.x3),
+                visual!,
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A goal ring for a [SummaryCard.visual]: how far toward the goal, with the
+/// percentage in the middle. Over 100 % the ring stays full and the number
+/// says how far over — the shape cannot draw more than all of it.
+class GoalRing extends StatelessWidget {
+  final double frac;
+  final Color color;
+  final double size;
+  const GoalRing(this.frac, this.color, {super.key, this.size = 52});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final f = frac.isFinite ? frac : 0.0;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(alignment: Alignment.center, children: [
+        Positioned.fill(
+          child: CustomPaint(
+            painter: Ring(f.clamp(0.0, 1.0), p.dark ? p.on(color) : p.tile(color),
+                p.track,
+                stroke: size * .13, t: animate(c, 1), solid: true),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(size * .2),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('${(f * 100).round()}%',
+                style: F.over.copyWith(
+                    color: p.ink, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// A done / not-yet mark for a checklist row: a filled tick when done, an
+/// empty ring when not. The word beside it says which — the mark is the
+/// glance, never the only channel.
+class CheckMark extends StatelessWidget {
+  final bool done;
+  final Color color;
+  const CheckMark(this.done, {super.key, this.color = C.green});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: done ? p.tile(color) : const Color(0x00000000),
+        shape: CircleBorder(
+          side: done
+              ? BorderSide.none
+              : BorderSide(color: p.ink3, width: 1.5),
+        ),
+      ),
+      child: done
+          ? Icon(LucideIcons.check, size: 15, color: p.inkOnFill)
+          : null,
+    );
+  }
+}
+
 // ══════════════════ B · PROGRESS ══════════════════
 /// Something moving toward a goal. Current → target.
 class ProgressCard extends StatelessWidget {

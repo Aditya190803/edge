@@ -12441,5 +12441,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "homeSummaryTitle": "Summary",
+  "@homeSummaryTitle": {"description": "Large title of the Home tab, in the style of a health summary."}
 }

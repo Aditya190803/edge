@@ -208,6 +208,17 @@ Map<String, Widget> goldenCases() => {
       'ecg_reading_row': Surface(
           pad: EdgeInsets.zero,
           child: EcgReadingRow(reading: _ecgDemoReading, onTap: () {})),
+      'summary_card': SummaryCard(LucideIcons.footprints, C.green, 'Steps', '8,412',
+          sub: '84% of goal · Strap', meta: 'Goal 10,000', onTap: () {},
+          visual: const GoalRing(.84, C.green)),
+      'summary_card_plain': const SummaryCard(
+          LucideIcons.heart, C.red, 'Heart rate', '52',
+          unit: 'bpm', meta: 'Resting'),
+      'check_mark': const Row(children: [
+        CheckMark(true),
+        SizedBox(width: S.x3),
+        CheckMark(false, color: C.blue),
+      ]),
       'signal': const SignalCard(
           LucideIcons.heartPulse, C.blue, 'Resting heart rate', '52',
           unit: 'bpm', sub: '4 BELOW YOUR BASELINE'),

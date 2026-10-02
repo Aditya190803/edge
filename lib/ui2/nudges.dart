@@ -116,61 +116,84 @@ class _AskCard extends StatelessWidget {
         ),
     };
 
+    // A Tip: compact, one card, the ask and its two answers on one line. It
+    // used to be a full-width button card per ask — two of them stacked under
+    // the rings pushed the day's numbers off the first screen.
     return Padding(
-      padding: const EdgeInsets.only(top: S.x5),
+      padding: const EdgeInsets.only(top: S.x3),
       child: Surface(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: 32,
-              height: 32,
+        pad: const EdgeInsets.fromLTRB(S.x4, S.x3, S.x2, S.x3),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+                color: p.tile(color), shape: R.shape(R.rMd)),
+            child: glyph(p.inkOnFill),
+          ),
+          const SizedBox(width: S.x3),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: F.head.copyWith(color: p.ink)),
+              const SizedBox(height: 2),
+              Text(body, style: F.cap.copyWith(color: p.ink2, height: 1.4)),
+              const SizedBox(height: S.x2),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: S.x3,
+                runSpacing: S.x1,
+                children: [
+                  Pressable(
+                    semanticLabel: cta,
+                    onTap: () async {
+                      // Only silence permanently once the link actually
+                      // opened — a failed launch (no app registered, no
+                      // browser default) should not look "acted on".
+                      if (await open3rdPartyLink(url)) {
+                        onSilence(ask);
+                      } else {
+                        onSnooze(ask);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: S.x3, vertical: 6),
+                      decoration: ShapeDecoration(
+                          color: p.wash(color), shape: const StadiumBorder()),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Flexible(
+                          child: Text(cta,
+                              style: F.cap.copyWith(
+                                  color: p.on(color),
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                        const SizedBox(width: S.x1),
+                        Icon(LucideIcons.arrowUpRight,
+                            size: 13, color: p.on(color)),
+                      ]),
+                    ),
+                  ),
+                  Pressable(
+                    onTap: () => onSilence(ask),
+                    semanticLabel: l?.nudgeDontShowAgain ?? "Don't show this again",
+                    child: Text(l?.nudgeDontShowAgain ?? "Don't show this again",
+                        style: F.cap.copyWith(color: p.ink3)),
+                  ),
+                ],
+              ),
+            ]),
+          ),
+          Pressable(
+            onTap: () => onSnooze(ask),
+            semanticLabel: l?.nudgeNotNow ?? 'Not now',
+            child: Container(
+              width: 24,
+              height: 24,
               alignment: Alignment.center,
-              decoration: ShapeDecoration(
-                  color: p.tile(color), shape: R.shape(R.rSm)),
-              child: glyph(p.inkOnFill),
-            ),
-            const SizedBox(width: S.x3),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: F.body.copyWith(
-                            color: p.ink, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(body, style: F.over.copyWith(color: p.ink3)),
-                  ]),
-            ),
-            const SizedBox(width: S.x2),
-            Pressable(
-              onTap: () => onSnooze(ask),
-              semanticLabel: l?.nudgeNotNow ?? 'Not now',
-              child: Icon(LucideIcons.x, size: 16, color: p.ink3),
-            ),
-          ]),
-          const SizedBox(height: S.x3),
-          BigButton(cta,
-              icon: LucideIcons.externalLink,
-              color: color,
-              soft: true,
-              onTap: () async {
-                // Only silence permanently once the link actually opened —
-                // a failed launch (no app registered, no browser default)
-                // should not look "acted on".
-                if (await open3rdPartyLink(url)) {
-                  onSilence(ask);
-                } else {
-                  onSnooze(ask);
-                }
-              }),
-          const SizedBox(height: S.x2),
-          Center(
-            child: Pressable(
-              onTap: () => onSilence(ask),
-              semanticLabel: l?.nudgeDontShowAgain ?? "Don't show this again",
-              child: Text(l?.nudgeDontShowAgain ?? "Don't show this again",
-                  style: F.over.copyWith(
-                      color: p.ink3, decoration: TextDecoration.underline)),
+              decoration:
+                  ShapeDecoration(color: p.card2, shape: const CircleBorder()),
+              child: Icon(LucideIcons.x, size: 13, color: p.ink3),
             ),
           ),
         ]),
