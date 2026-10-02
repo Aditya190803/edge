@@ -2382,5 +2382,9 @@
   "ecgWaveformEmpty": "इस रीडिंग के साथ कोई तरंग सहेजी नहीं गई।",
   "ecgWaveformLabel": "स्वीकृत तरंग, माइक्रोवोल्ट में जैसा बैंड ने भेजा। रिक्त स्थान अनुपलब्ध सेकंड हैं।",
   "ecgSampleNote": "{rate} Hz पर {count} सैंपल, फ़िल्टर्ड, इनपुट-संदर्भित µV। कोई लीड या ध्रुवता का दावा नहीं।",
-  "homeSummaryTitle": "सारांश"
+  "homeSummaryTitle": "सारांश",
+  "homeLast7Days": "पिछले 7 दिन",
+  "homeSevenDayAvg": "7 दिन औसत {value}",
+  "homeAvgValue": "औसत {value}",
+  "homeRowHrv": "HRV"
 }

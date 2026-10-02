@@ -807,32 +807,46 @@ class RingTrio extends StatelessWidget {
     // ([overnightMetric]), so a ring with no night behind it is a gap row with
     // the reason in it — same place every other absence on this screen goes.
 
-    final keys = [
-      for (var i = 0; i < rings.length; i++) ...[
-        if (i > 0) const SizedBox(height: S.x1),
-        _RingKey(rings[i], onTap: _open(rings[i].kind)),
-      ],
-    ];
-    return Surface(
+    final rec = rings[HomeRingKind.recovery.index];
+    final strain = rings[HomeRingKind.strain.index];
+    final sleep = rings[HomeRingKind.sleep.index];
+    // The card takes the recovery band's colour as a wash from the top — the
+    // day's verdict sets the mood of the card before a number is read. With
+    // no score there is no verdict, and the wash is the neutral tint.
+    final tint = rec.measured ? rec.color : C.blue;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(S.x3, S.x5, S.x3, S.x3),
+      decoration: ShapeDecoration(
+        shape: R.shape(R.rXl),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color.alphaBlend(p.wash(tint), p.card), p.card],
+        ),
+      ),
       child: Column(children: [
         if (bigText(c))
-          // Past ~1.3× the keys need the card's whole width, so the nest
-          // sits above them rather than beside them; it keeps its size and the
-          // type gets the room.
-          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Center(child: _Nest(rings, size: 132)),
+          // Past ~1.3× three dials across cannot hold their labels; they
+          // stack, and each keeps its size.
+          for (final r in [rec, sleep, strain]) ...[
+            _Dial(r, size: r == rec ? 136 : 96, hero: r == rec,
+                onTap: _open(r.kind)),
             const SizedBox(height: S.x3),
-            ...keys,
-          ])
+          ]
         else
-          Row(children: [
-            _Nest(rings, size: 132),
-            const SizedBox(width: S.x5),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: keys),
-            ),
+                child: Padding(
+              padding: const EdgeInsets.only(top: S.x6),
+              child: _Dial(sleep, size: 88, onTap: _open(sleep.kind)),
+            )),
+            _Dial(rec, size: 136, hero: true, onTap: _open(rec.kind)),
+            Expanded(
+                child: Padding(
+              padding: const EdgeInsets.only(top: S.x6),
+              child: _Dial(strain, size: 88, onTap: _open(strain.kind)),
+            )),
           ]),
         for (final r in gaps) ...[
           const SizedBox(height: S.x2),
@@ -847,17 +861,18 @@ class RingTrio extends StatelessWidget {
             onTap: _open(HomeRingKind.recovery),
             // Top-aligned: at an accessibility size the driver list is three
             // lines and "Why?" was centred against the middle of them.
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l?.homeWhyLabel ?? 'Why?', style: F.cap.copyWith(color: p.ink3)),
+            // What moved the score, as chips — the inputs read as things,
+            // not as a sentence to parse.
+            child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Text(l?.homeWhyLabel ?? 'Why?',
+                  style: F.cap.copyWith(
+                      color: p.ink3, fontWeight: FontWeight.w600)),
               const SizedBox(width: S.x2),
               Expanded(
-                child: Text(
-                  d.drivers
-                      .take(3)
-                      .map((e) => driverLabel(e['label'], l))
-                      .join(' · '),
-                  style: F.cap.copyWith(color: p.ink2),
-                ),
+                child: Wrap(spacing: S.x1, runSpacing: S.x1, children: [
+                  for (final e in d.drivers.take(3))
+                    Pill(driverLabel(e['label'], l), rec.color),
+                ]),
               ),
               Icon(LucideIcons.chevronRight, size: 15, color: p.ink3),
             ]),
@@ -1001,115 +1016,345 @@ _RingState _gap(HomeRingKind k, String label, IconData icon, Color color,
               : (l?.homeGapNoReason ?? 'Nothing recorded says why this is missing.')));
 }
 
-/// The three rings nested inside each other — recovery outside, strain in
-/// the middle, sleep at the core — the way the Activity rings stack Move,
-/// Exercise and Stand. One object, three readings, read in a single glance.
+/// One dial of the hero: the gauge, the reading inside it, the name under
+/// it. The hero dial (recovery) is the big one in the middle; sleep and
+/// strain flank it smaller, the way the day reads — the night, the verdict,
+/// the cost.
 ///
-/// Each ring is still exactly one of the three honest states: a measured
-/// ring is a solid arc on a dim track of its own colour, a calibrating one is
-/// beads filling night by night on a neutral track, and an absent one is the
-/// neutral track alone.
-class _Nest extends StatelessWidget {
-  final List<_RingState> rings;
+/// The three honest states carry through to the shape: a measured reading is
+/// a solid arc with its number inside; calibrating is beads with the count
+/// under the name; absent is the track with the metric's glyph inside and
+/// the absence in words under the name — never a dash, never a zero.
+class _Dial extends StatelessWidget {
+  final _RingState r;
   final double size;
+  final bool hero;
+  final VoidCallback? onTap;
 
-  const _Nest(this.rings, {required this.size});
+  const _Dial(this.r, {required this.size, this.hero = false, this.onTap});
 
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    final stroke = size * .105;
-    const gap = 2.5;
-    return ExcludeSemantics(
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Stack(children: [
-          for (var i = 0; i < rings.length; i++)
+    final ink = r.ink(p);
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: r.spoken,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: Stack(alignment: Alignment.center, children: [
             Positioned.fill(
-              child: Padding(
-                padding: EdgeInsets.all(i * (stroke + gap)),
-                child: CustomPaint(
-                  painter: rings[i].calibrating
-                      // One bead per night the baseline needs, not a fixed
-                      // count — "6 of 14" draws as 14 divisions with 6 filled.
-                      ? DashedRing(rings[i].frac ?? 0, rings[i].arc(p), p.track,
-                          stroke: stroke, segments: rings[i].need ?? 24)
-                      : Ring(rings[i].frac ?? 0, rings[i].arc(p), p.track,
-                          stroke: stroke,
-                          t: animate(c, 1),
-                          solid: rings[i].measured),
+              child: CustomPaint(
+                painter: Gauge(
+                  r.frac ?? 0,
+                  r.arc(p),
+                  p.track,
+                  stroke: size * (hero ? .085 : .1),
+                  t: animate(c, 1),
+                  solid: r.measured,
+                  // One bead per night the baseline needs — "6 of 14" draws
+                  // as 14 divisions with 6 filled.
+                  segments: r.calibrating ? (r.need ?? 24) : null,
+                  knob: p.card,
                 ),
               ),
             ),
+            Padding(
+              padding: EdgeInsets.all(size * .22),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: r.measured
+                    ? Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text(r.value,
+                            style: (hero ? F.n48 : F.n24)
+                                .copyWith(color: p.ink)),
+                        if (hero && r.sub.isNotEmpty) ...[
+                          const SizedBox(height: S.x1),
+                          Text(r.sub,
+                              style: F.cap.copyWith(
+                                  color: ink, fontWeight: FontWeight.w700)),
+                        ],
+                      ])
+                    : Icon(r.icon, size: hero ? 30 : 22, color: p.ink3),
+              ),
+            ),
+          ]),
+        ),
+        const SizedBox(height: S.x1),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(r.icon, size: 12, color: ink),
+          const SizedBox(width: S.x1),
+          Flexible(
+            child: Text(
+              r.label.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: F.over.copyWith(
+                  color: ink, fontWeight: FontWeight.w700, letterSpacing: .6),
+            ),
+          ),
         ]),
-      ),
+        // What the reading is out of (small dials), or what stands in for a
+        // reading that is not there.
+        if (!r.measured)
+          Text(r.value,
+              textAlign: TextAlign.center,
+              style: F.cap.copyWith(color: p.ink2, fontWeight: FontWeight.w600)),
+        if (r.sub.isNotEmpty && !(hero && r.measured))
+          Text(r.sub,
+              textAlign: TextAlign.center,
+              style: F.over.copyWith(color: p.ink3)),
+      ]),
     );
   }
 }
 
-/// One ring's key beside the nest: its name in its own colour, the reading
-/// large, and what the reading is measured against. The row is the door
-/// into that ring's screen.
-class _RingKey extends StatelessWidget {
-  final _RingState r;
+/// [pts] as the seven calendar days ENDING on [endDay] (today when null), one
+/// slot per day, `null` where nothing was stored. The window follows the day
+/// on screen, so stepping back a day steps the week back with it.
+List<double?> weekOf(List<ChartPoint> pts, String? endDay, [int n = 7]) {
+  final end = DateTime.tryParse(endDay ?? '') ?? DateTime.now();
+  final out = List<double?>.filled(n, null);
+  for (final p in pts) {
+    final d = DateTime.fromMillisecondsSinceEpoch(p.t * 1000);
+    final behind = calendarDaysBetween(d, end);
+    if (behind < 0 || behind >= n) continue;
+    out[n - 1 - behind] = p.v;
+  }
+  return out;
+}
+
+double? _meanOf(List<double?> v) {
+  final have = [for (final x in v) ?x];
+  return have.isEmpty ? null : have.reduce((a, b) => a + b) / have.length;
+}
+
+/// A metric tile with its week under it: the reading, then seven days of
+/// history as a line (a rate) or bars (a count), then the week's average.
+/// A tile whose history holds fewer than two days draws no chart and no
+/// average — one point is not a week.
+class _MetricTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label, value, unit, sub;
+  final List<double?> week;
+  final String Function(double) fmt;
+  final bool bars;
   final VoidCallback? onTap;
 
-  const _RingKey(this.r, {this.onTap});
+  const _MetricTile(this.icon, this.color, this.label, this.value,
+      {this.unit = '',
+      this.sub = '',
+      required this.week,
+      required this.fmt,
+      this.bars = false,
+      this.onTap});
 
   @override
   Widget build(BuildContext c) {
     final p = P.of(c);
-    return Pressable(
+    final l = AppLocalizations.of(c);
+    final ink = p.on(color);
+    final have = week.whereType<double>().length;
+    final mean = have >= 2 ? _meanOf(week) : null;
+    final foot = mean == null
+        ? ''
+        : (l?.homeSevenDayAvg(fmt(mean)) ?? '7-day avg ${fmt(mean)}');
+    return Surface(
       onTap: onTap,
-      semanticLabel: r.spoken,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(children: [
+      pad: const EdgeInsets.fromLTRB(S.x3 + 2, S.x3, S.x3, S.x3 + 2),
+      semanticLabel: [label, '$value $unit'.trim(), sub, foot]
+          .where((x) => x.isNotEmpty)
+          .join(', '),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, size: 14, color: ink),
+          const SizedBox(width: 6),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(r.icon, size: 13, color: r.ink(p)),
-                const SizedBox(width: S.x1),
-                Flexible(
-                  child: Text(
-                    r.label,
-                    style: F.cap.copyWith(
-                        color: r.ink(p), fontWeight: FontWeight.w700),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ]),
-              const SizedBox(height: 2),
-              // Absent reads as words, never as a dash and never as a zero —
-              // so it takes the sentence weight rather than the numeral one.
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.end,
-                spacing: S.x1,
-                children: [
-                  Text(r.value,
-                      style: r.measured
-                          ? F.n24.copyWith(color: p.ink)
-                          : F.body.copyWith(
-                              color: p.ink2, fontWeight: FontWeight.w600)),
-                  if (r.sub.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 1),
-                      child: Text(r.sub,
-                          style: F.cap.copyWith(
-                              color: p.ink3, fontWeight: FontWeight.w500)),
-                    ),
-                ],
-              ),
-            ]),
+            child: Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: F.cap.copyWith(color: ink, fontWeight: FontWeight.w700)),
           ),
           if (onTap != null)
-            Icon(LucideIcons.chevronRight, size: 16, color: p.ink3),
+            Icon(LucideIcons.chevronRight, size: 14, color: p.ink3),
         ]),
-      ),
+        const SizedBox(height: S.x2),
+        Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 3, children: [
+          Text(value, style: F.n24.copyWith(color: p.ink)),
+          if (unit.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 1),
+              child: Text(unit,
+                  style: F.over.copyWith(
+                      color: p.ink3, fontWeight: FontWeight.w600)),
+            ),
+        ]),
+        if (sub.isNotEmpty)
+          Text(sub,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: F.over.copyWith(color: p.ink3)),
+        if (mean != null) ...[
+          const SizedBox(height: S.x3),
+          ExcludeSemantics(
+            child: SizedBox(
+              height: 40,
+              child: CustomPaint(
+                size: Size.infinite,
+                painter: bars
+                    ? Bars(week, p.dark ? ink : p.tile(color),
+                        highlight: week.length - 1, t: animate(c, 1))
+                    : LineChart(week, ink,
+                        dots: true, dotInk: p.card, t: animate(c, 1)),
+              ),
+            ),
+          ),
+          const SizedBox(height: S.x2),
+          Text(foot, style: F.over.copyWith(color: p.ink3)),
+        ],
+      ]),
     );
   }
+}
+
+/// The week at a glance: recovery, sleep and strain as seven bars each, on
+/// their own scales, with the week's average beside each name. Recovery's
+/// bars wear their own band's colour, day by day, so a run of hard days
+/// shows as colour before anything is read.
+class _WeekCard extends StatelessWidget {
+  final HomeData d;
+  final String? endDay;
+  const _WeekCard(this.d, this.endDay);
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final l = AppLocalizations.of(c);
+    final rec = weekOf(d.charts['recovery'] ?? const [], endDay);
+    final sleep = weekOf(d.charts['sleep'] ?? const [], endDay);
+    final strain = weekOf(d.charts['strain'] ?? const [], endDay);
+    final end = DateTime.tryParse(endDay ?? '') ?? DateTime.now();
+    final days = [
+      for (var i = 6; i >= 0; i--) DateTime(end.year, end.month, end.day - i),
+    ];
+    final sleepTop = [
+      for (final v in sleep) ?v,
+      ?d.sleepNeedMin.value?.toDouble(),
+    ].fold<double>(0, (a, b) => b > a ? b : a);
+
+    Widget row(String label, IconData icon, Color col, List<double?> v,
+        double top, String Function(double) fmt,
+        {Color Function(double)? colorOf}) {
+      final mean = _meanOf(v);
+      return Semantics(
+        label: [
+          label,
+          if (mean != null) l?.homeAvgValue(fmt(mean)) ?? 'Avg ${fmt(mean)}',
+          l?.homeLast7Days ?? 'Last 7 days',
+        ].join(', '),
+        child: ExcludeSemantics(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(icon, size: 13, color: p.on(col)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(label,
+                    style: F.cap.copyWith(
+                        color: p.ink, fontWeight: FontWeight.w600)),
+              ),
+              if (mean != null)
+                Text(l?.homeAvgValue(fmt(mean)) ?? 'Avg ${fmt(mean)}',
+                    style: F.cap.copyWith(color: p.ink3)),
+            ]),
+            const SizedBox(height: S.x2),
+            SizedBox(
+              height: 38,
+              child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                for (var i = 0; i < v.length; i++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: v[i] == null || top <= 0
+                          // No record that day: a hole on the baseline,
+                          // never a zero-height bar that reads as a zero.
+                          ? Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                height: 3,
+                                decoration: ShapeDecoration(
+                                    color: p.card2,
+                                    shape: const StadiumBorder()),
+                              ),
+                            )
+                          : LayoutBuilder(builder: (_, box) {
+                              final h = (v[i]! / top).clamp(0.0, 1.0) *
+                                  box.maxHeight;
+                              final fill = colorOf?.call(v[i]!) ?? col;
+                              return Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Container(
+                                  height: h < 4 ? 4 : h,
+                                  decoration: ShapeDecoration(
+                                    color: p.dark ? p.on(fill) : p.tile(fill),
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(R.sm / 2),
+                                          bottom: Radius.circular(2)),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                    ),
+                  ),
+              ]),
+            ),
+          ]),
+        ),
+      );
+    }
+
+    return Surface(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        row(l?.homeRingRecovery ?? 'Recovery', LucideIcons.batteryCharging,
+            C.green, rec, 100, (x) => '${x.round()}',
+            colorOf: (x) => readinessBand(x, l).color),
+        const SizedBox(height: S.x4),
+        row(l?.homeRingSleep ?? 'Sleep', LucideIcons.moon, C.indigo, sleep,
+            sleepTop, (x) => hm(x)),
+        const SizedBox(height: S.x4),
+        row(l?.homeRingStrain ?? 'Strain', LucideIcons.zap, C.purple, strain,
+            21, (x) => x.toStringAsFixed(1)),
+        const SizedBox(height: S.x2),
+        ExcludeSemantics(
+          child: Row(children: [
+            for (final day in days)
+              Expanded(
+                child: Text(
+                  weekdayShortName(day.weekday, l).characters.first,
+                  textAlign: TextAlign.center,
+                  style: F.over.copyWith(
+                      color: day == days.last ? p.on(C.blue) : p.ink3,
+                      fontWeight:
+                          day == days.last ? FontWeight.w700 : FontWeight.w500),
+                ),
+              ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  /// Whether there is a week worth drawing — at least one stored day in any
+  /// of the three. Below that the section stays off the screen entirely.
+  static bool has(HomeData d, String? endDay) => [
+        'recovery',
+        'sleep',
+        'strain',
+      ].any((k) => weekOf(d.charts[k] ?? const [], endDay).any((v) => v != null));
 }
 
 /// WHY a ring is empty, on the row that also opens the screen which can say
@@ -1164,6 +1409,15 @@ class HomeData {
   /// tab reads. Nothing on this screen computes it.
   final Metric strain;
 
+  /// Last night's RMSSD, through the same stale-night gate as every other
+  /// overnight figure — see [overnightMetric].
+  final Metric hrv;
+
+  /// The stored history behind the tiles and the week, per chart key
+  /// ([homeCharts]). A key that failed to read is simply absent: a tile with
+  /// no history draws its reading and no chart, never an invented one.
+  final Map<String, List<ChartPoint>> charts;
+
   final int stepGoal;
   final Metric sleepNeedMin;
   final Metric bedtime;
@@ -1208,6 +1462,8 @@ class HomeData {
     this.calories = Metric.empty,
     this.caloriesTotal = Metric.empty,
     this.strain = Metric.empty,
+    this.hrv = Metric.empty,
+    this.charts = const {},
     this.stepGoal = kDefaultStepGoal,
     this.sleepNeedMin = Metric.empty,
     this.bedtime = Metric.empty,
@@ -1233,6 +1489,8 @@ class HomeData {
         calories: calories,
         caloriesTotal: caloriesTotal,
         strain: strain,
+        hrv: hrv,
+        charts: charts,
         stepGoal: stepGoal,
         sleepNeedMin: sleepNeedMin,
         bedtime: bedtime,
@@ -1254,6 +1512,27 @@ class HomeData {
   /// date-parameterized getters the strain/sleep detail screens already read
   /// ([LocalRepository.getDayStrain]/[getDaySleepV2]) plus the one figure
   /// neither carries ([getDayOverview]'s readiness/resting_hr).
+  /// The series Home draws: the three rings' own scores for the week, and the
+  /// four tiles' history.
+  static const homeCharts = [
+    'recovery', 'strain', 'sleep', 'hrv', 'resting_hr', 'steps', 'calories',
+  ];
+
+  /// Each series on its own: one that cannot be read leaves its own chart
+  /// out, and never takes the day's numbers down with it.
+  static Future<Map<String, List<ChartPoint>>> _charts(
+      LocalRepository repo) async {
+    final out = <String, List<ChartPoint>>{};
+    for (final k in homeCharts) {
+      try {
+        out[k] = pointsOf(await repo.getChart(k));
+      } catch (_) {
+        // Absent, not empty-and-claimed: the tile drops its chart.
+      }
+    }
+    return out;
+  }
+
   static Future<HomeData> loadForDay(LocalRepository repo, String date,
       [AppLocalizations? l]) async {
     final profile = await repo.getProfile();
@@ -1271,7 +1550,19 @@ class HomeData {
       caloriesTotal: metricOf(strain['calories_total']),
       sleepMin: metricOf(sleep['duration_min']),
       stepGoal: (profile['step_goal'] as num?)?.toInt() ?? kDefaultStepGoal,
+      charts: await _charts(repo),
     );
+  }
+
+  /// `today.hrv` carries RMSSD inside an object, not as a scalar envelope.
+  static Metric _hrvOf(Map<String, dynamic> today, AppLocalizations? l) {
+    final why = staleOvernightNote(today, l);
+    if (why != null) return Metric(note: why);
+    final b = today['hrv'];
+    final rmssd = b is Map ? b['rmssd'] as num? : null;
+    if (rmssd == null || b is! Map) return Metric.empty;
+    return Metric.parse(
+        {...b.cast<String, dynamic>(), 'value': rmssd, 'unit': 'ms'});
   }
 
   static Future<HomeData> load(LocalRepository repo, [AppLocalizations? l]) async {
@@ -1318,6 +1609,8 @@ class HomeData {
           if (e is Map) e.cast<String, dynamic>(),
       ],
       strain: metricOf(d('strain')),
+      hrv: _hrvOf(today, l),
+      charts: await _charts(repo),
       sleepMin: overnightMetric(today, s('duration_min'), l),
       rhr: overnightMetric(today, d('resting_hr'), l),
       steps: metricOf(d('steps')),
@@ -1780,14 +2073,16 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
               );
             }),
 
-          // Right under the rings — the one spot nobody scrolls past.
-          const CommunityNudge(),
-
           // ── the rollup was withheld, not absent ──
           if (stale != null) ...[const SizedBox(height: S.x3), stale],
 
-          // ── pinned: one reading per card, read top to bottom ──
+          // ── the four readings worth a glance, each with its week ──
           Section(l?.homeAtAGlance ?? 'At a glance', _glance(c, d)),
+
+          // ── the week the day sits in ──
+          if (_WeekCard.has(d, _day ?? d.dayId))
+            Section(l?.homeLast7Days ?? 'Last 7 days',
+                _WeekCard(d, _day ?? d.dayId)),
 
           // ── today's plan: only what the app can actually stand behind ──
           // Skipped on a past day — "3,000 steps left" about a day already
@@ -1804,6 +2099,10 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
               l?.homeBreakdownTitle ?? 'Breakdown of your day',
               l?.homeBreakdownSubtitle ?? 'Hour by hour',
               () => go(c, const DayTimelineScreen())),
+
+          // The community asks close the page: worth seeing, never worth
+          // pushing the day's numbers down for.
+          const CommunityNudge(),
         ],
       ],
     );
@@ -1863,56 +2162,63 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
 
   Widget _glance(BuildContext c, HomeData d) {
     final l = AppLocalizations.of(c);
-    final cards = <Widget>[];
+    final tiles = <Widget>[];
     final absent = <Widget>[];
+    final end = _day ?? d.dayId;
+    List<double?> week(String k) => weekOf(d.charts[k] ?? const [], end);
 
-    void add(Metric m, Widget Function() card, StatusCard? Function() gap) {
+    void add(Metric m, Widget Function() tile, StatusCard? Function() gap) {
       if (m.isEmpty) {
         final s = gap();
         if (s != null) absent.add(s);
       } else {
-        cards.add(card());
+        tiles.add(tile());
       }
     }
 
-    // Resting heart rate comes off the SAME overnight block readiness does,
-    // and it used to carry a date on its own line for the mornings that block
-    // was held over from an older night. It cannot be an older night any more
-    // — the loader refuses those — so every tile in this row is today's and
-    // none of them needs a date.
-
-    // Sleep is a RING now, duration and all — the card here was the same
-    // number twice on one screen, and the ring is the one that says what the
-    // duration was measured against.
+    // Overnight first: the two the night produces, then the day's two.
+    add(
+      d.hrv,
+      () => _MetricTile(LucideIcons.activity, C.green,
+          l?.homeRowHrv ?? 'HRV', '${d.hrv.value!.round()}',
+          unit: 'ms',
+          week: week('hrv'),
+          fmt: (x) => '${x.round()} ms',
+          onTap: () => go(c, const MetricDetail('hrv'))),
+      // Read only from sleep: with no night there is no HRV, and saying so
+      // is the one reason this screen can see. Every other defers to the note.
+      () => StatusCard.forMetric(l?.healthNoMetric('HRV') ?? 'No HRV', d.hrv,
+          why: d.sleepMin.isEmpty
+              ? (l?.healthWhyReadOnlyFromSleep ??
+                  'Read only from sleep, and no night was scored.')
+              : ''),
+    );
     add(
       d.rhr,
-      () => SummaryCard(LucideIcons.heart, C.red,
+      () => _MetricTile(LucideIcons.heart, C.red,
           l?.homeHeartRate ?? 'Heart rate', '${d.rhr.value!.round()}',
           unit: 'bpm',
-          meta: l?.homeRestingSub ?? 'Resting',
+          sub: l?.homeRestingSub ?? 'Resting',
+          week: week('resting_hr'),
+          fmt: (x) => '${x.round()} bpm',
           onTap: () => go(c, const MetricDetail('resting_hr'))),
-      // "no sleep was recorded" is only stated when the screen can SEE it:
-      // sleep duration and nocturnal RHR are gated separately, so a night
-      // staged from the accelerometer with no clean resting window produces a
-      // duration and no resting rate. Every other reason defers to the note.
+      // "no sleep was recorded" only when the screen can SEE it: sleep
+      // duration and nocturnal RHR are gated separately.
       () => StatusCard.forMetric(l?.homeNoRestingHr ?? 'No resting heart rate', d.rhr,
           why: d.sleepMin.isEmpty
               ? (l?.homeNoRestingHrWhy ??
                   'Resting heart rate is read from sleep, and no sleep was recorded.')
               : ''),
     );
-    // Steps keeps its card whether or not a counter reported. Zero steps is a
-    // real reading and renders as 0; when nothing counted at all the card stays
-    // and says so in two words.
+    // Steps keeps its tile whether or not a counter reported. Zero steps is a
+    // real reading and renders as 0; when nothing counted the tile says so in
+    // two words, and its line names which sensor counted when one did.
     final steps = d.steps.value;
-    cards.add(SummaryCard(
+    tiles.add(_MetricTile(
       LucideIcons.footprints,
       C.green,
       l?.homeSteps ?? 'Steps',
       steps == null ? (l?.homeStepsNone ?? 'None') : thousands(steps),
-      // The sensor rides the line under the number: the day is resolved per
-      // window, so "8,412" can be the strap's count, the phone's, or both, and
-      // the card has to say which.
       sub: steps == null
           ? (l?.homeStepsNotRecorded ?? 'NOT RECORDED')
           : [
@@ -1922,38 +2228,32 @@ class _HomeScreenState extends State<HomeScreen> with RevisionReload {
                     '${((steps / d.stepGoal) * 100).clamp(0, 999).round()}% of goal',
               ?stepSensorLabel(d.steps, l),
             ].join(' · '),
-      meta: d.stepGoal > 0
-          ? (l?.homeGoalSteps(thousands(d.stepGoal)) ??
-              'Goal ${thousands(d.stepGoal)}')
-          : '',
+      week: week('steps'),
+      fmt: (x) => thousands(x),
+      bars: true,
       onTap: () => go(c, const MetricDetail('steps')),
-      visual: steps == null || d.stepGoal <= 0
-          ? null
-          : GoalRing(steps / d.stepGoal, C.green),
     ));
     add(
       d.calories,
-      () => SummaryCard(LucideIcons.flame, C.orange,
+      () => _MetricTile(LucideIcons.flame, C.orange,
           l?.homeActiveEnergy ?? 'Active energy', thousands(d.calories.value),
           unit: 'kcal',
           sub: d.caloriesTotal.value == null
               ? (l?.homeCaloriesEstimated ?? 'Estimated')
               : (l?.homeCaloriesTotal(thousands(d.caloriesTotal.value)) ??
                   '${thousands(d.caloriesTotal.value)} total'),
+          week: week('calories'),
+          fmt: (x) => '${thousands(x)} kcal',
+          bars: true,
           onTap: () => go(c, const MetricDetail('calories'))),
-      // No `why:` — energy goes absent for more than one reason, and a reason
-      // written here would be printed for all of them.
+      // No `why:` — energy goes absent for more than one reason.
       () => StatusCard.forMetric(l?.homeNoEnergyEstimate ?? 'No energy estimate', d.calories),
     );
 
-    // One card per row, readings first and absences after: a summary is read
-    // top to bottom, and an absence in the middle of the readings breaks the
-    // column into two lists.
-    return Column(children: [
-      for (var i = 0; i < cards.length; i++) ...[
-        if (i > 0) const SizedBox(height: S.x3),
-        cards[i],
-      ],
+    // Readings as a 2×2 grid, then the absences in full width under it: an
+    // absence in the middle of the grid would break it into two.
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      TileGrid(tiles),
       for (final s in absent) ...[const SizedBox(height: S.x3), s],
     ]);
   }

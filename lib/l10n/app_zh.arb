@@ -2382,5 +2382,9 @@
   "ecgWaveformEmpty": "此读数未保存波形。",
   "ecgWaveformLabel": "接受的波形，单位为手环发送的微伏。空隙为缺失的秒。",
   "ecgSampleNote": "{rate} Hz 下 {count} 个样本，已滤波，输入参考 µV。不声明导联或极性。",
-  "homeSummaryTitle": "摘要"
+  "homeSummaryTitle": "摘要",
+  "homeLast7Days": "最近 7 天",
+  "homeSevenDayAvg": "7 天平均 {value}",
+  "homeAvgValue": "平均 {value}",
+  "homeRowHrv": "心率变异性"
 }

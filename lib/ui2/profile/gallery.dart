@@ -214,6 +214,22 @@ Map<String, Widget> goldenCases() => {
       'summary_card_plain': const SummaryCard(
           LucideIcons.heart, C.red, 'Heart rate', '52',
           unit: 'bpm', meta: 'Resting'),
+      'vital_tiles': TileGrid([
+        VitalTile(LucideIcons.heart, C.red, 'Resting heart rate', '52',
+            unit: 'bpm', sub: 'Overnight', onTap: () {},
+            series: const [55, 54, 56, 55, 54, 53, 52, 51, 52, 50],
+            rising: Rising.bad),
+        VitalTile(LucideIcons.activity, C.green, 'HRV', '68',
+            unit: 'ms', sub: 'RMSSD, asleep', onTap: () {}),
+        const VitalTile(LucideIcons.wind, C.teal, 'Respiratory rate', '14.2',
+            unit: 'br/min', sub: 'Asleep'),
+      ]),
+      'range_bar': const Column(children: [
+        RangeBar(30, 400, 96),
+        SizedBox(height: S.x3),
+        RangeBar(0, 100, 104),
+      ]),
+      'search_field': SearchField(hint: 'Search 20 measures', onChanged: (_) {}),
       'check_mark': const Row(children: [
         CheckMark(true),
         SizedBox(width: S.x3),

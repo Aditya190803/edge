@@ -54,6 +54,35 @@ List<ChartPoint> _points(int n, double base, double amp) {
   ];
 }
 
+/// [_points], anchored to a FIXED day instead of the run date — for a fixture
+/// whose `dayId` is pinned, so its week lines up with the day it claims.
+List<ChartPoint> _pointsEnding(
+  DateTime end,
+  int n,
+  double base,
+  double amp, {
+  Set<int> holes = const {},
+}) {
+  final vs = _series(n, base, amp);
+  return [
+    for (var i = 0; i < n; i++)
+      if (!holes.contains(i))
+        (
+          t:
+              DateTime(
+                end.year,
+                end.month,
+                end.day - (n - 1 - i),
+                12,
+              ).millisecondsSinceEpoch ~/
+              1000,
+          v: vs[i],
+        ),
+  ];
+}
+
+final _homeDay = DateTime(2026, 5, 20);
+
 Map<String, dynamic> _metric(num? v, String tier, {String? note}) => {
   'value': v ?? '—',
   'confidence': v == null ? 0 : 0.8,
@@ -121,6 +150,23 @@ final _home = HomeData(
   ),
   bedtime: const Metric(value: 1360, confidence: .7, tier: MetricTier.estimate),
   strainTarget: const {'value': 11.4, 'low': 9.2, 'high': 13.6},
+  hrv: const Metric(
+    value: 68,
+    unit: 'ms',
+    confidence: .8,
+    tier: MetricTier.high,
+  ),
+  // A week of history ending on the fixture's own day, one hole in it — the
+  // week card and the tiles draw what was stored and leave the gap a gap.
+  charts: {
+    'recovery': _pointsEnding(_homeDay, 7, 64, 50, holes: {2}),
+    'sleep': _pointsEnding(_homeDay, 7, 440, 90),
+    'strain': _pointsEnding(_homeDay, 7, 11, 9),
+    'hrv': _pointsEnding(_homeDay, 7, 64, 14),
+    'resting_hr': _pointsEnding(_homeDay, 7, 53, 5),
+    'steps': _pointsEnding(_homeDay, 7, 8200, 5200),
+    'calories': _pointsEnding(_homeDay, 7, 560, 320),
+  },
 );
 
 /// A first-week user: the band is on, nothing has a baseline yet.

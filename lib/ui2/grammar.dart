@@ -562,6 +562,207 @@ class SummaryCard extends StatelessWidget {
   }
 }
 
+/// A · SIGNAL, as a tile in a two-up grid — the vitals view.
+///
+/// Glyph tile top-left, the direction of the last few days top-right (see
+/// [trendOf]; nothing at all when there is not enough history to say), the
+/// reading large, then what it is and when. [series] is DENSE, like
+/// [MetricRow.series], and is read for a direction only — never drawn.
+class VitalTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String name, value, unit, sub;
+  final List<double?> series;
+  final Rising rising;
+  final VoidCallback? onTap;
+
+  const VitalTile(
+    this.icon,
+    this.color,
+    this.name,
+    this.value, {
+    super.key,
+    this.unit = '',
+    this.sub = '',
+    this.series = const [],
+    this.rising = Rising.neither,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final trend = trendOf(series);
+    final hue = trend == null ? null : _trendHue(p, trend, rising);
+    return Surface(
+      onTap: onTap,
+      pad: const EdgeInsets.all(S.x3 + 2),
+      semanticLabel: '$name, $value $unit ${_trendWord(trend)}'
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            _Tile(icon, color, size: 28),
+            const Spacer(),
+            if (trend != null)
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  color: hue == p.ink3 ? p.card2 : hue!.withValues(alpha: .14),
+                  shape: const CircleBorder(),
+                ),
+                child: Icon(
+                  switch (trend) {
+                    Trend.rising => LucideIcons.arrowUpRight,
+                    Trend.falling => LucideIcons.arrowDownRight,
+                    Trend.steady => LucideIcons.arrowRight,
+                  },
+                  size: 14,
+                  color: hue,
+                ),
+              ),
+          ]),
+          const SizedBox(height: S.x4),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 3,
+            children: [
+              Text(value, style: F.n24.copyWith(color: p.ink)),
+              if (unit.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 1),
+                  child: Text(unit,
+                      style: F.over.copyWith(
+                          color: p.ink3, fontWeight: FontWeight.w600)),
+                ),
+            ],
+          ),
+          const SizedBox(height: S.x1),
+          Text(name,
+              style: F.cap.copyWith(color: p.ink, fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+          if (sub.isNotEmpty)
+            Text(sub,
+                style: F.over.copyWith(color: p.ink3),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+}
+
+/// Lay [tiles] out two to a row, each row as tall as its taller tile. An odd
+/// last tile takes the full width rather than leaving a hole beside it. At
+/// accessibility text sizes the grid becomes a column: half a phone is not
+/// enough width for a reading set at 3×.
+class TileGrid extends StatelessWidget {
+  final List<Widget> tiles;
+  const TileGrid(this.tiles, {super.key});
+
+  @override
+  Widget build(BuildContext c) {
+    if (bigText(c)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (var i = 0; i < tiles.length; i++) ...[
+          if (i > 0) const SizedBox(height: S.x3),
+          tiles[i],
+        ],
+      ]);
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (var i = 0; i < tiles.length; i += 2) ...[
+        if (i > 0) const SizedBox(height: S.x3),
+        if (i + 1 >= tiles.length)
+          tiles[i]
+        else
+          // IntrinsicHeight, because `stretch` inside a scroll asks for an
+          // infinite height; the two tiles in a row must match.
+          IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(child: tiles[i]),
+              const SizedBox(width: S.x3),
+              Expanded(child: tiles[i + 1]),
+            ]),
+          ),
+      ],
+    ]);
+  }
+}
+
+/// A reading against its reference interval: a track, the interval as a
+/// highlighted band on it, and the reading as a dot — the way a lab panel is
+/// drawn in a health record. The axis is the interval padded to hold the
+/// reading, so a value far outside still lands on the track, at its edge.
+///
+/// No interval, no bar: drawing one around a guess would be the verdict this
+/// app does not give.
+class RangeBar extends StatelessWidget {
+  final double low, high, value;
+  final Color color;
+  const RangeBar(this.low, this.high, this.value,
+      {super.key, this.color = C.green});
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    final span = (high - low).abs();
+    final pad = span == 0 ? (value.abs() * .2 + 1) : span * .35;
+    final lo = math.min(low, value) - pad, hi = math.max(high, value) + pad;
+    double x(double v) => ((v - lo) / (hi - lo)).clamp(0.0, 1.0);
+    final inside = value >= low && value <= high;
+    final dot = inside ? p.tile(color) : p.tile(C.orange);
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: 12,
+        child: LayoutBuilder(builder: (_, box) {
+          final w = box.maxWidth;
+          return Stack(clipBehavior: Clip.none, children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 4,
+              height: 4,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                    color: p.track, shape: const StadiumBorder()),
+              ),
+            ),
+            Positioned(
+              left: w * x(low),
+              width: math.max(4, w * (x(high) - x(low))),
+              top: 4,
+              height: 4,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                    color: p.wash(color, strength: 1).withValues(alpha: .55),
+                    shape: const StadiumBorder()),
+              ),
+            ),
+            Positioned(
+              left: (w * x(value) - 6).clamp(0.0, math.max(0.0, w - 12)),
+              top: 0,
+              width: 12,
+              height: 12,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: dot,
+                  shape: CircleBorder(side: BorderSide(color: p.card, width: 2)),
+                ),
+              ),
+            ),
+          ]);
+        }),
+      ),
+    );
+  }
+}
+
 /// A goal ring for a [SummaryCard.visual]: how far toward the goal, with the
 /// percentage in the middle. Over 100 % the ring stays full and the number
 /// says how far over — the shape cannot draw more than all of it.
@@ -2175,6 +2376,54 @@ class SubTabs extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+/// The search field: a filled grey capsule with the magnifier inside, the
+/// shape every system list puts above its contents. Labelled for a screen
+/// reader, because a hint-only field announces nothing once text is in it.
+class SearchField extends StatelessWidget {
+  final String hint;
+  final String label;
+  final ValueChanged<String> onChanged;
+  final bool autofocus;
+
+  const SearchField({
+    super.key,
+    required this.hint,
+    required this.onChanged,
+    String? label,
+    this.autofocus = false,
+  }) : label = label ?? hint;
+
+  @override
+  Widget build(BuildContext c) {
+    final p = P.of(c);
+    return Container(
+      constraints: const BoxConstraints(minHeight: S.tap - 4),
+      padding: const EdgeInsets.symmetric(horizontal: S.x3),
+      decoration: ShapeDecoration(color: p.card2, shape: R.shape(R.rMd)),
+      child: Row(children: [
+        Icon(LucideIcons.search, size: 17, color: p.ink3),
+        const SizedBox(width: S.x2),
+        Expanded(
+          child: Semantics(
+            label: label,
+            textField: true,
+            child: TextField(
+              autofocus: autofocus,
+              onChanged: onChanged,
+              style: F.body.copyWith(color: p.ink),
+              cursorColor: p.on(C.blue),
+              decoration: InputDecoration.collapsed(
+                hintText: hint,
+                hintStyle: F.body.copyWith(color: p.ink3),
+              ).copyWith(filled: false),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }

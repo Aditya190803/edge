@@ -613,10 +613,12 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
   Widget build(BuildContext c) {
     final d = _d ?? const HealthData();
     final l = AppLocalizations.of(c);
-    return ListView(padding: pad, children: [
-      ScreenTitle(l?.healthTitle ?? 'Health'),
-      SubTabs(_tabsOf(l), _tab, _select, color: C.blue),
-      const SizedBox(height: S.x5),
+    return HealthPage(
+      title: l?.healthTitle ?? 'Health',
+      back: false,
+      accessory: SubTabs(_tabsOf(l), _tab, _select, color: C.domHealth),
+      onRefresh: () async => reload(),
+      children: [
       if (_loading && _d == null)
         const Padding(
           padding: EdgeInsets.only(top: S.x8),
@@ -635,7 +637,6 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
 
   // ─────────────── OVERVIEW ───────────────
   Widget _overview(BuildContext c, HealthData d) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final rows = <Widget>[];
     final gaps = <Widget>[];
@@ -663,7 +664,7 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         if (s != null) gaps.add(s);
         return;
       }
-      rows.add(MetricRow(icon, col, name, value,
+      rows.add(VitalTile(icon, col, name, value,
           sub: sub,
           unit: unit,
           series: series,
@@ -826,16 +827,9 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         const EcgEntryCard(),
         const SizedBox(height: S.x3),
       ],
-      if (rows.isNotEmpty)
-        Surface(
-          pad: const EdgeInsets.symmetric(horizontal: S.x4),
-          child: Column(children: [
-            for (var i = 0; i < rows.length; i++) ...[
-              if (i > 0) Divider(color: p.line, height: 1),
-              rows[i],
-            ],
-          ]),
-        ),
+      // The night's readings as a two-up grid of tiles: each one a reading
+      // you can take in without reading a row across.
+      if (rows.isNotEmpty) TileGrid(rows),
       for (final g in gaps) ...[const SizedBox(height: S.x3), g],
 
       // OBSERVATIONS — the illness watch, wrapped, plus a door to the other
@@ -1102,7 +1096,6 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
 
   // ─────────────── VITALS ───────────────
   Widget _vitals(BuildContext c, HealthData d) {
-    final p = P.of(c);
     final l = AppLocalizations.of(c);
     final v = _v;
     if (v == null) {
@@ -1147,11 +1140,11 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
     // list in the app already puts it.
     final rows = <Widget>[
       if (lo != null && hi != null)
-        MetricRow(LucideIcons.heart, C.red, l?.healthRowHeartRate ?? 'Heart rate',
+        VitalTile(LucideIcons.heart, C.red, l?.healthRowHeartRate ?? 'Heart rate',
             '${lo.round()} – ${hi.round()}',
             sub: dayWord, unit: 'bpm'),
       if (resp != null)
-        MetricRow(LucideIcons.wind, C.teal, l?.healthRowRespRate ?? 'Respiratory rate',
+        VitalTile(LucideIcons.wind, C.teal, l?.healthRowRespRate ?? 'Respiratory rate',
             resp.toStringAsFixed(1),
             sub: l?.healthSubAsleep ?? 'Asleep', unit: 'br/min'),
       if (skinTemp.value != null)
@@ -1160,7 +1153,7 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
         // heart rate in bpm, so it read as °C; and the sleep scrub's
         // "temperature" is a THIRD quantity again (raw ADC minus that day's
         // median), which is why neither may go unlabelled.
-        MetricRow(LucideIcons.thermometer, C.orange,
+        VitalTile(LucideIcons.thermometer, C.orange,
             l?.healthRowSkinTemp ?? 'Skin temperature',
             '${skinTemp.value! >= 0 ? '+' : '−'}'
                 '${skinTemp.value!.abs().toStringAsFixed(2)}',
@@ -1174,7 +1167,7 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
             // The number was on screen and its method was unreachable.
             onTap: () => go(c, const MetricDetail('skin_temp'))),
       if (worn != null)
-        MetricRow(LucideIcons.watch, C.green, l?.healthRowWearTime ?? 'Wear time',
+        VitalTile(LucideIcons.watch, C.green, l?.healthRowWearTime ?? 'Wear time',
             hm(worn),
             // `83.33333333333333% of the day` shipped. It is a percentage.
             sub: coverage == null
@@ -1197,15 +1190,7 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
           onFix: syncOf(c),
         )
       else
-        Surface(
-          pad: const EdgeInsets.symmetric(horizontal: S.x4),
-          child: Column(children: [
-            for (var i = 0; i < rows.length; i++) ...[
-              if (i > 0) Divider(color: p.line, height: 1),
-              rows[i],
-            ],
-          ]),
-        ),
+        TileGrid(rows),
 
       // No skin-temperature caveat card here. The row's own unit already says
       // the reading is relative, and `metric_detail` carries the method for
@@ -1475,6 +1460,18 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
     // The whole row is the control, with the bin as its affordance — the same
     // shape a logged meal takes, and it costs no width, which at 3x text is
     // the difference between a row that fits and one that overflows.
+    final reading = Wrap(
+        crossAxisAlignment: WrapCrossAlignment.end,
+        spacing: 3,
+        children: [
+          Text(v == null ? '' : (m?.format(v) ?? v.toString()),
+              style: F.n24.copyWith(
+                  color: inRange == false ? p.on(C.orange) : p.ink)),
+          Text(unit, style: F.over.copyWith(color: p.ink3)),
+        ]);
+    // The whole row is the control, with the bin as its affordance — the same
+    // shape a logged meal takes. Under it, the reading against its interval
+    // as a range bar: where the number sits is the question a panel answers.
     return Pressable(
       onTap: onRemove,
       semanticLabel: l?.healthRemoveMarkerFrom(
@@ -1482,49 +1479,37 @@ class _HealthScreenState extends State<HealthScreen> with RevisionReload {
           'Remove ${m?.label ?? r['marker']} from ${r['taken_on']}',
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: S.x3),
-        child: Row(children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              // No interval means NO OPINION — a grey dot, never a green one.
-              color: inRange == null
-                  ? p.ink3
-                  : (inRange ? p.on(C.green) : p.on(C.orange)),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: S.x3),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(m?.label ?? r['marker'].toString(),
-                  style: F.body.copyWith(color: p.ink)),
-              Text(
-                  range == null
-                      ? (l?.healthNoReferenceInterval(r['taken_on'].toString()) ??
-                          'No reference interval · ${r['taken_on']}')
-                      : (l?.healthTypicalRange(_num(range.low), _num(range.high),
-                              r['taken_on'].toString()) ??
-                          'Typical ${_num(range.low)}–${_num(range.high)} · '
-                              '${r['taken_on']}'),
-                  style: F.over.copyWith(color: p.ink3)),
-            ]),
-          ),
-          const SizedBox(width: S.x2),
-          Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(v == null ? '' : (m?.format(v) ?? v.toString()),
-                    style: F.n17.copyWith(
-                        color: inRange == false ? p.on(C.orange) : p.ink)),
-                const SizedBox(width: 3),
-                Text(unit, style: F.over.copyWith(color: p.ink3)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (bigText(context)) reading,
+                Text(m?.label ?? r['marker'].toString(),
+                    style: F.body.copyWith(color: p.ink, fontWeight: FontWeight.w500)),
+                Text(
+                    range == null
+                        ? (l?.healthNoReferenceInterval(r['taken_on'].toString()) ??
+                            'No reference interval · ${r['taken_on']}')
+                        : (l?.healthTypicalRange(_num(range.low), _num(range.high),
+                                r['taken_on'].toString()) ??
+                            'Typical ${_num(range.low)}–${_num(range.high)} · '
+                                '${r['taken_on']}'),
+                    style: F.over.copyWith(color: p.ink3)),
               ]),
-          // This is the user's own blood work in an app that keeps it on their
-          // phone; being able to take it back out is the premise, not a setting.
-          const SizedBox(width: S.x2),
-          Icon(LucideIcons.trash2, size: 16, color: p.ink3),
+            ),
+            // Past the restack point the reading moves above the name rather
+            // than pushing the row off the card.
+            if (!bigText(context)) ...[const SizedBox(width: S.x2), reading],
+            // This is the user's own blood work in an app that keeps it on
+            // their phone; being able to take it back out is the premise.
+            const SizedBox(width: S.x3),
+            Icon(LucideIcons.trash2, size: 16, color: p.ink3),
+          ]),
+          // No interval means NO OPINION — no bar at all, never a green one.
+          if (range != null && v != null) ...[
+            const SizedBox(height: S.x3),
+            RangeBar(range.low.toDouble(), range.high.toDouble(), v),
+          ],
         ]),
       ),
     );

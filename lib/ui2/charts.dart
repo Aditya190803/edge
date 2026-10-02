@@ -668,6 +668,93 @@ class Ring extends CustomPainter {
       o.stroke != stroke;
 }
 
+/// The dial: a 270° arc open at the bottom, filled clockwise from the lower
+/// left. The shape of a gauge rather than a ring, because it reads as "how far
+/// along a scale" — which is what a score out of a known maximum is.
+///
+/// Three states, like [Ring], and they must stay distinguishable:
+///   * MEASURED ([solid]) — the arc sweeps from a lighter tint of [color] to
+///     full [color] over a dim track of its own hue, with a knob at its head.
+///   * CALIBRATING ([segments] set) — beads on a neutral [track], [v] of them
+///     filled. Progress toward a reading, not a reading.
+///   * ABSENT — [v] of 0 and not solid: the neutral track alone.
+class Gauge extends CustomPainter {
+  final double v;
+  final Color color, track;
+  final double stroke, t;
+  final bool solid;
+  final int? segments;
+
+  /// The knob's knockout — pass the surface the gauge sits on.
+  final Color? knob;
+
+  Gauge(this.v, this.color, this.track,
+      {this.stroke = 12, this.t = 1, this.solid = true, this.segments, this.knob});
+
+  static const _start = 3 * pi / 4; // 135°, the lower-left end
+  static const _sweep = 3 * pi / 2; // 270°
+
+  @override
+  void paint(Canvas cv, Size s) {
+    final c = Offset(s.width / 2, s.height / 2);
+    final r = min(s.width, s.height) / 2 - stroke / 2;
+    if (r <= 0) return;
+    final rect = Rect.fromCircle(center: c, radius: r);
+    final base = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+
+    final n = segments;
+    if (n != null && n > 0) {
+      final filled = (n * v.clamp(0, 1)).round();
+      final step = _sweep / n;
+      for (var i = 0; i < n; i++) {
+        cv.drawArc(rect, _start + step * i + step * .2, step * .6, false,
+            base..color = i < filled ? color : track);
+      }
+      return;
+    }
+
+    cv.drawArc(rect, _start, _sweep, false,
+        base..color = solid ? color.withValues(alpha: .18) : track);
+    final sweep = _sweep * v.clamp(0, 1) * t.clamp(0, 1);
+    if (sweep <= 0 || !solid) return;
+    cv.drawArc(
+      rect,
+      _start,
+      sweep,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..shader = SweepGradient(
+          startAngle: 0,
+          endAngle: _sweep,
+          colors: [color.withValues(alpha: .55), color],
+          transform: const GradientRotation(_start),
+        ).createShader(rect),
+    );
+    // The knob: where the reading is, as a dot on the arc's head.
+    final end = _start + sweep;
+    final tip = c + Offset(cos(end), sin(end)) * r;
+    cv.drawCircle(tip, stroke * .5, Paint()..color = color);
+    if (knob != null) cv.drawCircle(tip, stroke * .22, Paint()..color = knob!);
+  }
+
+  @override
+  bool shouldRepaint(covariant Gauge o) =>
+      o.v != v ||
+      o.t != t ||
+      o.color != color ||
+      o.track != track ||
+      o.solid != solid ||
+      o.segments != segments ||
+      o.stroke != stroke ||
+      o.knob != knob;
+}
+
 /// A ring made of discrete dashes rather than a continuous arc — for a value
 /// that is still filling (a baseline calibrating night by night), so "not
 /// solid yet" is literally true of the shape, not just a softer tint of the

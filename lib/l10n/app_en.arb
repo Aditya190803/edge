@@ -12443,5 +12443,13 @@
     }
   },
   "homeSummaryTitle": "Summary",
-  "@homeSummaryTitle": {"description": "Large title of the Home tab, in the style of a health summary."}
+  "@homeSummaryTitle": {"description": "Large title of the Home tab, in the style of a health summary."},
+  "homeLast7Days": "Last 7 days",
+  "@homeLast7Days": {"description": "Home section title over the weekly bars."},
+  "homeSevenDayAvg": "7-day avg {value}",
+  "@homeSevenDayAvg": {"description": "Caption under a metric tile's mini chart.", "placeholders": {"value": {"type": "String"}}},
+  "homeAvgValue": "Avg {value}",
+  "@homeAvgValue": {"description": "Average beside a weekly bar row.", "placeholders": {"value": {"type": "String"}}},
+  "homeRowHrv": "HRV",
+  "@homeRowHrv": {"description": "Home metric tile label for heart-rate variability."}
 }

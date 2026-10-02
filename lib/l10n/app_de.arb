@@ -2382,5 +2382,9 @@
   "ecgWaveformEmpty": "Zu dieser Aufzeichnung wurde keine Kurve gespeichert.",
   "ecgWaveformLabel": "Akzeptierte Kurve in Mikrovolt, wie vom Band gesendet. Lücken sind fehlende Sekunden.",
   "ecgSampleNote": "{count} Messwerte bei {rate} Hz, gefiltert, eingangsbezogene µV. Keine Ableitung oder Polarität wird behauptet.",
-  "homeSummaryTitle": "Übersicht"
+  "homeSummaryTitle": "Übersicht",
+  "homeLast7Days": "Letzte 7 Tage",
+  "homeSevenDayAvg": "7-Tage-Ø {value}",
+  "homeAvgValue": "Ø {value}",
+  "homeRowHrv": "HRV"
 }
