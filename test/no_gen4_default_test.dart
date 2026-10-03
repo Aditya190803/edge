@@ -36,7 +36,7 @@ void main() {
   test('kWhoopGen4 default-fallback count only goes down', () {
     // `?? kWhoopGen4` sites plus the one field default (`= kWhoopGen4`).
     final count = _countMatches(RegExp(r'\?\?\s*kWhoopGen4')) +
-        _countMatches(RegExp(r'=\s*kWhoopGen4\b'));
+        _countMatches(RegExp(r'(?<![=])=(?!=)\s*kWhoopGen4\b'));
     expect(count, _kWhoopGen4Defaults,
         reason: 'kWhoopGen4-default count drifted from the tracked value. '
             'If a commit just retired a site, lower _kWhoopGen4Defaults in '

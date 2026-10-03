@@ -180,8 +180,10 @@ Future<bool> isNoopExport(String path) async {
   }
   switch (sniffImportContainer(head.take(64).toList())) {
     case ImportContainer.text:
-      return noopCsvFirstRecordMatches(String.fromCharCodes(head),
-          truncated: head.length > _headBytes);
+      return noopCsvFirstRecordMatches(
+        String.fromCharCodes(head),
+        truncated: head.length > _headBytes,
+      );
     case ImportContainer.sqlite:
       return true;
     case ImportContainer.zip:
@@ -196,8 +198,7 @@ Future<bool> isNoopExport(String path) async {
 Future<bool> _zipHoldsNoopExport(String path) async {
   final input = InputFileStream(path);
   try {
-    final files =
-        ZipDecoder().decodeStream(input).files.where((f) => f.isFile);
+    final files = ZipDecoder().decodeStream(input).files.where((f) => f.isFile);
     // A `.noopbak` is a ZIP around NOOP's SQLite database.
     if (files.any((f) => _isDbMember(f.name))) return true;
     // ponytail: member COUNT, not member content. A ZIP member is deflated and
@@ -363,7 +364,9 @@ Future<String?> inflateGzip(String path, Directory dir) async {
     },
   );
   try {
-    await File(path).openRead().transform(gzip.decoder).transform(counted).pipe(sink);
+    await File(
+      path,
+    ).openRead().transform(gzip.decoder).transform(counted).pipe(sink);
     await _checkGzipTrailer(path, written: written, crc: crc);
   } catch (e) {
     try {
@@ -505,12 +508,12 @@ Future<ResolvedNoopDatabase?> resolveNoopDatabase(String path) async {
       } finally {
         await sink.close();
       }
-    // A 260 MB backup unpacks to a full second copy, and a phone that runs out
-    // of space mid-write leaves a TRUNCATED file — which still opens as a valid
-    // database and would import a fraction of the history as if that were all
-    // of it. Silent partial history is the worst outcome here, so verify the
-    // whole member landed. (Dart has no portable free-space API, hence checking
-    // after rather than before.)
+      // A 260 MB backup unpacks to a full second copy, and a phone that runs out
+      // of space mid-write leaves a TRUNCATED file — which still opens as a valid
+      // database and would import a fraction of the history as if that were all
+      // of it. Silent partial history is the worst outcome here, so verify the
+      // whole member landed. (Dart has no portable free-space API, hence checking
+      // after rather than before.)
       // The size is checked in BOTH directions, AFTER the write. Short means it
       // ran out of space, and a truncated database still opens — importing a
       // fraction of someone's history as if it were all of it. Long means the
@@ -601,17 +604,16 @@ Future<ResolvedImportFiles> resolveImportCsvPaths(
         case ImportContainer.text:
           out.add(path);
         case ImportContainer.zip:
-          tempDir ??=
-              await Directory.systemTemp.createTemp('openstrap_import_');
+          tempDir ??= await Directory.systemTemp.createTemp(
+            'openstrap_import_',
+          );
           // One subdirectory per archive: the multi-select WHOOP path can hand
           // us two exports that each contain `data.csv`, and a shared
           // destination made the second overwrite the first (and returned the
           // survivor's path twice).
           final into = Directory(p.join(tempDir.path, 'a${archiveIndex++}'));
           await into.create(recursive: true);
-          out.addAll(
-            await _extractCsvMembers(path, flavor: flavor, dir: into),
-          );
+          out.addAll(await _extractCsvMembers(path, flavor: flavor, dir: into));
         case ImportContainer.sqlite:
           // Only reachable for WHOOP now — a NOOP database (loose or inside a
           // `.noopbak`) is claimed by [resolveNoopDatabase] before this runs.
@@ -624,8 +626,9 @@ Future<ResolvedImportFiles> resolveImportCsvPaths(
           // gzip is what every command-line tool and most file managers produce
           // when someone compresses a CSV, and it is the shape this app's own
           // auto-backups take.
-          tempDir ??=
-              await Directory.systemTemp.createTemp('openstrap_import_');
+          tempDir ??= await Directory.systemTemp.createTemp(
+            'openstrap_import_',
+          );
           final gzInto = Directory(p.join(tempDir.path, 'a${archiveIndex++}'));
           await gzInto.create(recursive: true);
           final inflated = await inflateGzip(path, gzInto);
@@ -678,48 +681,48 @@ Future<List<String>> _extractCsvMembers(
     archive = ZipDecoder().decodeStream(input);
   } catch (e) {
     await input.close();
-    throw ImportFormatException(
-      'Could not read “$name” as an archive: $e',
-    );
+    throw ImportFormatException('Could not read “$name” as an archive: $e');
   }
 
-  if (archive.files.length > _kMaxArchiveMembers) {
-    throw ImportFormatException(
-      '“$name” holds ${archive.files.length} entries, which is far more than '
-      'any $flavor export — refusing to unpack it.',
-    );
-  }
-
-  final csvFiles = [
-    for (final f in archive.files)
-      if (f.isFile && _isCsvMember(f.name)) f,
-  ];
-
-  final declaredBytes =
-      csvFiles.fold<int>(0, (sum, f) => sum + (f.size > 0 ? f.size : 0));
-  if (declaredBytes > _kMaxUncompressedBytes) {
-    throw ImportFormatException(
-      '“$name” unpacks to more than '
-      '${(declaredBytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB of '
-      'CSV, which is not something we can import.',
-    );
-  }
-
-  if (csvFiles.isEmpty) {
-    throw ImportFormatException(
-      '“$name” is an archive with no CSV files inside '
-      '(${archive.files.length} entr${archive.files.length == 1 ? 'y' : 'ies'}). '
-      'Pick the $flavor CSV export instead.',
-    );
-  }
-
-  final out = <String>[];
-  final used = <String>{};
   try {
+    if (archive.files.length > _kMaxArchiveMembers) {
+      throw ImportFormatException(
+        '“$name” holds ${archive.files.length} entries, which is far more than '
+        'any $flavor export — refusing to unpack it.',
+      );
+    }
+
+    final csvFiles = [
+      for (final f in archive.files)
+        if (f.isFile && _isCsvMember(f.name)) f,
+    ];
+
+    final declaredBytes = csvFiles.fold<int>(
+      0,
+      (sum, f) => sum + (f.size > 0 ? f.size : 0),
+    );
+    if (declaredBytes > _kMaxUncompressedBytes) {
+      throw ImportFormatException(
+        '“$name” unpacks to more than '
+        '${(declaredBytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB of '
+        'CSV, which is not something we can import.',
+      );
+    }
+
+    if (csvFiles.isEmpty) {
+      throw ImportFormatException(
+        '“$name” is an archive with no CSV files inside '
+        '(${archive.files.length} entr${archive.files.length == 1 ? 'y' : 'ies'}). '
+        'Pick the $flavor CSV export instead.',
+      );
+    }
+
+    final out = <String>[];
+    final used = <String>{};
     for (final f in csvFiles) {
-    // Members can share a basename (`daily/data.csv`, `workouts/data.csv`).
-    // Flattening them onto one destination silently dropped one file and
-    // parsed the survivor twice.
+      // Members can share a basename (`daily/data.csv`, `workouts/data.csv`).
+      // Flattening them onto one destination silently dropped one file and
+      // parsed the survivor twice.
       var base = p.basename(f.name);
       if (!used.add(base)) {
         final stem = p.basenameWithoutExtension(base);
@@ -740,8 +743,8 @@ Future<List<String>> _extractCsvMembers(
       }
       out.add(destPath);
     }
+    return out;
   } finally {
     await input.close();
   }
-  return out;
 }

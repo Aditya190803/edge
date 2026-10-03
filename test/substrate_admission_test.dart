@@ -57,11 +57,14 @@ class _FakePathProvider extends PathProviderPlatform {
 /// decoded read, you wanted `derivableSourceSql()` instead.
 const _mayWriteThePredicate = {
   'lib/data/db.dart',
-  'lib/health/health_export.dart',
+  'lib/health/bridge_health_export.dart',
 };
 
 /// A hand-written admission predicate against the decoded store.
-final _handWritten = RegExp(r'source\s+IS\s+(NOT\s+)?NULL', caseSensitive: false);
+final _handWritten = RegExp(
+  r'source\s+IS\s+(NOT\s+)?NULL',
+  caseSensitive: false,
+);
 
 /// A line that is nothing but a comment cannot reach a table.
 final _pureComment = RegExp(r'^\s*(///|//|\*|/\*)');
@@ -154,7 +157,7 @@ void main() {
     final offenders = <String>[];
     for (final f in Directory('lib').listSync(recursive: true)) {
       if (f is! File || !f.path.endsWith('.dart')) continue;
-      final rel = p.relative(f.path);
+      final rel = p.relative(f.path).replaceAll('\\', '/');
       if (_mayWriteThePredicate.contains(rel)) continue;
       final lines = f.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
@@ -183,7 +186,7 @@ void main() {
 
   test('both fragments really are named in the two files that may', () {
     expect(
-      File('lib/health/health_export.dart').readAsStringSync(),
+      File('lib/health/bridge_health_export.dart').readAsStringSync(),
       contains(r'$kPrimaryBandSourceSql'),
       reason:
           'The HealthKit / Health Connect HR export is deliberately the NARROW '

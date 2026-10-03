@@ -28,22 +28,14 @@ import 'dart:math' as math;
 import 'strain_backfill.dart' show backfillStrainScale;
 
 import 'package:flutter/foundation.dart';
-import 'findings.dart';
 import 'nap_edits.dart';
 import 'package:openstrap_analytics/onehz.dart' as ana;
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_performance/firebase_performance.dart';
 
 import '../ble/adapters/signals.dart';
 import '../data/coverage_resolver.dart';
 import '../data/db.dart';
 import '../data/day_label.dart';
 import '../data/series_codec.dart';
-import '../notify/fired_keys.dart';
-import '../notify/notification_center.dart';
-import '../notify/notification_event.dart';
-import '../notify/tap_router.dart' show workoutSuggestionRoute;
-import '../telemetry/telemetry_service.dart';
 import 'crossday_pipeline.dart';
 import 'derive_pacing.dart';
 import 'hr_max.dart'
@@ -1720,6 +1712,7 @@ import 'substrate.dart';
 // output. kAnalyticsPin repinned to analytics main's tip (one commit past
 // PR #75's merge SHA).
 const int kAlgoVersion = 97;
+
 /// The sibling SHAs this version was derived against, asserted against
 /// pubspec.yaml in test/db_serve_version_and_reads_test.dart.
 ///
@@ -2015,7 +2008,8 @@ List<Map<String, dynamic>> composeOneHzFrames(
   final oneHzSpans = ownership[InputSignal.hr1Hz] ?? const <OwnedSpan>[];
   final accelSpans = ownership[InputSignal.accel1Hz] ?? const <OwnedSpan>[];
   final ppgSpans = ownership[InputSignal.ppgRedIr] ?? const <OwnedSpan>[];
-  final skinTempSpans = ownership[InputSignal.skinTempRaw] ?? const <OwnedSpan>[];
+  final skinTempSpans =
+      ownership[InputSignal.skinTempRaw] ?? const <OwnedSpan>[];
   if (accelSpans.isEmpty && ppgSpans.isEmpty && skinTempSpans.isEmpty) {
     // No secondary ownership resolved for any spliced signal (the single-
     // device/import case oneHzSpans itself already covers) — skip the
@@ -2040,7 +2034,8 @@ List<Map<String, dynamic>> composeOneHzFrames(
   ) {
     final group = byRecTs[(base['rec_ts'] as num).toInt()]!;
     if (spans.isEmpty || group.length < 2) return base;
-    final baseDeviceId = base['device_id'] as String? ?? LocalDb.kPrimaryDeviceId;
+    final baseDeviceId =
+        base['device_id'] as String? ?? LocalDb.kPrimaryDeviceId;
     final owner = spanAt(spans, (base['rec_ts'] as num).toInt())?.deviceId;
     if (owner == null || owner == baseDeviceId) return base;
     Map<String, dynamic>? ownerRow;
@@ -2177,10 +2172,10 @@ typedef _DatedValue = ({String date, double value});
 
 class _BaselineHistoryCache {
   _BaselineHistoryCache(this._series)
-      : _prefixMax = {
-          for (final entry in _series.entries)
-            entry.key: _buildPrefixMax(entry.value),
-        };
+    : _prefixMax = {
+        for (final entry in _series.entries)
+          entry.key: _buildPrefixMax(entry.value),
+      };
 
   /// `_prefixMax[key][i]` = the largest value among `_series[key][0..i]`
   /// inclusive. Built once here (the series is frozen for the sweep) so
@@ -2302,8 +2297,9 @@ class _BaselineHistoryCache {
     final foreignFamily = await LocalDb.foreignFamilyDates();
     Future<List<_DatedValue>> hist(String key) async {
       final rows = await LocalDb.metricSeries(key);
-      final seam =
-          LocalDb.familySeamKeys.contains(key) ? foreignFamily : const <String>{};
+      final seam = LocalDb.familySeamKeys.contains(key)
+          ? foreignFamily
+          : const <String>{};
       final out = <_DatedValue>[];
       for (final row in rows) {
         final date = row['date'];
@@ -2349,8 +2345,8 @@ class _BaselineHistoryCache {
   /// Used to detect wear GAPS: a date with no `dyn_p90` row means the band
   /// produced no usable motion that day.
   Set<String> datesFor(String key) => {
-        for (final s in _series[key] ?? const <_DatedValue>[]) s.date,
-      };
+    for (final s in _series[key] ?? const <_DatedValue>[]) s.date,
+  };
 
   /// The LARGEST value of [key] over every stored day strictly before
   /// [beforeDate], or null when there is none.
@@ -2490,9 +2486,7 @@ class _AsyncLock {
     final completer = Completer<void>();
     final previous = _tail;
     _tail = completer.future;
-    return previous
-        .then((_) => action())
-        .whenComplete(completer.complete);
+    return previous.then((_) => action()).whenComplete(completer.complete);
   }
 }
 
@@ -2530,6 +2524,7 @@ class DerivationEngine {
       _running = false;
     }
   }
+
   final Map<String, dynamic> _diag = {
     'running': false,
     'stage': 'idle',
@@ -2592,19 +2587,6 @@ class DerivationEngine {
       ..['active_days'] = <String>[]
       ..['concurrency'] = _deriveConcurrency
       ..['last_error'] = null;
-      
-    Trace? runTrace;
-    try {
-      // Heavy/force passes only. Light passes run many times a day (including
-      // all night in the background), and each trace is buffered + eventually
-      // uploaded — periodic radio wakeups from a local-first app, for timings
-      // the _diag map already captures locally.
-      if (Firebase.apps.isNotEmpty && (heavy || force)) {
-        runTrace = FirebasePerformance.instance.newTrace('derivation_engine_run');
-        await runTrace.start();
-        runTrace.putAttribute('mode', force ? 'force' : (heavy ? 'heavy' : 'light'));
-      }
-    } catch (_) {}
 
     try {
       final scope = await _deriveScope(heavy: heavy, force: force);
@@ -2730,7 +2712,6 @@ class DerivationEngine {
         _diag['stage'] = 'cross_day';
         await _runCrossDay(profile);
         _diag['stage'] = 'notifications';
-        await _runNotifications();
       }
       // 5. Prune raw — never for a day still inside its raw window / un-derived.
       // Runs on EVERY derive, not just a full restage: `rawRetentionDays` is
@@ -2794,9 +2775,11 @@ class DerivationEngine {
           female: workoutSex(profile.sex) == 'female',
         );
         if (rescaled.didWork) {
-          _log('[derive] strain rescale: ${rescaled.bundleDays} day(s) '
-              'rebuilt, ${rescaled.skipped} skipped (no TRIMP or no wake '
-              'window)');
+          _log(
+            '[derive] strain rescale: ${rescaled.bundleDays} day(s) '
+            'rebuilt, ${rescaled.skipped} skipped (no TRIMP or no wake '
+            'window)',
+          );
         }
       } catch (e) {
         _log('[derive] strain rescale failed (kept old values): $e');
@@ -2809,8 +2792,6 @@ class DerivationEngine {
         ..['active_days'] = const <String>[]
         ..['finished_at'] = finishedAt
         ..['duration_ms'] = finishedAt - startedAt;
-      
-      try { await runTrace?.stop(); } catch (_) {}
     }
   }
 
@@ -2910,17 +2891,16 @@ class DerivationEngine {
         if (rawDays.isNotEmpty && rawDays.difference(days).isEmpty) {
           await LocalDb.putBaseline(
             'tz_travel_guard',
-            jsonEncode({
-              'offset_min': DateTime.now().timeZoneOffset.inMinutes,
-            }),
+            jsonEncode({'offset_min': DateTime.now().timeZoneOffset.inMinutes}),
           );
-          _log('derive selected: full-coverage restage — timezone hold cleared');
+          _log(
+            'derive selected: full-coverage restage — timezone hold cleared',
+          );
         }
       }
       if (done > 0) {
         await _refreshBaselines();
         await _runCrossDay(profile);
-        await _runNotifications();
       }
       return done;
     } catch (e, st) {
@@ -3029,7 +3009,7 @@ class DerivationEngine {
   /// (`_targetDayWindow`), the prepared day's is the union that includes the
   /// candidate — so the spans differ, but the rule producing them does not.
   Future<(Map<InputSignal, List<OwnedSpan>>, Map<InputSignal, List<String>>)>
-      _resolveOwnership(int from, int to) async {
+  _resolveOwnership(int from, int to) async {
     final ownership = <InputSignal, List<OwnedSpan>>{};
     // The order each signal ACTUALLY resolved under, carried on the prepared
     // day so `priority_hash` names it by construction instead of re-reading
@@ -3071,10 +3051,9 @@ class DerivationEngine {
           // fallback.
           : [
               ...rawPriority,
-              ...{for (final iv in coverage) iv.deviceId}
-                  .difference(rawPriority.toSet())
-                  .toList()
-                ..sort(),
+              ...{
+                for (final iv in coverage) iv.deviceId,
+              }.difference(rawPriority.toSet()).toList()..sort(),
             ];
       priority[sig] = resolved;
       ownership[sig] = resolveOwnership(
@@ -3173,78 +3152,84 @@ class DerivationEngine {
     // with no timeout at all, so a hung staging pass never completed its future
     // — `_running` stayed true and `DeriveScheduler._drain` never returned, i.e.
     // all derivation was dead until app restart.
-    final (candidateJson, observationJson) =
-        await _runIsolateCancellable(() {
-      try {
-        final p = profileJson == null
-            ? null
-            : ana.SleepUserProfile.fromJson(
-                (jsonDecode(profileJson) as Map).cast<String, dynamic>());
-        // Warm-up gate — see SleepProfilePolicy.shouldBlend. Note the profile
-        // is only WITHHELD FROM STAGING here; accumulation into it happens on
-        // the main isolate in _foldObservationIntoProfile, which re-reads the
-        // current profile, so a withheld night still counts toward `nights`.
-        ana.cardioUserProfile =
-            SleepProfilePolicy.shouldBlend(p?.nights) ? p : null;
-      } catch (_) {
-        // Defense in depth: an incompatible/outdated persisted profile must
-        // fall back to a cold start, never throw inside the worker (an uncaught
-        // throw here bubbles to processDay's per-day catch → the day gets stuck
-        // marked 'error' every pass until the row is fixed).
-        ana.cardioUserProfile = null;
-      }
-      ana.cardioRecordObservations = true;
-      ana.resetCardioObservations();
-      final candidate = prepareSleepSessionCandidate(
-        searchSub,
-        targetDay: dayId,
-        override: override,
-        priorSleep: priorSleep,
-      );
-      // Fold the MAIN sleep (most epochs) of a freshly-staged night into the
-      // rolling profile — done here in the worker because the observations live
-      // in THIS isolate's globals. Skipped for overrides. EWMA self-seeds.
-      String? observationJson;
-      // IDEMPOTENT PER DAY. `fold()` is an EWMA step that also increments
-      // `nights`, and this path runs on EVERY staging pass for a day — an
-      // algo-version bump, a BLE-drain re-derive, a backfill sweep. Without a
-      // guard the same handful of real nights fold hundreds of times: a real
-      // user export showed `nights: 1348` against 12 days of data, which pins
-      // `personalWeight` at its 0.5 cap from day one and collapses the EWMA
-      // onto whichever day was re-derived last. Measured effect of that
-      // corrupt profile on the same nights: wake 4.3% -> 36.4%, deep 1.9% ->
-      // 0.0%. One fold per day_id, ever.
-      if (mayFold) {
-        final obs = ana.takeCardioObservations();
-        if (obs.isNotEmpty) {
-          obs.sort((a, b) => b.epochs.compareTo(a.epochs));
-          final main = obs.first;
-          if (main.epochs >= 120) {
-            // require ≥60 min — not a nap.
-            // Return the raw OBSERVATION, not a folded profile. Folding here
-            // would bake in the profile this worker read before staging began,
-            // and a concurrent day may have written a newer one since. The
-            // fold happens on the main isolate under the profile lock.
-            observationJson = jsonEncode({
-              'epochs': main.epochs,
-              'hr_floor_p5': main.hrFloorP5,
-              'hr_floor_p25': main.hrFloorP25,
-              'hr_sleep_median': main.hrSleepMedian,
-              'hr_arousal': main.hrArousal,
-              'rmssd_med': main.rmssdMed,
-              'rmssd_mad': main.rmssdMad,
-              'enmo_still_cut': main.enmoStillCut,
-              'enmo_move_cut': main.enmoMoveCut,
-              'lfhf_med': main.lfhfMed,
-              'rk_med': main.rkMed,
-            });
+    final (candidateJson, observationJson) = await _runIsolateCancellable(
+      () {
+        try {
+          final p = profileJson == null
+              ? null
+              : ana.SleepUserProfile.fromJson(
+                  (jsonDecode(profileJson) as Map).cast<String, dynamic>(),
+                );
+          // Warm-up gate — see SleepProfilePolicy.shouldBlend. Note the profile
+          // is only WITHHELD FROM STAGING here; accumulation into it happens on
+          // the main isolate in _foldObservationIntoProfile, which re-reads the
+          // current profile, so a withheld night still counts toward `nights`.
+          ana.cardioUserProfile = SleepProfilePolicy.shouldBlend(p?.nights)
+              ? p
+              : null;
+        } catch (_) {
+          // Defense in depth: an incompatible/outdated persisted profile must
+          // fall back to a cold start, never throw inside the worker (an uncaught
+          // throw here bubbles to processDay's per-day catch → the day gets stuck
+          // marked 'error' every pass until the row is fixed).
+          ana.cardioUserProfile = null;
+        }
+        ana.cardioRecordObservations = true;
+        ana.resetCardioObservations();
+        final candidate = prepareSleepSessionCandidate(
+          searchSub,
+          targetDay: dayId,
+          override: override,
+          priorSleep: priorSleep,
+        );
+        // Fold the MAIN sleep (most epochs) of a freshly-staged night into the
+        // rolling profile — done here in the worker because the observations live
+        // in THIS isolate's globals. Skipped for overrides. EWMA self-seeds.
+        String? observationJson;
+        // IDEMPOTENT PER DAY. `fold()` is an EWMA step that also increments
+        // `nights`, and this path runs on EVERY staging pass for a day — an
+        // algo-version bump, a BLE-drain re-derive, a backfill sweep. Without a
+        // guard the same handful of real nights fold hundreds of times: a real
+        // user export showed `nights: 1348` against 12 days of data, which pins
+        // `personalWeight` at its 0.5 cap from day one and collapses the EWMA
+        // onto whichever day was re-derived last. Measured effect of that
+        // corrupt profile on the same nights: wake 4.3% -> 36.4%, deep 1.9% ->
+        // 0.0%. One fold per day_id, ever.
+        if (mayFold) {
+          final obs = ana.takeCardioObservations();
+          if (obs.isNotEmpty) {
+            obs.sort((a, b) => b.epochs.compareTo(a.epochs));
+            final main = obs.first;
+            if (main.epochs >= 120) {
+              // require ≥60 min — not a nap.
+              // Return the raw OBSERVATION, not a folded profile. Folding here
+              // would bake in the profile this worker read before staging began,
+              // and a concurrent day may have written a newer one since. The
+              // fold happens on the main isolate under the profile lock.
+              observationJson = jsonEncode({
+                'epochs': main.epochs,
+                'hr_floor_p5': main.hrFloorP5,
+                'hr_floor_p25': main.hrFloorP25,
+                'hr_sleep_median': main.hrSleepMedian,
+                'hr_arousal': main.hrArousal,
+                'rmssd_med': main.rmssdMed,
+                'rmssd_mad': main.rmssdMad,
+                'enmo_still_cut': main.enmoStillCut,
+                'enmo_move_cut': main.enmoMoveCut,
+                'lfhf_med': main.lfhfMed,
+                'rk_med': main.rkMed,
+              });
+            }
           }
         }
-      }
-      return (jsonEncode(candidate.toJson()), observationJson);
-    }, _perDayTimeout, label: 'sleep-staging $dayId');
+        return (jsonEncode(candidate.toJson()), observationJson);
+      },
+      _perDayTimeout,
+      label: 'sleep-staging $dayId',
+    );
     final candidate = SleepSessionCandidate.fromJson(
-        (jsonDecode(candidateJson) as Map).cast<String, dynamic>());
+      (jsonDecode(candidateJson) as Map).cast<String, dynamic>(),
+    );
     if (override == null) {
       // NEVER RE-STAGE A NIGHT SHORTER THAN THE ONE ALREADY BANKED (#242).
       //
@@ -3270,11 +3255,14 @@ class DerivationEngine {
       if (storedJson is String && storedJson.isNotEmpty) {
         try {
           final prev = SleepSessionCandidate.fromJson(
-              (jsonDecode(storedJson) as Map).cast<String, dynamic>());
+            (jsonDecode(storedJson) as Map).cast<String, dynamic>(),
+          );
           if (isRicherSleep(prev, candidate)) {
-            _log('derive $dayId: kept the banked night '
-                '(${_tstSec(prev)} s) over this pass\'s '
-                '${_tstSec(candidate)} s — less substrate, not a shorter night');
+            _log(
+              'derive $dayId: kept the banked night '
+              '(${_tstSec(prev)} s) over this pass\'s '
+              '${_tstSec(candidate)} s — less substrate, not a shorter night',
+            );
             return prev;
           }
         } catch (_) {
@@ -3315,8 +3303,10 @@ class DerivationEngine {
         try {
           await _foldObservationIntoProfile(dayId, observationJson);
         } catch (e) {
-          _log('sleep profile fold skipped for $dayId (day result kept, '
-              'this night will not contribute to the profile): $e');
+          _log(
+            'sleep profile fold skipped for $dayId (day result kept, '
+            'this night will not contribute to the profile): $e',
+          );
         }
       }
     }
@@ -3332,7 +3322,9 @@ class DerivationEngine {
   /// that re-check is what turns a read-modify-write race into a lost fold plus
   /// a lost day_id, and the day then re-folds forever.
   Future<void> _foldObservationIntoProfile(
-      String dayId, String observationJson) async {
+    String dayId,
+    String observationJson,
+  ) async {
     final Map<String, dynamic> o;
     try {
       o = (jsonDecode(observationJson) as Map).cast<String, dynamic>();
@@ -3368,7 +3360,10 @@ class DerivationEngine {
       final usable = SleepProfilePolicy.usableProfileJson(current);
       final freshDays = SleepProfilePolicy.foldedDays(usable);
       if (!SleepProfilePolicy.shouldFold(
-          alreadyFolded: freshDays, dayId: dayId, hasOverride: false)) {
+        alreadyFolded: freshDays,
+        dayId: dayId,
+        hasOverride: false,
+      )) {
         return null;
       }
       final ana.SleepUserProfile base;
@@ -3376,12 +3371,18 @@ class DerivationEngine {
         base = usable == null
             ? const ana.SleepUserProfile()
             : ana.SleepUserProfile.fromJson(
-                (jsonDecode(usable) as Map).cast<String, dynamic>());
+                (jsonDecode(usable) as Map).cast<String, dynamic>(),
+              );
       } catch (_) {
         return null; // unreadable — leave it for the cold-start path
       }
-      return jsonEncode(SleepProfilePolicy.withFoldedDays(
-          base.fold(observed).toJson(), freshDays, dayId));
+      return jsonEncode(
+        SleepProfilePolicy.withFoldedDays(
+          base.fold(observed).toJson(),
+          freshDays,
+          dayId,
+        ),
+      );
     });
   }
 
@@ -3505,8 +3506,12 @@ class DerivationEngine {
       }
       if (message is List) {
         // `onError` wire format ([error, stackTrace]) — an uncaught throw.
-        fail(Exception('prepare worker crashed: '
-            '${message.isNotEmpty ? message.first : "no detail"}'));
+        fail(
+          Exception(
+            'prepare worker crashed: '
+            '${message.isNotEmpty ? message.first : "no detail"}',
+          ),
+        );
         return;
       }
       if (message == null) {
@@ -3517,13 +3522,15 @@ class DerivationEngine {
     // M5: the resolved spans for this call's window, one list per anchor
     // signal. Read once, outside the loop — `ownership` never changes while
     // this range loads.
-    final rrOwnedSpans = ownership[InputSignal.rrIntervals] ?? const <OwnedSpan>[];
+    final rrOwnedSpans =
+        ownership[InputSignal.rrIntervals] ?? const <OwnedSpan>[];
     bool owned(List<OwnedSpan> spans, Map<String, dynamic> r) {
       if (spans.isEmpty) return true;
       final owner = spanAt(spans, (r['rec_ts'] as num).toInt())?.deviceId;
       if (owner == null) return true;
       return owner == (r['device_id'] as String? ?? LocalDb.kPrimaryDeviceId);
     }
+
     try {
       final worker = await ready.future;
       worker.send(const {'type': 'config', 'mode': 'substrate'});
@@ -3582,14 +3589,16 @@ class DerivationEngine {
           // would stall the keyset cursor on a page whose surviving rows are
           // fewer than the batch size and silently truncate the day.
           final isFinalPage = decodedRows.length < _rawDecodeBatchSize;
-          final combined =
-              carry.isEmpty ? decodedRows : [...carry, ...decodedRows];
+          final combined = carry.isEmpty
+              ? decodedRows
+              : [...carry, ...decodedRows];
           final splitIdx = trailingRecTsGroupStart(combined);
           // splitIdx == 0 means the WHOLE page-sized batch shares one
           // rec_ts — a pathological amount of contention no real pairing
           // produces. Send it as-is rather than risk carrying forever.
-          final toSend =
-              (isFinalPage || splitIdx == 0) ? combined : combined.sublist(0, splitIdx);
+          final toSend = (isFinalPage || splitIdx == 0)
+              ? combined
+              : combined.sublist(0, splitIdx);
           carry = (isFinalPage || splitIdx == 0)
               ? const <Map<String, dynamic>>[]
               : combined.sublist(splitIdx);
@@ -3958,7 +3967,6 @@ class DerivationEngine {
       await _refreshBaselines();
       // Cross-day rollup + notifications reflect the refreshed scalars.
       await _runCrossDay(profile);
-      await _runNotifications();
       // Store the new signature so the next tick is a cheap no-op until it moves.
       await LocalDb.setCursor('baseline_sig', await _baselineSignature());
       return done;
@@ -4007,7 +4015,6 @@ class DerivationEngine {
 
   /// Throttle for the readiness-absent diagnostic log — one per calendar day
   /// so repeated light-pass re-derives of today don't spam the outbox.
-  String? _loggedReadinessAbsentFor;
 
   /// Bounded worker-pool size for concurrent per-day derivation. Days within
   /// a single run share ONE frozen baseline snapshot (`_BaselineHistoryCache`
@@ -4088,7 +4095,6 @@ class DerivationEngine {
   Future<void> finalizeImport(Profile profile) async {
     await _refreshBaselines();
     await _runCrossDay(profile);
-    await _runNotifications();
   }
 
   // ── derive one day ──────────────────────────────────────────────────────────
@@ -4208,73 +4214,6 @@ class DerivationEngine {
       _perDayTimeout,
       label: 'day-bundle ${day.date}',
     );
-    // Readiness came back absent for TODAY specifically (not a historical
-    // backfill day, which would just be noise) — log why. This ran inside
-    // Isolate.run so it couldn't call Firebase itself; it just returned the
-    // per-input diagnostic (see onehz_pipeline.dart's readinessAbsentDiag).
-    // Throttled to once/day so repeated light-pass re-derives of today don't
-    // spam the outbox with the same finding.
-    final absentDiag = bundle['readiness_absent_diag'];
-    if (absentDiag != null &&
-        day.date == todayLabel() &&
-        _loggedReadinessAbsentFor != day.date) {
-      _loggedReadinessAbsentFor = day.date;
-      TelemetryService.instance.breadcrumb('readiness absent: $absentDiag');
-      // Flattened, not the raw nested map: record()'s Analytics forwarding
-      // only keeps num/String values as-is and stringifies everything else,
-      // so passing {'hrv': {'value': ..., 'baseline_n': ...}, ...} directly
-      // would turn each input into one unqueryable "{value: true, ...}"
-      // string instead of separately filterable fields.
-      final diag = (absentDiag as Map).cast<String, dynamic>();
-      final flat = <String, dynamic>{};
-      for (final key in ['hrv', 'rhr', 'resp', 'temp']) {
-        final v = (diag[key] as Map?)?.cast<String, dynamic>();
-        if (v == null) continue;
-        flat['${key}_value'] = v['value'];
-        flat['${key}_baseline_n'] = v['baseline_n'];
-      }
-      flat['note'] = diag['note'];
-      TelemetryService.instance.record(
-        kind: 'event',
-        level: 'warn',
-        message: 'readiness_absent',
-        context: flat,
-      );
-      // Also surface the SURPRISING case — readiness absent when it should NOT
-      // be (adequate inputs, not the honest cold-start `need_baseline` note) —
-      // as a queryable Crashlytics non-fatal, so a residual "readiness '—' even
-      // with sleep present" is diagnosable from the per-input flags WITHOUT GA4
-      // access. Cold-start (need_baseline) absences stay Analytics-only so this
-      // stays low-noise (and, post the MAD/SD-z fallback, rare).
-      //
-      // GATE: only fire the Crashlytics non-fatal when at least one input
-      // actually HAD a value with an adequate baseline (`value == true` — the
-      // "should have computed" case) — a day with literally no sleep session
-      // and no day-HR (every input false) is an honest, unremarkable miss, not
-      // a surprise, and was previously alarming here just as loudly as a real
-      // regression (analytics-only note above still records it either way).
-      final note = (diag['note'] as String?) ?? '';
-      final anyValuePresent = ['hrv', 'rhr', 'resp', 'temp'].any((key) {
-        final v = (diag[key] as Map?)?.cast<String, dynamic>();
-        return v != null && v['value'] == true;
-      });
-      if (!note.startsWith('need_baseline') && anyValuePresent) {
-        final summary = StringBuffer('readiness_absent');
-        for (final key in ['hrv', 'rhr', 'resp', 'temp']) {
-          final v = (diag[key] as Map?)?.cast<String, dynamic>();
-          if (v == null) continue;
-          summary.write(
-              ' $key=${v['value'] == true ? 'Y' : 'n'}/${v['baseline_n']}');
-        }
-        summary.write(' | $note');
-        TelemetryService.instance.recordNonFatal(
-          StateError(summary.toString()),
-          StackTrace.current,
-          reason: 'readiness_absent',
-        );
-      }
-    }
-
     // Where this day's sleep window came from (auto / auto_fallback / manual /
     // confirmed) — drives the Sleep screen's "is this right?" prompt + the
     // manual-edit affordance. Carried verbatim from the segmentation candidate.
@@ -4297,14 +4236,17 @@ class DerivationEngine {
     // (wake_day_features) can't clobber the early-read path either. With no day
     // substrate and no sleep substrate the second half has nothing to add — its
     // scalars are all derived from those two.
-    final producedNothing = daySub.isEmpty &&
+    final producedNothing =
+        daySub.isEmpty &&
         sleepSub.isEmpty &&
         (scMap == null || !scMap.values.any((v) => v != null));
     if (producedNothing) {
       final existing = await LocalDb.dayResult(day.date);
       if (_isRealDayResult(existing)) {
-        _log('derive ${day.date}: no substrate (raw pruned) — kept the '
-            'existing result rather than blanking it');
+        _log(
+          'derive ${day.date}: no substrate (raw pruned) — kept the '
+          'existing result rather than blanking it',
+        );
         return;
       }
     }
@@ -4339,21 +4281,25 @@ class DerivationEngine {
     if (!producedNothing &&
         nightSubstrateRegressed(
           sleepSubEmpty: sleepSub.isEmpty,
-          nightScalarsNull: scMap == null ||
+          nightScalarsNull:
+              scMap == null ||
               (scMap['rhr'] == null &&
                   scMap['rmssd'] == null &&
                   scMap['readiness'] == null),
         )) {
       final existingNight = await LocalDb.dayResult(day.date);
-      final existingHadNight = existingNight != null &&
+      final existingHadNight =
+          existingNight != null &&
           (existingNight['rhr'] != null ||
               existingNight['rmssd'] != null ||
               existingNight['readiness'] != null);
       if (existingHadNight) {
-        _log('derive ${day.date}: sleep-window substrate pruned out from '
-            "under a day that already had real night scalars — kept the "
-            'existing result rather than nulling the readiness baseline '
-            '(edge#305)');
+        _log(
+          'derive ${day.date}: sleep-window substrate pruned out from '
+          "under a day that already had real night scalars — kept the "
+          'existing result rather than nulling the readiness baseline '
+          '(edge#305)',
+        );
         return;
       }
     }
@@ -4404,10 +4350,8 @@ class DerivationEngine {
       // day's end), read here because the isolate has no DB handle. These are
       // the strap's own reports: a band on a table or a charger is perfectly
       // still and otherwise reads as deep rest to a motion-based detector.
-      final napLo =
-          day.napSub.length == 0 ? dayLo : day.napSub.tsSec.first;
-      final napHi =
-          day.napSub.length == 0 ? dayHi : day.napSub.tsSec.last + 60;
+      final napLo = day.napSub.length == 0 ? dayLo : day.napSub.tsSec.first;
+      final napHi = day.napSub.length == 0 ? dayHi : day.napSub.tsSec.last + 60;
       // ...and back to SLEEP ONSET, which is routinely EARLIER than napLo. This
       // day's sleep is the night that ENDED this morning, so its onset sits at
       // ~23:00 YESTERDAY — before local midnight, before the day's first
@@ -4532,8 +4476,10 @@ class DerivationEngine {
         dayEndSec: day.endSec,
         dataNowSec: dataNowSec,
       );
-      final blocks =
-          await _runDayBlocksCancellable(blocksInput, _perDayTimeout);
+      final blocks = await _runDayBlocksCancellable(
+        blocksInput,
+        _perDayTimeout,
+      );
 
       // Merge the computed blocks back into the isolate-1 bundle. scMap is the
       // CastMap view over bundle['scalars'], so addAll writes through — nap_min /
@@ -4549,8 +4495,8 @@ class DerivationEngine {
         (bundle['absent_notes'] as Map?)?['trimp'] = trimpNote;
       }
       (bundle['series'] as Map?)?.cast<String, dynamic>().addAll(
-            blocks.seriesPatch,
-          );
+        blocks.seriesPatch,
+      );
       scMap?.addAll(blocks.scalarPatch);
 
       // M5: COVERAGE. Same map, one key, written only when there is
@@ -4610,54 +4556,14 @@ class DerivationEngine {
           'created_at': DateTime.now().millisecondsSinceEpoch,
         });
       }
-      final nb = blocks.notifBout;
-      // Only for a bout that is STILL waiting on an answer. The detector is
-      // pure and re-derives the same bouts every pass; dismissing one, logging
-      // it, or logging any session that covers its window retires the row
-      // (`supersededSuggestionIds`), and none of that reaches the detector. So
-      // the live table is what decides, not the detection — a notification
-      // about a workout already in the log is how someone turns all of them
-      // off. `putWorkoutSuggestion` ran a few lines up, so the row is there.
-      final live = nb == null
-          ? false
-          : (await LocalDb.activeWorkoutSuggestions())
-              .any((r) => r['id'] == nb.id);
-      if (nb != null && live) {
-        await NotificationCenter.instance.emit(
-          NotificationEvent(
-            // Per-bout, not per-day — a per-day key silently swallowed the
-            // notification for a second real workout later the same day
-            // (fire-once-per-key by design). The suggestion id is stable across
-            // re-derive passes re-detecting the SAME bout, so that case still
-            // dedupes, and it is date-prefixed so the fired-key store prunes it.
-            dedupeKey: '${nb.id}:auto_workout',
-            // NOT `recovery`. That channel is where "your recovery is ready"
-            // lived and `classOf` drops everything on it, so this notification
-            // has never once reached anybody: the suggestion row was written,
-            // the user was never told. This is a prompt about something that
-            // happened — reminders channel, NotifClass.prompt, and it respects
-            // quiet hours like every prompt should.
-            category: NotifCategory.reminders,
-            priority: NotifPriority.normal,
-            title: 'Did you work out?',
-            body: 'We spotted ~${nb.durationMin} min of elevated activity. '
-                'Tap to log it.',
-            date: day.date,
-            route: workoutSuggestionRoute(nb.id),
-          ),
-          // This runs from headless background derivation too — never prompt
-          // for permission from a background context (violates the OS
-          // background contract and can incorrectly cache permission=denied).
-          allowPermissionPrompt: false,
-        );
-      }
-
       await _persistWakeDayFeatures(dayId: day.date, wake: blocks.wake);
     } catch (e, st) {
       secondHalfOk = false;
-      _log('day-blocks (offloaded second half) failed for ${day.date} — '
-          'persisting headline day (partial): $e');
-      TelemetryService.instance.recordNonFatal(e, st, reason: 'day_blocks_failed');
+      _log(
+        'day-blocks (offloaded second half) failed for ${day.date} — '
+        'persisting headline day (partial): $e',
+      );
+      _log('day-blocks stack: $st');
     }
 
     // Finalize once the DATA EDGE has moved >48 h past the day's wake — i.e. we
@@ -4702,9 +4608,11 @@ class DerivationEngine {
           );
           effectivePartial = outcome.partial;
           effectiveFinalized = outcome.finalized;
-          _log('derive ${day.date}: second half failed — carried the previous '
-              "result's detail blocks forward (v$prevVersion -> v$kAlgoVersion, "
-              'partial=$effectivePartial)');
+          _log(
+            'derive ${day.date}: second half failed — carried the previous '
+            "result's detail blocks forward (v$prevVersion -> v$kAlgoVersion, "
+            'partial=$effectivePartial)',
+          );
         }
       }
     }
@@ -4746,8 +4654,7 @@ class DerivationEngine {
       // not re-read here. Re-reading could stamp an order the user changed
       // while the day was computing, i.e. one no output of this day used.
       // Null only when no resolve ran at all (the import path).
-      priorityHash:
-          day.priority.isEmpty ? null : priorityKey(day.priority),
+      priorityHash: day.priority.isEmpty ? null : priorityKey(day.priority),
       series: {
         'rhr': sc('rhr'),
         'rmssd': sc('rmssd'),
@@ -4915,7 +4822,9 @@ class DerivationEngine {
     if (payload['skipped'] == true) return false;
     final scalars = payload['scalars'];
     if (scalars is Map && scalars.values.any((v) => v != null)) return true;
-    return row['rhr'] != null || row['rmssd'] != null || row['readiness'] != null;
+    return row['rhr'] != null ||
+        row['rmssd'] != null ||
+        row['readiness'] != null;
   }
 
   /// Fill [next]'s missing detail from [prev] when the second-half compute
@@ -5024,8 +4933,7 @@ class DerivationEngine {
     int dayEndSec,
     int dataNowSec, {
     required String reason,
-  }) =>
-      _markDaySkipped(dayId, dayEndSec, dataNowSec, reason: reason);
+  }) => _markDaySkipped(dayId, dayEndSec, dataNowSec, reason: reason);
 
   /// Persist a minimal skip marker so a pathological day isn't retried forever.
   ///
@@ -5048,8 +4956,10 @@ class DerivationEngine {
     try {
       final existing = await LocalDb.dayResult(dayId);
       if (_isRealDayResult(existing)) {
-        _log('derive $dayId $reason — existing result kept (not overwritten '
-            'with a skip marker)');
+        _log(
+          'derive $dayId $reason — existing result kept (not overwritten '
+          'with a skip marker)',
+        );
         return;
       }
       await LocalDb.putDayResult(
@@ -5061,7 +4971,8 @@ class DerivationEngine {
         // prepare budget) still finalize once aged out, so they aren't retried
         // forever. A timeout or a one-off error does not — that day gets
         // another chance while it still has raw.
-        finalized: !_transientSkipReasons.contains(reason) &&
+        finalized:
+            !_transientSkipReasons.contains(reason) &&
             (dayEndSec + _finalizationSec) < dataNowSec,
         skipped: true,
       );
@@ -5134,7 +5045,9 @@ class DerivationEngine {
     // day — the new cross-day family silently saw nothing on the very pass the
     // bump existed to trigger. A shape the current code did not write is not
     // reusable, whatever day it was built for.
-    if ((decoded['algo_version'] as num?)?.toInt() != kAlgoVersion) return false;
+    if ((decoded['algo_version'] as num?)?.toInt() != kAlgoVersion) {
+      return false;
+    }
     final builtFor = decoded['built_for_day'];
     return builtFor is String && builtFor.isNotEmpty && builtFor == today;
   }
@@ -5199,8 +5112,10 @@ class DerivationEngine {
       if (dropped.isNotEmpty) {
         // Loud, not debug-only: a dropped field is a metric the user will see
         // as absent, and the reason lives here and nowhere else.
-        debugPrint('[derive] crossday: ${dropped.length} field(s) were not '
-            'JSON-encodable and were stored as absent: ${dropped.join(", ")}');
+        debugPrint(
+          '[derive] crossday: ${dropped.length} field(s) were not '
+          'JSON-encodable and were stored as absent: ${dropped.join(", ")}',
+        );
       }
       _log('crossday: stored over ${days.length} day(s)');
     } catch (e, st) {
@@ -5208,8 +5123,10 @@ class DerivationEngine {
       // — the reader's version/day stamp will reject it and the whole
       // cross-day family goes absent — so it has to be visible in a release
       // build, with the stack, or the cause is unrecoverable after the fact.
-      debugPrint('[derive] crossday BUNDLE DROPPED — the stored artifact is '
-          'now stale and every cross-day metric will read absent: $e\n$st');
+      debugPrint(
+        '[derive] crossday BUNDLE DROPPED — the stored artifact is '
+        'now stale and every cross-day metric will read absent: $e\n$st',
+      );
       _log('crossday FAILED/skipped: $e');
     }
   }
@@ -5285,207 +5202,53 @@ class DerivationEngine {
     // both static, so this whole transform+encode step is isolate-safe.
     final rows = await LocalDb.recentDayResults(_crossDayWindow);
     final today = LocalDb.localDayLabelNow();
-    final (days, json) = await _runIsolateCancellable(() {
-      final days = <Map<String, dynamic>>[];
-      for (final row in rows.reversed) {
-        final payload = _decodeBundle(row['payload_json']);
-        if (payload == null) continue;
-        if (payload['skipped'] == true) continue;
-        final rec = _crossDayRecord(row, payload);
-        if (rec == null) continue;
-        // Today's own row updates on every derive pass while the night is
-        // still syncing/settling — feeding that partial reading into the
-        // illness/anomaly CUSUM can fire a false "possible illness onset" on
-        // data that's really just a truncated/mid-drain night. Only exclude
-        // TODAY specifically; older days already had their 48h to settle.
-        //
-        // FLAG it rather than DROP it: `days` is the single input list for the
-        // whole cross-day bundle, so dropping today also silently removed it
-        // from readiness/glass-box, the resting-HR trend-shift CUSUM, load,
-        // sleep debt and `recent` (whose last row dates every notification).
-        // buildCrossDayBundle nulls only the alert inputs for a flagged day.
-        if (row['day_id'] == today && (row['finalized'] as num?) != 1) {
-          rec['unsettled'] = true;
+    final (days, json) = await _runIsolateCancellable(
+      () {
+        final days = <Map<String, dynamic>>[];
+        for (final row in rows.reversed) {
+          final payload = _decodeBundle(row['payload_json']);
+          if (payload == null) continue;
+          if (payload['skipped'] == true) continue;
+          final rec = _crossDayRecord(row, payload);
+          if (rec == null) continue;
+          // Today's own row updates on every derive pass while the night is
+          // still syncing/settling — feeding that partial reading into the
+          // illness/anomaly CUSUM can fire a false "possible illness onset" on
+          // data that's really just a truncated/mid-drain night. Only exclude
+          // TODAY specifically; older days already had their 48h to settle.
+          //
+          // FLAG it rather than DROP it: `days` is the single input list for the
+          // whole cross-day bundle, so dropping today also silently removed it
+          // from readiness/glass-box, the resting-HR trend-shift CUSUM, load,
+          // sleep debt and `recent` (whose last row dates every notification).
+          // buildCrossDayBundle nulls only the alert inputs for a flagged day.
+          if (row['day_id'] == today && (row['finalized'] as num?) != 1) {
+            rec['unsettled'] = true;
+          }
+          // Explicit identity for TODAY-scoped reads. `unsettled` cannot serve
+          // this purpose — it is only set while today is unfinalized. Without a
+          // flag, a today-scoped consumer can only take the LAST record
+          // positionally, which on a day with no derived row is YESTERDAY's.
+          if (row['day_id'] == today) rec['is_today'] = true;
+          days.add(rec);
         }
-        // Explicit identity for TODAY-scoped reads. `unsettled` cannot serve
-        // this purpose — it is only set while today is unfinalized. Without a
-        // flag, a today-scoped consumer can only take the LAST record
-        // positionally, which on a day with no derived row is YESTERDAY's.
-        if (row['day_id'] == today) rec['is_today'] = true;
-        days.add(rec);
-      }
-      // `built_for_day` is what makes the `is_today` stamps inside `days`
-      // interpretable later. Without it the envelope carries day-relative facts
-      // with no day attached, and any reader has to assume freshness.
-      return (
-        days,
-        jsonEncode({
-          'algo_version': kAlgoVersion,
-          'built_for_day': today,
-          'days': days,
-        })
-      );
-    }, _crossDayTimeout, label: 'crossday-input');
+        // `built_for_day` is what makes the `is_today` stamps inside `days`
+        // interpretable later. Without it the envelope carries day-relative facts
+        // with no day attached, and any reader has to assume freshness.
+        return (
+          days,
+          jsonEncode({
+            'algo_version': kAlgoVersion,
+            'built_for_day': today,
+            'days': days,
+          }),
+        );
+      },
+      _crossDayTimeout,
+      label: 'crossday-input',
+    );
     await LocalDb.putBaseline('crossday_input', json);
     return days;
-  }
-
-  // ── notifications generator ─────────────────────────────────────────────────
-
-  Future<void> _runNotifications() async {
-    try {
-      final cdRow = await LocalDb.baseline('crossday');
-      final cd = _decodeBundle(cdRow?['payload_json']);
-      if (cd == null) return;
-      String? date;
-      var lastUnsettled = false;
-      final recent = cd['recent'];
-      if (recent is List && recent.isNotEmpty) {
-        final last = recent.last;
-        if (last is Map) {
-          date = last['date'] as String?;
-          lastUnsettled = last['unsettled'] == true;
-        }
-      }
-      final illness = cd['illness'] is Map ? cd['illness'] as Map : null;
-      final anomaly = cd['anomaly'] is Map ? cd['anomaly'] as Map : null;
-      final temp = cd['temp_illness'] is Map ? cd['temp_illness'] as Map : null;
-      final gb = cd['readiness_glassbox'] is Map
-          ? cd['readiness_glassbox'] as Map
-          : null;
-      date ??=
-          (illness?['date'] ?? anomaly?['date'] ?? temp?['date']) as String?;
-      // ANCHORED TO THE DAY THIS IS RUNNING ON, not to the newest DERIVED day.
-      //
-      // Every date in here is the newest day the rollup happened to see, which
-      // is not today whenever the newest data is old: import a back-catalogue
-      // (finalizeImport runs this straight after) or bump kAlgoVersion after a
-      // week off the wrist, and a critical, quiet-hours-overriding "Possible
-      // illness onset" goes out about nights from last November — in the
-      // present tense, with the irregular-rhythm copy saying "today".
-      //
-      // Yesterday still counts: before the first sync of the day (and just
-      // after midnight) the newest derived night IS yesterday's, and that
-      // finding is current. Anything older is history, and history does not
-      // interrupt.
-      final today = LocalDb.localDayLabelNow();
-      final yesterday = dayLabelOf(
-        DateTime.now().subtract(const Duration(days: 1)),
-      );
-      if (date == null || (date != today && date != yesterday)) return;
-      // ONE exception per day, not one per finding.
-      //
-      // These six signals are correlated by construction — an illness flag, an
-      // overnight anomaly and an elevated skin temperature are usually the same
-      // morning saying the same thing — and they used to fire as six separate
-      // notifications, two of them on the recovery channel. Under the
-      // three-class rule (alarm · exception · lookback) the day's findings are
-      // collected here and presented once, aggregated, so the user gets one
-      // buzz and the whole picture instead of six buzzes and a third of it.
-      //
-      // `medical` marks the DETECTION-class findings — the ones the design
-      // sanctions interrupting for. It only affects the dedupe key (below),
-      // never the wording.
-      // The SENTENCES live in findings.dart, with the log that reads the same
-      // six. They were inline here, which is exactly how a second surface for
-      // the same detector ends up quietly differently worded.
-      final findings = <Finding>[];
-      if (illness != null && illness['state'] == 'red') {
-        findings.add(Finding(FindingKind.illness, date));
-      }
-      if (anomaly != null && anomaly['flagged'] == true) {
-        findings.add(Finding(FindingKind.anomaly, date));
-      }
-      if (temp != null && temp['flag'] == 'elevated') {
-        findings.add(Finding(FindingKind.tempElevated, date));
-      }
-      // 24/7 irregular-rhythm SCREEN (not a diagnosis).
-      final irregFlag = await LocalDb.metricValueOn(date, 'irregular_rhythm_flag');
-      if (irregFlag == 1.0) {
-        findings.add(Finding(FindingKind.irregularRhythm, date));
-      }
-      final score = gb?['value'] is Map ? (gb!['value'] as Map)['score'] : null;
-      if (score is num && score < kLowReadiness) {
-        findings.add(Finding(FindingKind.lowReadiness, date));
-      }
-
-      // "Something changed" — online CUSUM on the recent resting-HR series.
-      // Only when the shift lands on the day this notification is STAMPED with
-      // (a fresh change, not old history we'd re-announce every pass).
-      //
-      // The dates travel with the values. `rhrSeries` is compacted — days with
-      // no nocturnal RHR are skipped, which is most days for some users — so
-      // `index == length - 1` meant "the most recent day that HAPPENED to have
-      // an rhr". With a few null days in between, a week-old shift satisfied it
-      // and went out at critical priority under today's date.
-      //
-      // `recent[].rhr` is written WITHOUT the `settled()` guard on purpose —
-      // the guard's comment names `recent` and "RHR trend" as things an
-      // unsettled day still feeds, and the trend chart is right to show it.
-      // A critical-priority ALERT is not: a night that is only half drained
-      // reads several bpm high, fires "your resting HR trend shifted", and then
-      // corrects an hour later with the day's dedupe key already claimed. So
-      // the trend keeps the raw value and this one consumer stands down until
-      // the day settles.
-      final rhrSeries = <double>[];
-      final rhrDates = <String?>[];
-      if (recent is List) {
-        for (final r in recent) {
-          if (r is Map && r['rhr'] is num) {
-            rhrSeries.add((r['rhr'] as num).toDouble());
-            rhrDates.add(r['date'] as String?);
-          }
-        }
-      }
-      if (!lastUnsettled && rhrSeries.length >= 10) {
-        final dets = ana.cusumChangePoints(rhrSeries, h: 5.0);
-        if (dets.isNotEmpty && rhrDates[dets.last.index] == date) {
-          findings.add(Finding(FindingKind.rhrShift, date,
-              risen: dets.last.direction > 0));
-        }
-      }
-
-      if (findings.isEmpty) return;
-      final one = findings.length == 1;
-      // The key carries the day's HIGHEST severity class, not just the day.
-      //
-      // With a bare '$date:exception' the first pass of the day claimed the
-      // slot whatever it found, so a day that opened with nothing but "low
-      // readiness" and then turned an illness flag RED in the evening
-      // discarded the illness flag — the one class of notification the design
-      // does sanction, suppressed by a low-priority sibling of the same day.
-      // Keyed this way an ESCALATION still gets through exactly once, while a
-      // re-derive that finds the same class again (or merely adds another
-      // finding of a class already announced) stays silent.
-      // The other direction needs saying too: a day that opens RED and then
-      // DE-escalates (the illness flag clears by evening, "low readiness"
-      // remains) used to buzz a second time under the still-unclaimed plain
-      // key, about a finding the morning's aggregate already carried. So a
-      // presented medical exception burns the day's plain slot as well —
-      // only on a real present, or a medical one lost to quiet hours would
-      // take the plain one down with it.
-      final medical = findings.any((f) => f.medical);
-      final fired = await NotificationCenter.instance.emit(
-        NotificationEvent(
-          dedupeKey: medical ? '$date:exception:medical' : '$date:exception',
-          category: NotifCategory.health,
-          priority: NotifPriority.critical,
-          title: one
-              ? findings.first.title
-              : '${findings.length} things to look at',
-          body: one
-              ? findings.first.detail
-              : findings.map((f) => '• ${f.title} — ${f.detail}').join('\n'),
-          date: date,
-          route: '/heart',
-        ),
-      );
-      if (medical && fired) {
-        await const FiredKeyStore().recordFired('$date:exception');
-      }
-    } catch (e) {
-      _log('notifications FAILED/skipped: $e');
-    }
   }
 
   /// Decode a stored day bundle, normalizing the compact curve format back to
@@ -5555,7 +5318,8 @@ class DerivationEngine {
       // Unknown stays NULL, never 0: a night whose segmentation did not report
       // what it watched is not a night we watched none of, and 0 would read as
       // a confident "no coverage".
-      'sleep_coverage': (inBedSec == null || inBedSec <= 0 || observedSec == null)
+      'sleep_coverage':
+          (inBedSec == null || inBedSec <= 0 || observedSec == null)
           ? null
           : observedSec / inBedSec,
       'hypnogram': series?['hypnogram'],
@@ -5808,8 +5572,10 @@ class DerivationEngine {
     // An empty map is already this function's "no zones" answer everywhere it
     // is read; a zero-filled one would claim the day was measured and spent at
     // rest. See `HeartRateZones.timeInZone`.
-    return ana.HeartRateZones.timeInZone(samples, zoneSet)
-            ?.toRoundedMinuteMap() ??
+    return ana.HeartRateZones.timeInZone(
+          samples,
+          zoneSet,
+        )?.toRoundedMinuteMap() ??
         const {};
   }
 
@@ -5865,7 +5631,7 @@ class DerivationEngine {
   /// reason, so Today does not show a figure the derived day then withdraws.
   @visibleForTesting
   static ({double active, double basal, double total, double walking})?
-      wakeDayEnergy(
+  wakeDayEnergy(
     List<double> wakeHrPerMin, {
     required Profile profile,
     required double? restingHr,
@@ -5957,6 +5723,7 @@ class DerivationEngine {
     required Profile profile,
     required int sleepOnsetSec,
     required int sleepOffsetSec,
+
     /// Local midnight opening this day, and the start of the NEXT local day —
     /// both from the day LABEL. `_DayBlocksInput.dayEndSec` is NOT this: it is
     /// the data edge (`daySub.lastTs + 1`), which is exactly the span-shaped
@@ -5971,6 +5738,7 @@ class DerivationEngine {
     int liveStepsFromStrap = 0,
     int dynHistoryDays = 0,
     List<List<int>> stepSpans = const [],
+
     /// This day's `sessions` rows (`LocalDb.sessionsInRange`), for the
     /// zero-coverage credit below. Defaults to none — every existing caller
     /// keeps its old behaviour until it is threaded through.
@@ -6118,12 +5886,13 @@ class DerivationEngine {
           if (walking > 0) 'live_coverage_pedometer',
           if (sessionCredit > 0) 'saved_session_calories',
         ],
-        'note': 'total daily energy: Mifflin BMR floor over the covered day + '
+        'note':
+            'total daily energy: Mifflin BMR floor over the covered day + '
             'active Keytel surplus over the wake span (HR-flex)'
             '${walking > 0 ? ' + measured-cadence walking term '
-                '(CADENCE-Adults, ${walking.round()} kcal)' : ''}'
+                      '(CADENCE-Adults, ${walking.round()} kcal)' : ''}'
             '${sessionCredit > 0 ? ' + workout-gap session calories '
-                '(PPG lost the window, ${sessionCredit.round()} kcal)' : ''}',
+                      '(PPG lost the window, ${sessionCredit.round()} kcal)' : ''}',
       };
     }
     // WHY each of the above is absent, per figure. This recompute is the answer
@@ -6174,8 +5943,7 @@ class DerivationEngine {
   static Future<double?> _frozenMovementFloor(
     _BaselineHistoryCache history,
     String dayId,
-  ) =>
-      _floorLock.run(() => _resolveMovementFloor(history, dayId));
+  ) => _floorLock.run(() => _resolveMovementFloor(history, dayId));
 
   /// Serializes the shared-floor read-modify-write across concurrent day
   /// workers. See [_frozenMovementFloor].
@@ -6242,8 +6010,10 @@ class DerivationEngine {
       days: hist.length,
     );
     if (kDebugMode) {
-      debugPrint('[derive] movement floor FROZEN at '
-          '${floor.toStringAsFixed(4)} g from ${hist.length} days ($dayId)');
+      debugPrint(
+        '[derive] movement floor FROZEN at '
+        '${floor.toStringAsFixed(4)} g from ${hist.length} days ($dayId)',
+      );
     }
     return floor;
   }
@@ -6332,10 +6102,10 @@ class DerivationEngine {
       'source': !haveRealSteps
           ? null
           : useBand
-              ? 'strap_counter'
-              : (strap > 0 && phone > 0)
-                  ? 'mixed'
-                  : (strap > 0 ? 'strap' : 'phone'),
+          ? 'strap_counter'
+          : (strap > 0 && phone > 0)
+          ? 'mixed'
+          : (strap > 0 ? 'strap' : 'phone'),
       'confidence': haveRealSteps ? 0.9 : 0.0,
       // NO TIER ON AN ABSENT METRIC. `ESTIMATE` here was actively wrong in two
       // ways: this code path never estimates anything (that is the whole point
@@ -6354,28 +6124,28 @@ class DerivationEngine {
       'inputs_used': !haveRealSteps
           ? const <String>[]
           : useBand
-              ? const ['band_step_counter']
-              : <String>[
-                  if (strap > 0) 'band_pedometer_100hz',
-                  if (phone > 0) 'phone_pedometer',
-                ],
+          ? const ['band_step_counter']
+          : <String>[
+              if (strap > 0) 'band_pedometer_100hz',
+              if (phone > 0) 'phone_pedometer',
+            ],
       'note': haveRealSteps
           ? (useBand
-              ? 'the strap\'s own on-chip pedometer, summed from its cumulative '
-                  'counter; wrapped and reset boundaries contribute nothing '
-                  'rather than a guess'
-              : (strap > 0 && phone > 0)
-                  ? 'counted over measured windows only, each window by the '
+                ? 'the strap\'s own on-chip pedometer, summed from its cumulative '
+                      'counter; wrapped and reset boundaries contribute nothing '
+                      'rather than a guess'
+                : (strap > 0 && phone > 0)
+                ? 'counted over measured windows only, each window by the '
                       'better sensor that was actually recording it — the '
                       'strap while it streamed, your phone the rest of the '
                       'time. Overlaps are counted once, and time no sensor '
                       'covered is not counted rather than estimated'
-                  : 'real pedometer count over measured windows only; time '
+                : 'real pedometer count over measured windows only; time '
                       'outside those windows is not counted rather than '
                       'estimated')
           : 'no step count: nothing that can resolve gait measured this day. '
-              'A 1 Hz wrist stream cannot count steps, so no number is shown '
-              'instead of an invented one',
+                'A 1 Hz wrist stream cannot count steps, so no number is shown '
+                'instead of an invented one',
     };
   }
 
@@ -6422,8 +6192,10 @@ class DerivationEngine {
         liveStepsFromStrap: liveStepsFromStrap,
         bandSteps: hardwareStepsFromCounter(
           daySub,
-          cumulativeCounterModulus:
-              ana.calibrationFor(_stepCounterModulus, daySub.deviceFamily),
+          cumulativeCounterModulus: ana.calibrationFor(
+            _stepCounterModulus,
+            daySub.deviceFamily,
+          ),
         ),
       );
 
@@ -6487,7 +6259,7 @@ class DerivationEngine {
         'note': v == null
             ? (est.note ?? 'need_baseline')
             : 'minutes of sustained wrist movement — activity volume, NOT '
-                'walking, and deliberately not converted to steps',
+                  'walking, and deliberately not converted to steps',
       };
       // ENERGY IS NOT COMPUTED HERE. `_applyWakeDayFeatures` has already
       // published `calories`, `calories_total` and the TDEE block from the
@@ -6532,8 +6304,11 @@ class DerivationEngine {
       dayCalendarEndSec: dayCalendarEndSec,
       dataNowSec: dataNowSec,
     );
-    final wakeSeries =
-        _perMinuteMeanWake(daySub, sleepOnsetSec, sleepOffsetSec);
+    final wakeSeries = _perMinuteMeanWake(
+      daySub,
+      sleepOnsetSec,
+      sleepOffsetSec,
+    );
     final perMin = wakeSeries.hr;
     // The day's MEASURED walking cadence, minute-aligned to the same wake
     // buckets — from the resolved `live_coverage` spans, so band/phone overlap
@@ -6584,11 +6359,11 @@ class DerivationEngine {
         ? needInputNote('wake_hr')
         : hrMax == null
         ? ceilingAbsent
-            : dayHrValid.isEmpty
+        : dayHrValid.isEmpty
         ? needInputNote('hr_samples')
-                : rhrForTrimp == null
+        : rhrForTrimp == null
         ? needInputNote('resting_hr')
-                    : sex == null
+        : sex == null
         ? needInputNote('sex')
         : null;
     // `wakeDayEnergy`'s own gates, named. It returns a bare null, so the reason
@@ -6611,7 +6386,7 @@ class DerivationEngine {
         // term nets out a Mifflin basal minute, which does.
         : profile.heightCm == null
         ? needInputNote('height_cm')
-                        : null;
+        : null;
     final zonesAbsent = perMin.isEmpty
         ? needInputNote('wake_hr')
         : ceilingAbsent;
@@ -6729,9 +6504,11 @@ class DerivationEngine {
     final hrStats = dayHrValid.isEmpty
         ? null
         : {
-            'max': smoothedMaxHr(dayHrInt, age: age) ??
+            'max':
+                smoothedMaxHr(dayHrInt, age: age) ??
                 dayHrValid.reduce(math.max).round(),
-            'min': smoothedMinHr(dayHrInt, age: age) ??
+            'min':
+                smoothedMinHr(dayHrInt, age: age) ??
                 dayHrValid.reduce(math.min).round(),
             'avg': _meanWake(dayHrValid)?.round(),
           };
@@ -6777,7 +6554,8 @@ class DerivationEngine {
         'confidence': 0.6,
         'tier': 'ESTIMATE',
         'inputs_used': const ['accel_1hz'],
-        'note': 'minutes of wrist movement over wake (1 Hz). This is activity '
+        'note':
+            'minutes of wrist movement over wake (1 Hz). This is activity '
             'volume, NOT walking, and is never converted to steps: at the '
             'wrist, arm work registers as strongly as ambulation. Real step '
             'counts come only from the 100 Hz or phone pedometer',
@@ -6796,7 +6574,10 @@ class DerivationEngine {
   /// second is skipped below and the loop falls out with `active == 0` — which
   /// published "0 active minutes" as a measurement for a fully-worn band.
   static int? _activeMinutes(
-      Substrate s, int sleepOnsetSec, int sleepOffsetSec) {
+    Substrate s,
+    int sleepOnsetSec,
+    int sleepOffsetSec,
+  ) {
     final n = s.length;
     if (n < 60) return null;
     final ang = List<double>.filled(n, 0);
@@ -7104,7 +6885,7 @@ class DerivationEngine {
   /// movement-confounded daytime data, which is exactly what is hard to fake.
   @visibleForTesting
   static double? Function(List<double> nn, List<double> nnt)?
-      debugRespEstimator;
+  debugRespEstimator;
 
   /// Test seam: counts estimator ATTEMPTS. The cost fix is about how often the
   /// estimator runs, not about what it returns, so the attempt count is the only
@@ -7144,8 +6925,9 @@ class DerivationEngine {
     for (var i = 0; i < s.length; i++) {
       var q = 0;
       if (s.accelPresentAt(i)) {
-        final mag =
-            math.sqrt(s.ax[i] * s.ax[i] + s.ay[i] * s.ay[i] + s.az[i] * s.az[i]);
+        final mag = math.sqrt(
+          s.ax[i] * s.ax[i] + s.ay[i] * s.ay[i] + s.az[i] * s.az[i],
+        );
         if ((mag - 1.0).abs() <= cut) q = 1;
       }
       quietPrefix[i + 1] = quietPrefix[i] + q;
@@ -7272,8 +7054,10 @@ class DerivationEngine {
 
   @visibleForTesting
   static Map<String, dynamic> daytimeHrv(
-          Substrate s, int onsetSec, int offsetSec) =>
-      _daytimeHrv(s, onsetSec, offsetSec);
+    Substrate s,
+    int onsetSec,
+    int offsetSec,
+  ) => _daytimeHrv(s, onsetSec, offsetSec);
 
   /// Daytime HRV, MOTION-GATED. The gate is the feature, not a refinement: an
   /// RR series filtered only on plausibility lets a bin of walking into the
@@ -7312,7 +7096,11 @@ class DerivationEngine {
   /// so: no score, no 0-100, no battery, no gauge, no "current stress". a
   /// timeline of RMSSD over still minutes, labelled as variability, is the
   /// whole allowed surface.
-  static Map<String, dynamic> _daytimeHrv(Substrate s, int onsetSec, int offsetSec) {
+  static Map<String, dynamic> _daytimeHrv(
+    Substrate s,
+    int onsetSec,
+    int offsetSec,
+  ) {
     const binSec = 300;
     final cut = ana.calibrationFor(_quietEnmoCutG, s.deviceFamily);
     if (cut == null) {
@@ -7330,7 +7118,8 @@ class DerivationEngine {
     for (var i = 0; i < s.length; i++) {
       if (!s.accelPresentAt(i)) continue;
       final mag = math.sqrt(
-          s.ax[i] * s.ax[i] + s.ay[i] * s.ay[i] + s.az[i] * s.az[i]);
+        s.ax[i] * s.ax[i] + s.ay[i] * s.ay[i] + s.az[i] * s.az[i],
+      );
       if ((mag - 1.0).abs() <= cut) quiet.add(s.tsSec[i]);
     }
     final bins = <int, List<double>>{};
@@ -7657,10 +7446,7 @@ class DerivationEngine {
     ];
   }
 
-  static void _writeUnknownNaps(
-    Map<String, dynamic> bundle,
-    String note,
-  ) {
+  static void _writeUnknownNaps(Map<String, dynamic> bundle, String note) {
     bundle['naps'] = <String, dynamic>{
       'value': null,
       'count': null,
@@ -7697,8 +7483,13 @@ class DerivationEngine {
       }
       final accel = <ana.AccelSample>[
         for (var i = 0; i < n; i++)
-          ana.AccelSample(s.tsSec[i] * 1000.0, s.ax[i], s.ay[i], s.az[i],
-              valid: s.accelPresentAt(i)),
+          ana.AccelSample(
+            s.tsSec[i] * 1000.0,
+            s.ax[i],
+            s.ay[i],
+            s.az[i],
+            valid: s.accelPresentAt(i),
+          ),
       ];
       final hr = [for (final h in s.hr) h.toDouble()];
       // Map the main-sleep epoch-second window to indices into the day arrays.
@@ -7750,7 +7541,8 @@ class DerivationEngine {
       // broke on that same discontinuity and dropped the bout too, so
       // dropping it here as well would lose a real nap rather than
       // de-duplicate one.
-      final leadingEdgeOwnedByYesterday = attributionStartSec != null &&
+      final leadingEdgeOwnedByYesterday =
+          attributionStartSec != null &&
           t0 <= attributionStartSec + napLeadingEdgeContiguitySec;
       // A nap STARTING at/after the real day boundary is tomorrow's — its own
       // (unbuffered) window finds it independently, so keeping it here too
@@ -7911,8 +7703,10 @@ class DerivationEngine {
     required String label,
   }) async {
     final port = ReceivePort();
-    final (SendPort, FutureOr<Object?> Function()) message =
-        (port.sendPort, compute);
+    final (SendPort, FutureOr<Object?> Function()) message = (
+      port.sendPort,
+      compute,
+    );
     final isolate = await Isolate.spawn(
       _cancellableIsolateEntry,
       message,
@@ -8211,15 +8005,17 @@ class DerivationEngine {
       // entirely (HRR for already-saved sessions below still runs).
       final bouts = rhr == null
           ? const <ana.DetectedWorkout>[]
-          : (ana.autoDetectWorkouts(
-                hrTs: hrTs,
-                hrBpm: hrBpm,
-                restingBpm: rhr,
-                maxBpm: maxHr,
-                motion: motion,
-                savedSpans: savedSpans,
-              ).value ??
-              const <ana.DetectedWorkout>[]);
+          : (ana
+                    .autoDetectWorkouts(
+                      hrTs: hrTs,
+                      hrBpm: hrBpm,
+                      restingBpm: rhr,
+                      maxBpm: maxHr,
+                      motion: motion,
+                      savedSpans: savedSpans,
+                    )
+                    .value ??
+                const <ana.DetectedWorkout>[]);
 
       // HRR per bout from the per-second HR tail bracketing each bout end.
       final drops = <double>[];
@@ -8260,14 +8056,16 @@ class DerivationEngine {
       final hrrBpm = drops.isEmpty
           ? null
           : double.parse(
-              (drops.reduce((a, c) => a + c) / drops.length).toStringAsFixed(1));
+              (drops.reduce((a, c) => a + c) / drops.length).toStringAsFixed(1),
+            );
       // Mean tau over the bouts that SURVIVED the residual gate — deliberately
       // a different denominator from `hrrBpm`'s, because the gate abstains
       // often and pretending otherwise would average a fit never made.
       final hrrTauS = taus.isEmpty
           ? null
           : double.parse(
-              (taus.reduce((a, c) => a + c) / taus.length).toStringAsFixed(1));
+              (taus.reduce((a, c) => a + c) / taus.length).toStringAsFixed(1),
+            );
 
       // Persist + notify only for RECENT days (≤ ~36 h old) so imports/re-analyze
       // don't resurface 90 days of prompts.
@@ -8299,10 +8097,7 @@ class DerivationEngine {
         // above so they surface in the Workouts screen; we just don't ping for them.
         final newest = bouts.reduce((a, b) => a.endSec >= b.endSec ? a : b);
         if ((dataNowSec - newest.endSec) < 2 * 3600) {
-          notif = (
-            id: sugId(newest.startSec),
-            durationMin: newest.durationMin,
-          );
+          notif = (id: sugId(newest.startSec), durationMin: newest.durationMin);
         }
       }
       return _WorkoutCompute(
@@ -8314,7 +8109,9 @@ class DerivationEngine {
         notifBout: notif,
       );
     } catch (e) {
-      if (kDebugMode) debugPrint('[derive] auto-workout/HRR FAILED/skipped: $e');
+      if (kDebugMode) {
+        debugPrint('[derive] auto-workout/HRR FAILED/skipped: $e');
+      }
       return const _WorkoutCompute.empty();
     }
   }
@@ -8342,8 +8139,7 @@ class DerivationEngine {
   static Map<String, dynamic> dayHrCeiling(
     Substrate s,
     List<Map<String, dynamic>> saved,
-  ) =>
-      _dayHrCeiling(s, saved);
+  ) => _dayHrCeiling(s, saved);
 
   static Map<String, dynamic> _dayHrCeiling(
     Substrate s,
@@ -8365,8 +8161,15 @@ class DerivationEngine {
         if (t > end) break;
         final tsMs = t * 1000.0;
         hr.add(ana.HrSample(tsMs, s.hr[i].toDouble()));
-        accel.add(ana.AccelSample(tsMs, s.ax[i], s.ay[i], s.az[i],
-            valid: s.accelPresentAt(i)));
+        accel.add(
+          ana.AccelSample(
+            tsMs,
+            s.ax[i],
+            s.ay[i],
+            s.az[i],
+            valid: s.accelPresentAt(i),
+          ),
+        );
       }
       if (hr.isEmpty) continue;
       final m = ana.sessionHrCeiling(hr, accel, deviceFamily: s.deviceFamily);
@@ -8380,7 +8183,8 @@ class DerivationEngine {
         bestType = row['type']?.toString();
       }
     }
-    final m = best ??
+    final m =
+        best ??
         lastAbsent ??
         const ana.Metric<ana.HrCeiling>.absent(
           tier: ana.Tier.high,
@@ -8398,7 +8202,9 @@ class DerivationEngine {
   /// the per-second HR tail around the end index, delegate the drop to
   /// [ana.hrRecovery] and fit tau over the same tail. Either half may be null.
   static ({double? hrrBpm, double? tauSec}) _hrrForBout(
-      Substrate s, int endSec) {
+    Substrate s,
+    int endSec,
+  ) {
     const none = (hrrBpm: null, tauSec: null);
     final n = s.length;
     if (n == 0) return none;
@@ -8538,8 +8344,13 @@ class DerivationEngine {
       final epoch = <ana.AccelSample>[
         for (var i = 0; i < s.length; i++)
           if (s.tsSec[i] >= onsetSec && s.tsSec[i] < offsetSec)
-            ana.AccelSample(s.tsSec[i] * 1000.0, s.ax[i], s.ay[i], s.az[i],
-                valid: s.accelPresentAt(i))
+            ana.AccelSample(
+              s.tsSec[i] * 1000.0,
+              s.ax[i],
+              s.ay[i],
+              s.az[i],
+              valid: s.accelPresentAt(i),
+            ),
       ];
       if (epoch.length < 60) return;
       final tilts = ana.positionSeries(epoch, epochSec: 30);
@@ -8568,12 +8379,15 @@ class DerivationEngine {
         'epochs': tilts.length,
         'confidence': 'low',
         'tier': ana.Tier.relative,
-        'note': 'WRIST orientation during sleep (gravity-tilt). A body-position '
+        'note':
+            'WRIST orientation during sleep (gravity-tilt). A body-position '
             'PROXY, NOT supine/side/prone body position — the wrist moves '
             'independently of the torso.',
       };
     } catch (e) {
-      if (kDebugMode) debugPrint('[derive] wrist-orientation FAILED/skipped: $e');
+      if (kDebugMode) {
+        debugPrint('[derive] wrist-orientation FAILED/skipped: $e');
+      }
     }
   }
 
@@ -8641,14 +8455,14 @@ class DerivationEngine {
     List<Map<String, dynamic>>? naps, {
     int? mainTstMin,
     double? mainEfficiency,
-  }) =>
-      _sleepPeriods(
-        onsetSec,
-        offsetSec,
-        naps,
-        mainTstMin: mainTstMin,
-        mainEfficiency: mainEfficiency,
-      );
+  }) => _sleepPeriods(
+    onsetSec,
+    offsetSec,
+    naps,
+    mainTstMin: mainTstMin,
+    mainEfficiency: mainEfficiency,
+  );
+
   /// Test seam for [_attachNaps] — the day-boundary attribution rules (drop
   /// tomorrow's leading nap, drop yesterday's trailing one) decide which day a
   /// nap's minutes are credited to, and are cheap to state directly.
@@ -8664,19 +8478,18 @@ class DerivationEngine {
     List<List<int>> wristOff = const [],
     List<List<int>> charging = const [],
     List<NapEdit> napEdits = const [],
-  }) =>
-      _attachNaps(
-        bundle,
-        scMap,
-        s,
-        onsetSec,
-        offsetSec,
-        attributionStartSec: attributionStartSec,
-        attributionEndSec: attributionEndSec,
-        wristOff: wristOff,
-        charging: charging,
-        napEdits: napEdits,
-      );
+  }) => _attachNaps(
+    bundle,
+    scMap,
+    s,
+    onsetSec,
+    offsetSec,
+    attributionStartSec: attributionStartSec,
+    attributionEndSec: attributionEndSec,
+    wristOff: wristOff,
+    charging: charging,
+    napEdits: napEdits,
+  );
 
   void _log(String m) {
     if (kDebugMode) debugPrint('[derive] $m');
@@ -8700,8 +8513,7 @@ Future<R> runCancellableIsolate<R>(
   FutureOr<R> Function() compute,
   Duration timeout, {
   String label = 'test',
-}) =>
-    DerivationEngine._runIsolateCancellable(compute, timeout, label: label);
+}) => DerivationEngine._runIsolateCancellable(compute, timeout, label: label);
 
 /// Sendable input for [DerivationEngine._computeDayBlocks] — crosses the
 /// `Isolate.run` boundary, so every field is plain data (Substrate is int/double
@@ -8841,12 +8653,12 @@ class _WorkoutCompute {
     required this.notifBout,
   });
   const _WorkoutCompute.empty()
-      : boutJson = const [],
-        hrrBpm = null,
+    : boutJson = const [],
+      hrrBpm = null,
       hrrTauS = null,
-        sessionHrrWrites = const [],
-        suggestionsToPersist = const [],
-        notifBout = null;
+      sessionHrrWrites = const [],
+      suggestionsToPersist = const [],
+      notifBout = null;
 }
 
 double? _median(List<double> xs) {

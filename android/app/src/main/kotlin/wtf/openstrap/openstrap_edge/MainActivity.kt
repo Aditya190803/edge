@@ -1,6 +1,5 @@
 package wtf.openstrap.openstrap_edge
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -10,7 +9,7 @@ import io.flutter.embedding.android.FlutterFragmentActivity
  * via ensureEngine(), then cached) rather than spinning
  * up its own, and refuses to destroy that engine when the Activity is finished. Combined
  * with the EdgeTracking foreground service keeping the process alive, this lets the Dart
- * side (BLE connection + notification relay) keep running after the app is swiped from
+ * side (Bluetooth capture and export) keep running after the app is swiped from
  * recents — instead of Android tearing the engine down (onDetachedFromEngine).
  *
  * Platform channels are registered on the engine in EdgeApplication (NativeChannels), not
@@ -38,7 +37,6 @@ class MainActivity : FlutterFragmentActivity() {
         // entry must exist before it runs.
         EdgeApplication.ensureEngine(applicationContext)
         activityAttached = true
-        clearPendingHeadlessBoot()
         super.onCreate(savedInstanceState)
         CompanionBridge.currentActivity = this
         // Re-arm CDM device-presence observation for an already-associated band
@@ -49,7 +47,6 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onStart() {
         super.onStart()
         activityAttached = true
-        clearPendingHeadlessBoot()
     }
 
     override fun onStop() {
@@ -64,20 +61,6 @@ class MainActivity : FlutterFragmentActivity() {
         super.onDestroy()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        // ACTIVITY_RECOGNITION for the phone step counter — same borrow-the-Activity
-        // pattern as the CDM dialog below. Only OUR request code is consumed here;
-        // everything else still reaches the plugins.
-        if (PhoneStepCounter.handlePermissionResult(applicationContext, requestCode, grantResults)) {
-            return
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
     @Deprecated("Deprecated in AndroidX; Flutter still routes plugin results through it")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         // CDM association dialog result → CompanionBridge (consumed there).
@@ -88,13 +71,4 @@ class MainActivity : FlutterFragmentActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    private fun clearPendingHeadlessBoot() {
-        val prefs = applicationContext.getSharedPreferences(
-            "openstrap_runtime",
-            Context.MODE_PRIVATE
-        )
-        if (prefs.getBoolean("pending_headless_boot", false)) {
-            prefs.edit().putBoolean("pending_headless_boot", false).apply()
-        }
-    }
 }

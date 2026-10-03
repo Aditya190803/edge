@@ -18,12 +18,18 @@ const _allowlist = {
   // M2 §15: scan()/_scanLocked() moved here — a `part of` extension on
   // BleEngine, not a new entry point.
   'lib/ble/transport.dart',
-  'lib/ble/hrs_link.dart',
+  'lib/bridge/coordinator.dart',
 };
 
 final _pureComment = RegExp(r'^\s*(///|//|\*|/\*)');
 
 void main() {
+  test('bridge pairing scan shares the transport scan lock', () {
+    expect(
+      File('lib/bridge/coordinator.dart').readAsStringSync(),
+      contains('withScanLock(_scanLocked)'),
+    );
+  });
   final dartFiles = Directory('lib')
       .listSync(recursive: true)
       .whereType<File>()
@@ -35,17 +41,23 @@ void main() {
     final pattern = RegExp(r'FlutterBluePlus\.(start|stop)Scan');
     final offenders = <String>[];
     for (final f in dartFiles) {
-      final rel = f.path.replaceFirst(RegExp(r'^\./'), '');
+      final rel = f.path
+          .replaceAll('\\', '/')
+          .replaceFirst(RegExp(r'^\./'), '');
       if (_allowlist.contains(rel)) continue;
       for (final line in f.readAsStringSync().split('\n')) {
         if (_pureComment.hasMatch(line)) continue;
         if (pattern.hasMatch(line)) offenders.add('$rel: $line');
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'a new scan entry point must go through withScanLock via '
-            'BleEngine or HrsLink, not call FlutterBluePlus directly:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'a new scan entry point must go through withScanLock via '
+          'BleEngine or HrsLink, not call FlutterBluePlus directly:\n'
+          '${offenders.join('\n')}',
+    );
   });
 
   test('FlutterBluePlus.isScanning is only ever read from the allowlisted '
@@ -55,15 +67,21 @@ void main() {
     final pattern = RegExp(r'FlutterBluePlus\.isScanning');
     final offenders = <String>[];
     for (final f in dartFiles) {
-      final rel = f.path.replaceFirst(RegExp(r'^\./'), '');
+      final rel = f.path
+          .replaceAll('\\', '/')
+          .replaceFirst(RegExp(r'^\./'), '');
       if (_allowlist.contains(rel)) continue;
       for (final line in f.readAsStringSync().split('\n')) {
         if (_pureComment.hasMatch(line)) continue;
         if (pattern.hasMatch(line)) offenders.add('$rel: $line');
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'a new file reading isScanning outside withScanLock:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'a new file reading isScanning outside withScanLock:\n'
+          '${offenders.join('\n')}',
+    );
   });
 }

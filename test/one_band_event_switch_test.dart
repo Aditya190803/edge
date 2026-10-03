@@ -16,20 +16,27 @@ void main() {
   test('case SampleBatch( only appears in the one allowlisted host file', () {
     final pattern = RegExp(r'case SampleBatch\(');
     final offenders = <String>[];
-    for (final f in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
-      final rel = f.path.replaceFirst(RegExp(r'^\./'), '');
+    for (final f
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
+      final rel = f.path
+          .replaceAll('\\', '/')
+          .replaceFirst(RegExp(r'^\./'), '');
       if (_allowlist.contains(rel)) continue;
       for (final line in f.readAsStringSync().split('\n')) {
         if (_pureComment.hasMatch(line)) continue;
         if (pattern.hasMatch(line)) offenders.add('$rel: $line');
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'a second BandEvent switch means the ephemeral refusal, the '
-            'commit-then-confirm ordering, or the device_id stamping can '
-            'drift between two copies:\n${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'a second BandEvent switch means the ephemeral refusal, the '
+          'commit-then-confirm ordering, or the device_id stamping can '
+          'drift between two copies:\n${offenders.join('\n')}',
+    );
   });
 }

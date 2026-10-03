@@ -29,19 +29,14 @@ class Seam {
 
 const seams = [
   Seam(
-    'lib/data/local_repository_impl.dart',
-    '_decode',
-    'the read seam every screen is served from',
-  ),
-  Seam(
     'lib/compute/derivation_engine.dart',
     '_decodeBundle',
-    'the re-derive path merges a previous bundle into a fresh one',
+    'rederive restores stored curve shapes',
   ),
   Seam(
-    'lib/health/health_export.dart',
-    '_decode',
-    'the Apple Health sleep export reads hypnogram out of a bundle',
+    'lib/health/bridge_health_export.dart',
+    '_loadNights',
+    'night export restores stored curve shapes',
   ),
 ];
 
@@ -122,20 +117,26 @@ void main() {
   for (final seam in seams) {
     test('${seam.path} ${seam.helper} routes through SeriesCodec', () {
       final file = File(seam.path);
-      expect(file.existsSync(), isTrue, reason: '${seam.path} moved or was renamed');
+      expect(
+        file.existsSync(),
+        isTrue,
+        reason: '${seam.path} moved or was renamed',
+      );
 
       final code = stripCommentsAndStrings(file.readAsStringSync());
       final body = helperBody(code, seam.helper);
       expect(
         body,
         isNotNull,
-        reason: '${seam.helper} not found in ${seam.path} — if it was renamed, '
+        reason:
+            '${seam.helper} not found in ${seam.path} — if it was renamed, '
             'update this guard rather than deleting it',
       );
       expect(
         body,
         contains('SeriesCodec'),
-        reason: 'BYPASSED: ${seam.helper} decodes a stored bundle without '
+        reason:
+            'BYPASSED: ${seam.helper} decodes a stored bundle without '
             'normalizing the curve format. ${seam.why}. A grid/offset curve '
             'reaches the caller as a Map where it expects a List and silently '
             'renders as nothing.',
@@ -155,7 +156,8 @@ void main() {
     expect(
       body,
       contains('SeriesCodec.encodePayloadJson'),
-      reason: 'putDayResult stopped encoding — new days would be written in '
+      reason:
+          'putDayResult stopped encoding — new days would be written in '
           'the legacy shape and the saving would quietly stop',
     );
   });

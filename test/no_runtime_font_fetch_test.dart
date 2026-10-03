@@ -16,28 +16,23 @@ void main() {
         offenders.add(f.path);
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'bundle the family under assets/fonts/ instead');
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'bundle the family under assets/fonts/ instead',
+    );
   });
 
   test('google_fonts is not a dependency', () {
     final pubspec = loadYaml(File('pubspec.yaml').readAsStringSync()) as Map;
-    expect((pubspec['dependencies'] as Map).containsKey('google_fonts'), isFalse);
+    expect(
+      (pubspec['dependencies'] as Map).containsKey('google_fonts'),
+      isFalse,
+    );
   });
 
-  test('every family the type scale uses is bundled', () {
+  test('bridge uses system fonts', () {
     final pubspec = loadYaml(File('pubspec.yaml').readAsStringSync()) as Map;
-    final families = <String>{
-      for (final f in (pubspec['flutter']['fonts'] as YamlList))
-        (f as Map)['family'] as String
-    };
-    expect(families, containsAll(<String>['Manrope', 'Barlow Condensed']));
-
-    for (final f in (pubspec['flutter']['fonts'] as YamlList)) {
-      for (final a in ((f as Map)['fonts'] as YamlList)) {
-        final asset = (a as Map)['asset'] as String;
-        expect(File(asset).existsSync(), isTrue, reason: 'missing $asset');
-      }
-    }
+    expect(pubspec['flutter']['fonts'], isNull);
   });
 }

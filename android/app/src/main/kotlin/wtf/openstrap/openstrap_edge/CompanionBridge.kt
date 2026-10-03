@@ -306,7 +306,7 @@ class EdgeCompanionService : CompanionDeviceService() {
         // mid-workout) must not churn an already-running service — a restart just
         // rebuilds and re-posts the notification. `running` is exact in-process,
         // and a dead process initializes it false, so the cold path still starts.
-        if (EdgeTrackingService.running) return
+        if (!KeepAliveWorker.hasPairedDevice(this) || EdgeTrackingService.running) return
         try {
             EdgeTrackingService.start(this)
         } catch (e: Exception) {

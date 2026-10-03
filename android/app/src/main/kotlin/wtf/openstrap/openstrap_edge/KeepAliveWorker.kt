@@ -59,7 +59,9 @@ class KeepAliveWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, para
                 "FlutterSharedPreferences",
                 Context.MODE_PRIVATE,
             )
-            return !prefs.getString("flutter.paired_remote_id", null).isNullOrEmpty()
+            return !prefs.getBoolean("flutter.bridge_sync_paused", false) &&
+                prefs.getString("flutter.paired_generation", null) != "gen5" &&
+                !prefs.getString("flutter.paired_remote_id", null).isNullOrEmpty()
         }
     }
 
